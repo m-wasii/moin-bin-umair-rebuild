@@ -1,0 +1,39 @@
+---
+import { navigation, site } from '../data/site';
+---
+
+<header class="site-header" data-header>
+	<div class="scroll-progress" aria-hidden="true">
+		<span data-scroll-progress></span>
+	</div>
+
+	<a class="site-brand" href="#home" aria-label={`${site.name}, home`}>
+		<span class="site-brand__mark">{site.shortName}</span>
+		<span class="site-brand__name">{site.name}</span>
+	</a>
+
+	<button
+		class="nav-toggle"
+		type="button"
+		aria-expanded="false"
+		aria-controls="primary-navigation"
+		data-nav-toggle
+	>
+		<span class="sr-only">Toggle navigation</span>
+		<span aria-hidden="true"></span>
+		<span aria-hidden="true"></span>
+	</button>
+
+	<nav class="site-nav" id="primary-navigation" aria-label="Primary navigation" data-nav>
+		{navigation.map((item, index) => (
+			<a
+				class="site-nav__link"
+				href={item.href}
+				data-nav-link
+				aria-current={index === 0 ? 'page' : undefined}
+			>
+				{item.label}
+			</a>
+		))}
+	</nav>
+</header>

@@ -1,0 +1,28 @@
+<dialog class="video-dialog" data-video-dialog aria-labelledby="video-dialog-title">
+	<div class="video-dialog__panel">
+		<header class="video-dialog__header">
+			<p id="video-dialog-title" data-video-dialog-title>Project film</p>
+			<form method="dialog">
+				<button class="video-dialog__close" type="submit">
+					<span>Close</span>
+					<svg viewBox="0 0 18 18" aria-hidden="true">
+						<path d="m3 3 12 12M15 3 3 15"></path>
+					</svg>
+				</button>
+			</form>
+		</header>
+
+		<div class="video-dialog__player" data-video-player></div>
+
+		<a
+			class="video-dialog__external"
+			href="https://vimeo.com/moonshine123"
+			target="_blank"
+			rel="noreferrer"
+			data-video-external
+		>
+			Open on Vimeo
+			<span aria-hidden="true">↗</span>
+		</a>
+	</div>
+</dialog>

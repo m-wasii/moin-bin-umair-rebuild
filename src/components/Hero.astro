@@ -1,0 +1,42 @@
+---
+import { site } from '../data/site';
+---
+
+<section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
+	<div class="hero__media" aria-hidden="true">
+		<video
+			autoplay
+			muted
+			loop
+			playsinline
+			preload="metadata"
+			poster="/media/hero-poster.webp"
+			tabindex="-1"
+			data-hero-video
+		>
+			<source src="/media/hero-loop.mp4" type="video/mp4" />
+		</video>
+		<div class="hero__veil"></div>
+		<div class="hero__grain"></div>
+	</div>
+
+	<div class="hero__topline">
+		<p>{site.hero.eyebrow}</p>
+		<p>Film portfolio · 2023—2024</p>
+	</div>
+
+	<h1 class="hero__title" id="hero-title">
+		<span data-hero-line>Moin Bin</span>
+		<span data-hero-line>Umair</span>
+	</h1>
+
+	<div class="hero__footer">
+		<p>{site.hero.statement}</p>
+		<a class="hero__scroll" href="#commercial">
+			<span>Explore the work</span>
+			<svg viewBox="0 0 18 18" aria-hidden="true">
+				<path d="M9 2v13M4 10l5 5 5-5"></path>
+			</svg>
+		</a>
+	</div>
+</section>

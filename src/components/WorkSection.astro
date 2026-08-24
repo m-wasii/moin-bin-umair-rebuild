@@ -1,0 +1,29 @@
+---
+import type { Project } from '../data/projects';
+import ProjectCard from './ProjectCard.astro';
+
+interface Props {
+	id: 'commercial' | 'art';
+	number: string;
+	title: string;
+	description: string;
+	projects: Project[];
+}
+
+const { id, number, title, description, projects } = Astro.props;
+---
+
+<section class="work-section" id={id} aria-labelledby={`${id}-title`} data-nav-section>
+	<header class="section-heading" data-reveal>
+		<div class="section-heading__meta">
+			<p>{number}</p>
+			<p>{projects.length} projects</p>
+		</div>
+		<h2 id={`${id}-title`}>{title}</h2>
+		<p class="section-heading__description">{description}</p>
+	</header>
+
+	<div class="project-grid">
+		{projects.map((project, index) => <ProjectCard project={project} index={index} />)}
+	</div>
+</section>

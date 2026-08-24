@@ -1,0 +1,31 @@
+---
+import { site } from '../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<section class="contact" id="contact" aria-labelledby="contact-title" data-nav-section>
+	<header class="section-heading section-heading--contact" data-reveal>
+		<div class="section-heading__meta">
+			<p>03</p>
+			<p>Enquiries</p>
+		</div>
+		<h2 id="contact-title">Let’s make something worth watching.</h2>
+		<p class="section-heading__description">
+			Commercial films, narrative projects, and creative collaborations.
+		</p>
+	</header>
+
+	<div class="contact__actions" data-reveal>
+		<a class="text-link" href={site.vimeoUrl} target="_blank" rel="noreferrer">
+			<span>Visit Vimeo</span>
+			<span aria-hidden="true">↗</span>
+		</a>
+	</div>
+
+	<footer class="site-footer">
+		<p>{site.name} © {year}</p>
+		<p>Filmmaker · Visual storyteller</p>
+		<a href="#home">Back to top ↑</a>
+	</footer>
+</section>

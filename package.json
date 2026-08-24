@@ -1,0 +1,24 @@
+{
+  "name": "moin-bin-umair-rebuild",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Single-page filmmaker portfolio for Moin Bin Umair.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^7.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

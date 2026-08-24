@@ -1,0 +1,37 @@
+---
+import Contact from '../components/Contact.astro';
+import Hero from '../components/Hero.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import VideoDialog from '../components/VideoDialog.astro';
+import WorkSection from '../components/WorkSection.astro';
+import { artProjects, commercialProjects } from '../data/projects';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+	<SiteHeader />
+
+	<main id="main-content">
+		<Hero />
+
+		<WorkSection
+			id="commercial"
+			number="01"
+			title="Commercial"
+			description="Brand films, campaigns, and behind-the-scenes projects."
+			projects={commercialProjects}
+		/>
+
+		<WorkSection
+			id="art"
+			number="02"
+			title="Art & Films"
+			description="Narrative films, trailers, and personal work."
+			projects={artProjects}
+		/>
+
+		<Contact />
+	</main>
+
+	<VideoDialog />
+</BaseLayout>

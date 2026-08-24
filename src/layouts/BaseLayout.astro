@@ -1,0 +1,58 @@
+---
+import '../styles/global.css';
+import { site } from '../data/site';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = site.title,
+	description = site.description,
+} = Astro.props;
+
+const structuredData = {
+	'@context': 'https://schema.org',
+	'@type': 'Person',
+	name: site.name,
+	jobTitle: 'Filmmaker',
+	url: Astro.site?.toString(),
+	sameAs: [site.vimeoUrl],
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content={description} />
+		<meta name="theme-color" content="#050505" />
+		<meta name="color-scheme" content="dark" />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content="/media/hero-poster.webp" />
+		<meta name="twitter:card" content="summary_large_image" />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
+		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
+
+		<title>{title}</title>
+		<script is:inline>document.documentElement.classList.add('js');</script>
+		<script
+			type="application/ld+json"
+			is:inline
+			set:html={JSON.stringify(structuredData)}
+		/>
+	</head>
+	<body>
+		<a class="skip-link" href="#main-content">Skip to selected work</a>
+		<slot />
+		<script src="../scripts/site.ts"></script>
+	</body>
+</html>

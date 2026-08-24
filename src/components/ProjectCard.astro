@@ -1,0 +1,54 @@
+---
+import type { Project } from '../data/projects';
+import { formatDuration } from '../data/projects';
+
+interface Props {
+	project: Project;
+	index: number;
+}
+
+const { project, index } = Astro.props;
+const projectNumber = String(index + 1).padStart(2, '0');
+const vimeoUrl = `https://vimeo.com/${project.id}`;
+---
+
+<article class:list={['project-card', { 'project-card--featured': project.featured }]} data-reveal>
+	<a
+		class="project-card__link"
+		href={vimeoUrl}
+		target="_blank"
+		rel="noreferrer"
+		data-video
+		data-video-id={project.id}
+		data-video-title={project.title}
+		aria-label={`Play ${project.title} on Vimeo`}
+	>
+		<figure class="project-card__frame">
+			<img
+				src={project.thumbnail}
+				alt={`Still from ${project.title}`}
+				width="1280"
+				height="720"
+				loading="lazy"
+				decoding="async"
+				referrerpolicy="no-referrer"
+			/>
+			<span class="project-card__wash" aria-hidden="true"></span>
+			<span class="project-card__play" aria-hidden="true">
+				<svg viewBox="0 0 24 24">
+					<path d="m9 7 8 5-8 5V7Z"></path>
+				</svg>
+			</span>
+			<span class="project-card__number" aria-hidden="true">{projectNumber}</span>
+		</figure>
+
+		<div class="project-card__meta">
+			<h3>{project.title}</h3>
+			<p>
+				<span>{project.year}</span>
+				<span aria-hidden="true">/</span>
+				<span>{formatDuration(project.duration)}</span>
+			</p>
+		</div>
+	</a>
+</article>
