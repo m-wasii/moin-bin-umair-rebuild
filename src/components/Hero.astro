@@ -1,5 +1,7 @@
 ---
-import { site } from '../data/site';
+import { site } from "../data/site";
+
+const [role, craft] = site.hero.tagline;
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
@@ -20,18 +22,14 @@ import { site } from '../data/site';
 		<div class="hero__grain"></div>
 	</div>
 
-	<div class="hero__topline">
-		<p>{site.hero.eyebrow}</p>
-		<p>Film portfolio · 2023—2024</p>
-	</div>
-
-	<h1 class="hero__title" id="hero-title">
-		<span data-hero-line>Moin Bin</span>
-		<span data-hero-line>Umair</span>
-	</h1>
+	<h1 class="sr-only" id="hero-title">{site.name}</h1>
 
 	<div class="hero__footer">
-		<p>{site.hero.statement}</p>
+		<p class="hero__tagline">
+			<span>{role}</span>
+			<span class="hero__tagline-sep">·</span>
+			<span>{craft}</span>
+		</p>
 		<a class="hero__scroll" href="#commercial">
 			<span>Explore the work</span>
 			<svg viewBox="0 0 18 18" aria-hidden="true">
