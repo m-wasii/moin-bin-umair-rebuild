@@ -24,13 +24,16 @@ function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 		return;
 	}
 
-	const navRect = nav.getBoundingClientRect();
-	const linkRect = current.getBoundingClientRect();
 	const isMobile = window.matchMedia("(max-width: 760px)").matches;
+	const x = Math.round(current.offsetLeft);
+	const y = Math.round(current.offsetTop);
+	const width = Math.round(isMobile ? 3 : current.offsetWidth);
+	const height = Math.round(current.offsetHeight);
 
-	navIndicator.style.width = isMobile ? "3px" : `${linkRect.width}px`;
-	navIndicator.style.height = `${linkRect.height}px`;
-	navIndicator.style.transform = `translate(${linkRect.left - navRect.left}px, ${linkRect.top - navRect.top}px)`;
+	nav.style.setProperty("--nav-indicator-x", `${x}px`);
+	nav.style.setProperty("--nav-indicator-y", `${y}px`);
+	nav.style.setProperty("--nav-indicator-w", `${width}px`);
+	nav.style.setProperty("--nav-indicator-h", `${height}px`);
 	navIndicator.style.opacity = "1";
 }
 
@@ -91,6 +94,14 @@ window.addEventListener("resize", () => {
 });
 updateScrollChrome();
 queueNavIndicatorUpdate();
+
+if (nav && "ResizeObserver" in window) {
+	new ResizeObserver(() => queueNavIndicatorUpdate()).observe(nav);
+}
+
+if (document.fonts?.ready) {
+	document.fonts.ready.then(() => queueNavIndicatorUpdate());
+}
 
 const sectionVisibility = new Map<string, number>();
 const sections = document.querySelectorAll<HTMLElement>("[data-nav-section]");
