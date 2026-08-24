@@ -477,7 +477,7 @@ main,
 	margin: 0;
 	font-family: var(--font-display);
 	font-size: clamp(2.2rem, 4.6vw, 3.8rem);
-	font-weight: 500;
+	font-weight: 400;
 	line-height: 1.08;
 	letter-spacing: -0.03em;
 }
@@ -590,7 +590,7 @@ main,
 	margin: 0;
 	font-family: var(--font-display);
 	font-size: clamp(1.2rem, 1.7vw, 1.7rem);
-	font-weight: 500;
+	font-weight: 400;
 	line-height: 1.15;
 	letter-spacing: -0.02em;
 }
@@ -814,7 +814,7 @@ main,
 		color: var(--paper);
 		font-family: var(--font-display);
 		font-size: clamp(2.1rem, 11vw, 3.6rem);
-		font-weight: 500;
+		font-weight: 400;
 		line-height: 1.05;
 		letter-spacing: -0.03em;
 	}
