@@ -1,5 +1,4 @@
 const header = document.querySelector<HTMLElement>("[data-header]");
-const progress = document.querySelector<HTMLElement>("[data-scroll-progress]");
 const nav = document.querySelector<HTMLElement>("[data-nav]");
 const navToggle =
 	document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
@@ -10,11 +9,7 @@ const navLinks = Array.from(
 let scrollFrame = 0;
 
 function updateScrollChrome() {
-	const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-	const ratio = scrollable > 0 ? Math.min(window.scrollY / scrollable, 1) : 0;
-
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
-	progress?.style.setProperty("--scroll-progress", ratio.toString());
 	scrollFrame = 0;
 }
 

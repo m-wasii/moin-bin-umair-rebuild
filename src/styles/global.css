@@ -157,26 +157,6 @@ main,
 	backdrop-filter: blur(18px);
 }
 
-.scroll-progress {
-	position: absolute;
-	top: 0;
-	left: 1.2rem;
-	right: 1.2rem;
-	height: 2px;
-	overflow: hidden;
-	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.08);
-}
-
-.scroll-progress span {
-	display: block;
-	width: 100%;
-	height: 100%;
-	background: var(--tungsten);
-	transform: scaleX(var(--scroll-progress, 0));
-	transform-origin: left center;
-}
-
 .site-brand {
 	position: relative;
 	z-index: 102;
