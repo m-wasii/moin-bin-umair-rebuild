@@ -111,8 +111,7 @@ button {
 }
 
 .site-header,
-main,
-.video-dialog {
+main {
 	position: relative;
 	z-index: 1;
 }
@@ -614,6 +613,7 @@ main,
 .video-dialog {
 	width: min(94vw, 90rem);
 	max-width: none;
+	margin: auto;
 	padding: 0;
 	border: 0;
 	background: transparent;
