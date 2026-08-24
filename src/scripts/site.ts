@@ -20,14 +20,24 @@ let cachedLinkMetrics: Array<{
 }> = [];
 
 function measureLinkMetrics() {
+	if (!nav) return;
+
+	const navRect = nav.getBoundingClientRect();
+	const navStyles = getComputedStyle(nav);
+	const insetX = parseFloat(navStyles.borderLeftWidth) || 0;
+	const insetY = parseFloat(navStyles.borderTopWidth) || 0;
 	const isMobile = window.matchMedia("(max-width: 760px)").matches;
 
-	cachedLinkMetrics = navLinks.map((link) => ({
-		x: Math.round(link.offsetLeft),
-		y: Math.round(link.offsetTop),
-		w: Math.round(isMobile ? 3 : link.offsetWidth),
-		h: Math.round(link.offsetHeight),
-	}));
+	cachedLinkMetrics = navLinks.map((link) => {
+		const rect = link.getBoundingClientRect();
+
+		return {
+			x: rect.left - navRect.left - insetX,
+			y: rect.top - navRect.top - insetY,
+			w: isMobile ? 3 : rect.width,
+			h: rect.height,
+		};
+	});
 }
 
 function setIndicatorMetrics(metrics: {
@@ -39,10 +49,10 @@ function setIndicatorMetrics(metrics: {
 }) {
 	if (!nav || !navIndicator) return;
 
-	nav.style.setProperty("--nav-indicator-x", `${Math.round(metrics.x)}px`);
-	nav.style.setProperty("--nav-indicator-y", `${Math.round(metrics.y)}px`);
-	nav.style.setProperty("--nav-indicator-w", `${Math.round(metrics.w)}px`);
-	nav.style.setProperty("--nav-indicator-h", `${Math.round(metrics.h)}px`);
+	nav.style.setProperty("--nav-indicator-x", `${metrics.x.toFixed(2)}px`);
+	nav.style.setProperty("--nav-indicator-y", `${metrics.y.toFixed(2)}px`);
+	nav.style.setProperty("--nav-indicator-w", `${metrics.w.toFixed(2)}px`);
+	nav.style.setProperty("--nav-indicator-h", `${metrics.h.toFixed(2)}px`);
 	nav.style.setProperty(
 		"--nav-indicator-radius",
 		`${Math.round(metrics.radius)}px`,
@@ -76,10 +86,10 @@ function morphIndicatorShape(
 	const left = lerp(from.x, to.x, easedProgress);
 	const right = lerp(from.x + from.w, to.x + to.w, easedProgress);
 	const width = Math.max(right - left, 4);
-	const height = Math.max(
-		lerp(from.h, to.h, easedProgress) * (1 - stretch * 0.08),
-		4,
-	);
+	const baseHeight = lerp(from.h, to.h, easedProgress);
+	const height = Math.max(baseHeight * (1 - stretch * 0.08), 4);
+	const baseY = lerp(from.y, to.y, easedProgress);
+	const y = baseY + (baseHeight - height) / 2;
 	const settledRadius = Math.min(height / 2, 999);
 	const stretchedRadius = Math.max(height * 0.34, 6);
 	const radius = lerp(
@@ -93,7 +103,7 @@ function morphIndicatorShape(
 
 	return {
 		x: left,
-		y: lerp(from.y, to.y, easedProgress),
+		y,
 		w: width,
 		h: height,
 		radius,
