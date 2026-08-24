@@ -8,12 +8,207 @@ const navToggle =
 const navLinks = Array.from(
 	document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
 );
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let scrollFrame = 0;
 let navIndicatorFrame = 0;
+let cachedLinkMetrics: Array<{
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}> = [];
+
+function measureLinkMetrics() {
+	const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+	cachedLinkMetrics = navLinks.map((link) => ({
+		x: Math.round(link.offsetLeft),
+		y: Math.round(link.offsetTop),
+		w: Math.round(isMobile ? 3 : link.offsetWidth),
+		h: Math.round(link.offsetHeight),
+	}));
+}
+
+function setIndicatorMetrics(metrics: {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	radius: number;
+}) {
+	if (!nav || !navIndicator) return;
+
+	nav.style.setProperty("--nav-indicator-x", `${Math.round(metrics.x)}px`);
+	nav.style.setProperty("--nav-indicator-y", `${Math.round(metrics.y)}px`);
+	nav.style.setProperty("--nav-indicator-w", `${Math.round(metrics.w)}px`);
+	nav.style.setProperty("--nav-indicator-h", `${Math.round(metrics.h)}px`);
+	nav.style.setProperty(
+		"--nav-indicator-radius",
+		`${Math.round(metrics.radius)}px`,
+	);
+	navIndicator.style.opacity = "1";
+}
+
+function lerp(start: number, end: number, amount: number) {
+	return start + (end - start) * amount;
+}
+
+function boltEase(amount: number) {
+	if (amount <= 0) return 0;
+	if (amount >= 1) return 1;
+
+	if (amount < 0.42) {
+		return amount * amount * 0.22;
+	}
+
+	const rush = (amount - 0.42) / 0.58;
+	return 0.039 + rush * rush * rush * 0.961;
+}
+
+function morphIndicatorShape(
+	from: { x: number; y: number; w: number; h: number },
+	to: { x: number; y: number; w: number; h: number },
+	easedProgress: number,
+	rawProgress: number,
+) {
+	const stretch = Math.sin(rawProgress * Math.PI);
+	const left = lerp(from.x, to.x, easedProgress);
+	const right = lerp(from.x + from.w, to.x + to.w, easedProgress);
+	const width = Math.max(right - left, 4);
+	const height = Math.max(
+		lerp(from.h, to.h, easedProgress) * (1 - stretch * 0.08),
+		4,
+	);
+	const settledRadius = Math.min(height / 2, 999);
+	const stretchedRadius = Math.max(height * 0.34, 6);
+	const radius = lerp(
+		settledRadius,
+		stretchedRadius,
+		Math.min(
+			1,
+			stretch * 0.85 + (rawProgress >= 0.72 ? (rawProgress - 0.72) / 0.28 : 0),
+		),
+	);
+
+	return {
+		x: left,
+		y: lerp(from.y, to.y, easedProgress),
+		w: width,
+		h: height,
+		radius,
+	};
+}
+
+function settledIndicatorMetrics(metrics: {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}) {
+	return {
+		...metrics,
+		radius: Math.min(metrics.h / 2, 999),
+	};
+}
+
+function getSectionScrollTop(section: HTMLElement) {
+	return section.getBoundingClientRect().top + window.scrollY;
+}
+
+function updateNavIndicatorFromScroll() {
+	if (!nav || !navIndicator || !cachedLinkMetrics.length) return;
+
+	if (reducedMotion.matches) return;
+
+	const navSections = navLinks
+		.map((link) => {
+			const section = document.getElementById(link.hash.slice(1));
+			return section ? { link, section } : null;
+		})
+		.filter(
+			(entry): entry is { link: HTMLAnchorElement; section: HTMLElement } =>
+				entry !== null,
+		);
+
+	if (!navSections.length) return;
+
+	nav.classList.add("is-scroll-tracking");
+
+	const scrollFocus = window.scrollY + window.innerHeight * 0.34;
+	let fromIndex = navSections.length - 1;
+	let rawProgress = 0;
+
+	for (let index = 0; index < navSections.length - 1; index += 1) {
+		const currentSection = navSections[index].section;
+		const nextSection = navSections[index + 1].section;
+		const zoneStart =
+			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.5;
+		const zoneEnd =
+			getSectionScrollTop(nextSection) + nextSection.offsetHeight * 0.12;
+
+		if (scrollFocus < zoneStart) {
+			fromIndex = index;
+			rawProgress = 0;
+			break;
+		}
+
+		if (scrollFocus >= zoneStart && scrollFocus < zoneEnd) {
+			fromIndex = index;
+			rawProgress = (scrollFocus - zoneStart) / (zoneEnd - zoneStart);
+			break;
+		}
+
+		if (index === navSections.length - 2 && scrollFocus >= zoneEnd) {
+			fromIndex = index + 1;
+			rawProgress = 0;
+		}
+	}
+
+	const easedProgress = boltEase(Math.min(1, Math.max(0, rawProgress)));
+	const fromMetrics = cachedLinkMetrics[fromIndex];
+	const toMetrics =
+		cachedLinkMetrics[Math.min(fromIndex + 1, cachedLinkMetrics.length - 1)];
+
+	if (!fromMetrics || !toMetrics) return;
+
+	const isTransitioning =
+		fromIndex < cachedLinkMetrics.length - 1 &&
+		rawProgress > 0 &&
+		rawProgress < 1;
+
+	if (isTransitioning) {
+		setIndicatorMetrics(
+			morphIndicatorShape(fromMetrics, toMetrics, easedProgress, rawProgress),
+		);
+		nav.classList.toggle("is-nav-approaching", rawProgress < 0.72);
+		nav.classList.toggle("is-nav-bolting", rawProgress >= 0.72);
+	} else {
+		setIndicatorMetrics(settledIndicatorMetrics(fromMetrics));
+		nav.classList.remove("is-nav-approaching", "is-nav-bolting");
+	}
+
+	const activeIndex =
+		isTransitioning && rawProgress >= 0.68 ? fromIndex + 1 : fromIndex;
+
+	navLinks.forEach((link, index) => {
+		if (index === activeIndex) {
+			link.setAttribute("aria-current", "page");
+		} else {
+			link.removeAttribute("aria-current");
+		}
+	});
+}
 
 function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 	if (!nav || !navIndicator) return;
+
+	measureLinkMetrics();
+
+	if (!reducedMotion.matches) {
+		updateNavIndicatorFromScroll();
+		return;
+	}
 
 	const current =
 		activeLink ??
@@ -24,17 +219,10 @@ function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 		return;
 	}
 
-	const isMobile = window.matchMedia("(max-width: 760px)").matches;
-	const x = Math.round(current.offsetLeft);
-	const y = Math.round(current.offsetTop);
-	const width = Math.round(isMobile ? 3 : current.offsetWidth);
-	const height = Math.round(current.offsetHeight);
+	const metrics = cachedLinkMetrics[navLinks.indexOf(current)];
+	if (!metrics) return;
 
-	nav.style.setProperty("--nav-indicator-x", `${x}px`);
-	nav.style.setProperty("--nav-indicator-y", `${y}px`);
-	nav.style.setProperty("--nav-indicator-w", `${width}px`);
-	nav.style.setProperty("--nav-indicator-h", `${height}px`);
-	navIndicator.style.opacity = "1";
+	setIndicatorMetrics(settledIndicatorMetrics(metrics));
 }
 
 function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
@@ -48,6 +236,7 @@ function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
 
 function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
+	queueNavIndicatorUpdate();
 	scrollFrame = 0;
 }
 
@@ -93,20 +282,29 @@ window.addEventListener("resize", () => {
 	queueNavIndicatorUpdate();
 });
 updateScrollChrome();
+measureLinkMetrics();
 queueNavIndicatorUpdate();
 
 if (nav && "ResizeObserver" in window) {
-	new ResizeObserver(() => queueNavIndicatorUpdate()).observe(nav);
+	new ResizeObserver(() => {
+		measureLinkMetrics();
+		queueNavIndicatorUpdate();
+	}).observe(nav);
 }
 
 if (document.fonts?.ready) {
-	document.fonts.ready.then(() => queueNavIndicatorUpdate());
+	document.fonts.ready.then(() => {
+		measureLinkMetrics();
+		queueNavIndicatorUpdate();
+	});
 }
 
 const sectionVisibility = new Map<string, number>();
 const sections = document.querySelectorAll<HTMLElement>("[data-nav-section]");
 
 function setActiveNavigation() {
+	if (!reducedMotion.matches) return;
+
 	const active = [...sectionVisibility.entries()]
 		.sort((a, b) => b[1] - a[1])
 		.find(([, ratio]) => ratio > 0)?.[0];
@@ -130,6 +328,8 @@ function setActiveNavigation() {
 
 const sectionObserver = new IntersectionObserver(
 	(entries) => {
+		if (!reducedMotion.matches) return;
+
 		entries.forEach((entry) => {
 			sectionVisibility.set(entry.target.id, entry.intersectionRatio);
 		});
@@ -143,7 +343,20 @@ const sectionObserver = new IntersectionObserver(
 
 sections.forEach((section) => sectionObserver.observe(section));
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+reducedMotion.addEventListener("change", () => {
+	if (reducedMotion.matches) {
+		nav?.classList.remove(
+			"is-scroll-tracking",
+			"is-nav-approaching",
+			"is-nav-bolting",
+		);
+		setActiveNavigation();
+		return;
+	}
+
+	queueNavIndicatorUpdate();
+});
+
 const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]");
 
 if (reducedMotion.matches || !("IntersectionObserver" in window)) {
