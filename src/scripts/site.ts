@@ -314,10 +314,15 @@ navLinks.forEach((link, index) => {
 });
 
 document.addEventListener("keydown", (event) => {
-	if (
-		event.key === "Escape" &&
-		navToggle?.getAttribute("aria-expanded") === "true"
-	) {
+	if (event.key !== "Escape") return;
+
+	if (isVideoOpen()) {
+		event.preventDefault();
+		closeVideoDialog();
+		return;
+	}
+
+	if (navToggle?.getAttribute("aria-expanded") === "true") {
 		closeNavigation();
 		navToggle.focus();
 	}
@@ -451,9 +456,9 @@ reducedMotion.addEventListener("change", syncHeroPlayback);
 document.addEventListener("visibilitychange", syncHeroPlayback);
 syncHeroPlayback();
 
-const videoDialog = document.querySelector<HTMLDialogElement>(
-	"[data-video-dialog]",
-);
+const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
+const videoBackdrop = document.querySelector<HTMLElement>("[data-video-backdrop]");
+const videoClose = document.querySelector<HTMLButtonElement>("[data-video-close]");
 const videoPlayer = document.querySelector<HTMLElement>("[data-video-player]");
 const videoTitle = document.querySelector<HTMLElement>(
 	"[data-video-dialog-title]",
@@ -466,6 +471,7 @@ let lockedScrollY = 0;
 
 function lockDocumentScroll() {
 	lockedScrollY = window.scrollY;
+	document.documentElement.classList.add("video-open");
 	document.body.style.position = "fixed";
 	document.body.style.top = `-${lockedScrollY}px`;
 	document.body.style.left = "0";
@@ -475,24 +481,38 @@ function lockDocumentScroll() {
 
 function unlockDocumentScroll() {
 	const scrollY = lockedScrollY;
+	document.documentElement.classList.remove("video-open");
 	document.body.style.position = "";
 	document.body.style.top = "";
 	document.body.style.left = "";
 	document.body.style.right = "";
 	document.body.style.width = "";
-	requestAnimationFrame(() => {
-		window.scrollTo(0, scrollY);
-		requestAnimationFrame(() => {
-			window.scrollTo(0, scrollY);
-		});
-	});
+
+	const { scrollBehavior } = document.documentElement.style;
+	document.documentElement.style.scrollBehavior = "auto";
+	window.scrollTo(0, scrollY);
+	document.documentElement.style.scrollBehavior = scrollBehavior;
 }
 
-function unloadVideo() {
+function isVideoOpen() {
+	return Boolean(videoDialog && !videoDialog.hidden);
+}
+
+function closeVideoDialog() {
+	if (!isVideoOpen()) return;
+
 	videoPlayer?.replaceChildren();
+	if (videoDialog) videoDialog.hidden = true;
 	unlockDocumentScroll();
 	previousFocus?.focus({ preventScroll: true });
 	previousFocus = null;
+}
+
+function openVideoOverlay() {
+	if (!videoDialog) return;
+
+	videoDialog.hidden = false;
+	videoClose?.focus({ preventScroll: true });
 }
 
 document.addEventListener("click", (event) => {
@@ -511,12 +531,7 @@ document.addEventListener("click", (event) => {
 	if (!(target instanceof Element)) return;
 
 	const link = target.closest<HTMLAnchorElement>("[data-video]");
-	if (
-		!link ||
-		!videoDialog ||
-		!videoPlayer ||
-		typeof videoDialog.showModal !== "function"
-	) {
+	if (!link || !videoDialog || !videoPlayer) {
 		return;
 	}
 
@@ -525,6 +540,7 @@ document.addEventListener("click", (event) => {
 	if (!videoId) return;
 
 	event.preventDefault();
+	lockDocumentScroll();
 	previousFocus = link;
 
 	const iframe = document.createElement("iframe");
@@ -536,12 +552,8 @@ document.addEventListener("click", (event) => {
 	videoTitle?.replaceChildren(document.createTextNode(title));
 	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;
 	videoPlayer.replaceChildren(iframe);
-	lockDocumentScroll();
-	videoDialog.showModal();
+	openVideoOverlay();
 });
 
-videoDialog?.addEventListener("click", (event) => {
-	if (event.target === videoDialog) videoDialog.close();
-});
-
-videoDialog?.addEventListener("close", unloadVideo);
+videoClose?.addEventListener("click", closeVideoDialog);
+videoBackdrop?.addEventListener("click", closeVideoDialog);
