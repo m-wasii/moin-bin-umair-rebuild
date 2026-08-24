@@ -58,6 +58,15 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1687596871-28bf77650fa98913d58a39f5826756fc15e403d2bf89a869bf412ba9c9a297f3-d_1280x720?region=us",
 	},
 	{
+		id: "898735413",
+		title: "An'kahi",
+		category: "art",
+		year: 2023,
+		duration: 652,
+		thumbnail:
+			"https://i.vimeocdn.com/video/1775725392-344c18ebccaaf32c9fb7760d65e20250de731b7b2fcb18855506372c096a7c49-d_1280x720?region=us",
+	},
+	{
 		id: "1026359221",
 		title: "Smoke and Mirrors",
 		category: "art",
@@ -102,15 +111,6 @@ export const projects: Project[] = [
 		duration: 66,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
-	},
-	{
-		id: "898735413",
-		title: "An'kahi",
-		category: "art",
-		year: 2023,
-		duration: 652,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1775725392-344c18ebccaaf32c9fb7760d65e20250de731b7b2fcb18855506372c096a7c49-d_1280x720?region=us",
 	},
 	{
 		id: "887016435",
