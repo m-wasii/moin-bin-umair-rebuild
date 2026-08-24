@@ -65,6 +65,7 @@ export const projects: Project[] = [
 		duration: 652,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1775725392-344c18ebccaaf32c9fb7760d65e20250de731b7b2fcb18855506372c096a7c49-d_1280x720?region=us",
+		featured: true,
 	},
 	{
 		id: "1026359221",
@@ -74,7 +75,6 @@ export const projects: Project[] = [
 		duration: 724,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1946129668-289e7a07b9b93a96d757a66b06c445692574cef623453229f3f9bd2126ab0215-d_1280x720?region=us",
-		featured: true,
 	},
 	{
 		id: "1026358790",
