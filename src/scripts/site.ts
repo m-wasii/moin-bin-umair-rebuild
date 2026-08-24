@@ -12,6 +12,7 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let scrollFrame = 0;
 let navIndicatorFrame = 0;
+let wasNavTransitioning = false;
 let cachedLinkMetrics: Array<{
 	x: number;
 	y: number;
@@ -59,16 +60,21 @@ function lerp(start: number, end: number, amount: number) {
 	return start + (end - start) * amount;
 }
 
-function boltEase(amount: number) {
+function scrollNavEase(amount: number) {
 	if (amount <= 0) return 0;
 	if (amount >= 1) return 1;
 
-	if (amount < 0.45) {
-		return amount * amount * 0.35;
+	if (amount < 0.4) {
+		return (amount / 0.4) ** 2 * 0.24;
 	}
 
-	const rush = (amount - 0.45) / 0.55;
-	return 0.071 + rush * rush * rush * 0.929;
+	if (amount < 0.78) {
+		const rush = (amount - 0.4) / 0.38;
+		return 0.24 + rush ** 3 * 0.56;
+	}
+
+	const settle = (amount - 0.78) / 0.22;
+	return 0.8 + (1 - (1 - settle) ** 3) * 0.2;
 }
 
 function slideIndicatorMetrics(
@@ -105,8 +111,6 @@ function updateNavIndicatorFromScroll() {
 
 	if (!navSections.length) return;
 
-	nav.classList.add("is-scroll-tracking");
-
 	const scrollFocus = window.scrollY + window.innerHeight * 0.34;
 	let fromIndex = navSections.length - 1;
 	let rawProgress = 0;
@@ -115,9 +119,9 @@ function updateNavIndicatorFromScroll() {
 		const currentSection = navSections[index].section;
 		const nextSection = navSections[index + 1].section;
 		const zoneStart =
-			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.5;
+			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.48;
 		const zoneEnd =
-			getSectionScrollTop(nextSection) + nextSection.offsetHeight * 0.12;
+			getSectionScrollTop(nextSection) + nextSection.offsetHeight * 0.22;
 
 		if (scrollFocus < zoneStart) {
 			fromIndex = index;
@@ -137,7 +141,7 @@ function updateNavIndicatorFromScroll() {
 		}
 	}
 
-	const easedProgress = boltEase(Math.min(1, Math.max(0, rawProgress)));
+	const easedProgress = scrollNavEase(Math.min(1, Math.max(0, rawProgress)));
 	const fromMetrics = cachedLinkMetrics[fromIndex];
 	const toMetrics =
 		cachedLinkMetrics[Math.min(fromIndex + 1, cachedLinkMetrics.length - 1)];
@@ -150,15 +154,24 @@ function updateNavIndicatorFromScroll() {
 		rawProgress < 1;
 
 	if (isTransitioning) {
+		nav.classList.add("is-scroll-tracking");
+		nav.classList.remove("is-nav-settling");
 		setIndicatorMetrics(
 			slideIndicatorMetrics(fromMetrics, toMetrics, easedProgress),
 		);
+	} else if (wasNavTransitioning) {
+		nav.classList.remove("is-scroll-tracking");
+		nav.classList.add("is-nav-settling");
+		setIndicatorMetrics(fromMetrics);
 	} else {
+		nav.classList.remove("is-scroll-tracking", "is-nav-settling");
 		setIndicatorMetrics(fromMetrics);
 	}
 
+	wasNavTransitioning = isTransitioning;
+
 	const activeIndex =
-		isTransitioning && rawProgress >= 0.68 ? fromIndex + 1 : fromIndex;
+		isTransitioning && rawProgress >= 0.72 ? fromIndex + 1 : fromIndex;
 
 	navLinks.forEach((link, index) => {
 		if (index === activeIndex) {
@@ -245,6 +258,18 @@ document.addEventListener("keydown", (event) => {
 	}
 });
 
+navIndicator?.addEventListener("transitionend", (event) => {
+	if (
+		event.target !== navIndicator ||
+		event.propertyName !== "left" ||
+		!nav?.classList.contains("is-nav-settling")
+	) {
+		return;
+	}
+
+	nav.classList.remove("is-nav-settling");
+});
+
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
 window.addEventListener("resize", () => {
 	queueScrollChromeUpdate();
@@ -314,7 +339,8 @@ sections.forEach((section) => sectionObserver.observe(section));
 
 reducedMotion.addEventListener("change", () => {
 	if (reducedMotion.matches) {
-		nav?.classList.remove("is-scroll-tracking");
+		wasNavTransitioning = false;
+		nav?.classList.remove("is-scroll-tracking", "is-nav-settling");
 		setActiveNavigation();
 		return;
 	}
