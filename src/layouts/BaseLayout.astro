@@ -1,23 +1,25 @@
 ---
-import '../styles/global.css';
-import { site } from '../data/site';
+import "../styles/global.css";
+import { site } from "../data/site";
 
 interface Props {
 	title?: string;
 	description?: string;
 }
 
-const {
-	title = site.title,
-	description = site.description,
-} = Astro.props;
+const { title = site.title, description = site.description } = Astro.props;
+
+const canonicalUrl = Astro.site?.toString();
+const ogImage = Astro.site
+	? new URL("/media/hero-poster.webp", Astro.site).href
+	: "/media/hero-poster.webp";
 
 const structuredData = {
-	'@context': 'https://schema.org',
-	'@type': 'Person',
+	"@context": "https://schema.org",
+	"@type": "Person",
 	name: site.name,
-	jobTitle: 'Filmmaker',
-	url: Astro.site?.toString(),
+	jobTitle: "Filmmaker",
+	url: canonicalUrl,
 	sameAs: [site.vimeoUrl],
 };
 ---
@@ -26,16 +28,21 @@ const structuredData = {
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover"
+		/>
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<meta name="theme-color" content="#050505" />
 		<meta name="color-scheme" content="dark" />
 
+		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 		<meta property="og:type" content="website" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:image" content="/media/hero-poster.webp" />
+		{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+		<meta property="og:image" content={ogImage} />
 		<meta name="twitter:card" content="summary_large_image" />
 
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -43,7 +50,9 @@ const structuredData = {
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
 
 		<title>{title}</title>
-		<script is:inline>document.documentElement.classList.add('js');</script>
+		<script is:inline>
+			document.documentElement.classList.add("js");
+		</script>
 		<script
 			type="application/ld+json"
 			is:inline
