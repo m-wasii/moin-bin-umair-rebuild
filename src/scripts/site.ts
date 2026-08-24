@@ -1,5 +1,8 @@
 const header = document.querySelector<HTMLElement>("[data-header]");
 const nav = document.querySelector<HTMLElement>("[data-nav]");
+const navIndicator = document.querySelector<HTMLElement>(
+	"[data-nav-indicator]",
+);
 const navToggle =
 	document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
 const navLinks = Array.from(
@@ -7,6 +10,38 @@ const navLinks = Array.from(
 );
 
 let scrollFrame = 0;
+let navIndicatorFrame = 0;
+
+function updateNavIndicator(activeLink?: HTMLAnchorElement) {
+	if (!nav || !navIndicator) return;
+
+	const current =
+		activeLink ??
+		navLinks.find((link) => link.getAttribute("aria-current") === "page");
+
+	if (!current) {
+		navIndicator.style.opacity = "0";
+		return;
+	}
+
+	const navRect = nav.getBoundingClientRect();
+	const linkRect = current.getBoundingClientRect();
+	const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+	navIndicator.style.width = isMobile ? "3px" : `${linkRect.width}px`;
+	navIndicator.style.height = `${linkRect.height}px`;
+	navIndicator.style.transform = `translate(${linkRect.left - navRect.left}px, ${linkRect.top - navRect.top}px)`;
+	navIndicator.style.opacity = "1";
+}
+
+function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
+	if (!navIndicatorFrame) {
+		navIndicatorFrame = window.requestAnimationFrame(() => {
+			updateNavIndicator(activeLink);
+			navIndicatorFrame = 0;
+		});
+	}
+}
 
 function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
@@ -31,6 +66,10 @@ navToggle?.addEventListener("click", () => {
 	navToggle.setAttribute("aria-expanded", shouldOpen.toString());
 	nav?.classList.toggle("site-nav--open", shouldOpen);
 	document.body.classList.toggle("nav-open", shouldOpen);
+
+	if (shouldOpen) {
+		queueNavIndicatorUpdate();
+	}
 });
 
 navLinks.forEach((link) => link.addEventListener("click", closeNavigation));
@@ -46,8 +85,12 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
-window.addEventListener("resize", queueScrollChromeUpdate);
+window.addEventListener("resize", () => {
+	queueScrollChromeUpdate();
+	queueNavIndicatorUpdate();
+});
 updateScrollChrome();
+queueNavIndicatorUpdate();
 
 const sectionVisibility = new Map<string, number>();
 const sections = document.querySelectorAll<HTMLElement>("[data-nav-section]");
@@ -59,14 +102,19 @@ function setActiveNavigation() {
 
 	if (!active) return;
 
+	let activeLink: HTMLAnchorElement | undefined;
+
 	navLinks.forEach((link) => {
 		const isCurrent = link.hash === `#${active}`;
 		if (isCurrent) {
 			link.setAttribute("aria-current", "page");
+			activeLink = link;
 		} else {
 			link.removeAttribute("aria-current");
 		}
 	});
+
+	queueNavIndicatorUpdate(activeLink);
 }
 
 const sectionObserver = new IntersectionObserver(
