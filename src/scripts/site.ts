@@ -462,10 +462,36 @@ const externalLink = document.querySelector<HTMLAnchorElement>(
 	"[data-video-external]",
 );
 let previousFocus: HTMLElement | null = null;
+let lockedScrollY = 0;
+
+function lockDocumentScroll() {
+	lockedScrollY = window.scrollY;
+	document.body.style.position = "fixed";
+	document.body.style.top = `-${lockedScrollY}px`;
+	document.body.style.left = "0";
+	document.body.style.right = "0";
+	document.body.style.width = "100%";
+}
+
+function unlockDocumentScroll() {
+	const scrollY = lockedScrollY;
+	document.body.style.position = "";
+	document.body.style.top = "";
+	document.body.style.left = "";
+	document.body.style.right = "";
+	document.body.style.width = "";
+	requestAnimationFrame(() => {
+		window.scrollTo(0, scrollY);
+		requestAnimationFrame(() => {
+			window.scrollTo(0, scrollY);
+		});
+	});
+}
 
 function unloadVideo() {
 	videoPlayer?.replaceChildren();
-	previousFocus?.focus();
+	unlockDocumentScroll();
+	previousFocus?.focus({ preventScroll: true });
 	previousFocus = null;
 }
 
@@ -510,6 +536,7 @@ document.addEventListener("click", (event) => {
 	videoTitle?.replaceChildren(document.createTextNode(title));
 	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;
 	videoPlayer.replaceChildren(iframe);
+	lockDocumentScroll();
 	videoDialog.showModal();
 });
 
