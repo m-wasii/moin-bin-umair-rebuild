@@ -94,12 +94,16 @@ function getSectionScrollTop(section: HTMLElement) {
 	return section.getBoundingClientRect().top + window.scrollY;
 }
 
-function updateNavIndicatorFromScroll() {
-	if (!nav || !navIndicator || !cachedLinkMetrics.length) return;
+function getScrollAnchor() {
+	const paddingTop =
+		parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+		0;
 
-	if (reducedMotion.matches) return;
+	return window.scrollY + paddingTop + 1;
+}
 
-	const navSections = navLinks
+function getNavSections() {
+	return navLinks
 		.map((link) => {
 			const section = document.getElementById(link.hash.slice(1));
 			return section ? { link, section } : null;
@@ -108,36 +112,64 @@ function updateNavIndicatorFromScroll() {
 			(entry): entry is { link: HTMLAnchorElement; section: HTMLElement } =>
 				entry !== null,
 		);
+}
 
+function getActiveSectionIndex(
+	navSections: Array<{ link: HTMLAnchorElement; section: HTMLElement }>,
+	anchor: number,
+) {
+	let activeIndex = 0;
+
+	for (let index = 0; index < navSections.length; index += 1) {
+		if (anchor >= getSectionScrollTop(navSections[index].section) - 2) {
+			activeIndex = index;
+		}
+	}
+
+	return activeIndex;
+}
+
+function snapIndicatorToIndex(index: number) {
+	if (!nav || index < 0 || index >= cachedLinkMetrics.length) return;
+
+	wasNavTransitioning = false;
+	nav.classList.remove("is-scroll-tracking");
+	nav.classList.add("is-nav-settling");
+	measureLinkMetrics();
+	setIndicatorMetrics(cachedLinkMetrics[index]);
+
+	navLinks.forEach((link, linkIndex) => {
+		if (linkIndex === index) {
+			link.setAttribute("aria-current", "page");
+		} else {
+			link.removeAttribute("aria-current");
+		}
+	});
+}
+
+function updateNavIndicatorFromScroll() {
+	if (!nav || !navIndicator || !cachedLinkMetrics.length) return;
+
+	if (reducedMotion.matches) return;
+
+	const navSections = getNavSections();
 	if (!navSections.length) return;
 
-	const scrollFocus = window.scrollY + window.innerHeight * 0.34;
-	let fromIndex = navSections.length - 1;
+	const anchor = getScrollAnchor();
+	const activeIndex = getActiveSectionIndex(navSections, anchor);
+	let fromIndex = activeIndex;
 	let rawProgress = 0;
 
-	for (let index = 0; index < navSections.length - 1; index += 1) {
-		const currentSection = navSections[index].section;
-		const nextSection = navSections[index + 1].section;
-		const zoneStart =
-			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.48;
-		const zoneEnd =
-			getSectionScrollTop(nextSection) + nextSection.offsetHeight * 0.22;
+	if (activeIndex < navSections.length - 1) {
+		const currentSection = navSections[activeIndex].section;
+		const nextSection = navSections[activeIndex + 1].section;
+		const nextTop = getSectionScrollTop(nextSection);
+		const leaveCurrent =
+			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.58;
 
-		if (scrollFocus < zoneStart) {
-			fromIndex = index;
-			rawProgress = 0;
-			break;
-		}
-
-		if (scrollFocus >= zoneStart && scrollFocus < zoneEnd) {
-			fromIndex = index;
-			rawProgress = (scrollFocus - zoneStart) / (zoneEnd - zoneStart);
-			break;
-		}
-
-		if (index === navSections.length - 2 && scrollFocus >= zoneEnd) {
-			fromIndex = index + 1;
-			rawProgress = 0;
+		if (anchor >= leaveCurrent && anchor < nextTop) {
+			fromIndex = activeIndex;
+			rawProgress = (anchor - leaveCurrent) / (nextTop - leaveCurrent);
 		}
 	}
 
@@ -162,19 +194,19 @@ function updateNavIndicatorFromScroll() {
 	} else if (wasNavTransitioning) {
 		nav.classList.remove("is-scroll-tracking");
 		nav.classList.add("is-nav-settling");
-		setIndicatorMetrics(fromMetrics);
+		setIndicatorMetrics(cachedLinkMetrics[activeIndex]);
 	} else {
 		nav.classList.remove("is-scroll-tracking", "is-nav-settling");
-		setIndicatorMetrics(fromMetrics);
+		setIndicatorMetrics(cachedLinkMetrics[activeIndex]);
 	}
 
 	wasNavTransitioning = isTransitioning;
 
-	const activeIndex =
-		isTransitioning && rawProgress >= 0.72 ? fromIndex + 1 : fromIndex;
+	const highlightIndex =
+		isTransitioning && rawProgress >= 0.55 ? fromIndex + 1 : activeIndex;
 
 	navLinks.forEach((link, index) => {
-		if (index === activeIndex) {
+		if (index === highlightIndex) {
 			link.setAttribute("aria-current", "page");
 		} else {
 			link.removeAttribute("aria-current");
@@ -246,7 +278,40 @@ navToggle?.addEventListener("click", () => {
 	}
 });
 
-navLinks.forEach((link) => link.addEventListener("click", closeNavigation));
+navLinks.forEach((link, index) => {
+	link.addEventListener("click", () => {
+		closeNavigation();
+
+		const finalizeSnap = () => snapIndicatorToIndex(index);
+
+		const supportsScrollEnd = "onscrollend" in window;
+
+		if (supportsScrollEnd) {
+			window.addEventListener("scrollend", finalizeSnap, { once: true });
+			return;
+		}
+
+		let lastY = window.scrollY;
+		let stableFrames = 0;
+
+		const waitForScrollEnd = () => {
+			if (Math.abs(window.scrollY - lastY) < 1) {
+				stableFrames += 1;
+				if (stableFrames >= 4) {
+					finalizeSnap();
+					return;
+				}
+			} else {
+				stableFrames = 0;
+				lastY = window.scrollY;
+			}
+
+			requestAnimationFrame(waitForScrollEnd);
+		};
+
+		requestAnimationFrame(waitForScrollEnd);
+	});
+});
 
 document.addEventListener("keydown", (event) => {
 	if (
