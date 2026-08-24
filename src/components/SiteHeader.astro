@@ -3,12 +3,7 @@ import { navigation, site } from "../data/site";
 ---
 
 <header class="site-header" data-header>
-	<div class="scroll-progress" aria-hidden="true">
-		<span data-scroll-progress></span>
-	</div>
-
 	<a class="site-brand" href="#home" aria-label={`${site.name}, home`}>
-		<span class="site-brand__mark">{site.shortName}</span>
 		<span class="site-brand__name">{site.name}</span>
 	</a>
 
@@ -30,6 +25,8 @@ import { navigation, site } from "../data/site";
 		aria-label="Primary navigation"
 		data-nav
 	>
+		<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
+		></span>
 		{
 			navigation.map((item, index) => (
 				<a
