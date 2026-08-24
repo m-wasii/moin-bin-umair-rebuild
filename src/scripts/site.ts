@@ -128,11 +128,12 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 }
 
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
+let heroInView = true;
 
 function syncHeroPlayback() {
 	if (!heroVideo) return;
 
-	if (reducedMotion.matches || document.hidden) {
+	if (reducedMotion.matches || document.hidden || !heroInView) {
 		heroVideo.pause();
 		return;
 	}
@@ -140,6 +141,18 @@ function syncHeroPlayback() {
 	void heroVideo.play().catch(() => {
 		// The poster remains visible if autoplay is unavailable.
 	});
+}
+
+if (heroVideo && "IntersectionObserver" in window) {
+	const heroMedia = heroVideo.closest(".hero__media") ?? heroVideo;
+
+	new IntersectionObserver(
+		([entry]) => {
+			heroInView = entry?.isIntersecting ?? false;
+			syncHeroPlayback();
+		},
+		{ threshold: 0.2 },
+	).observe(heroMedia);
 }
 
 reducedMotion.addEventListener("change", syncHeroPlayback);

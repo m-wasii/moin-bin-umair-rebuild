@@ -8,6 +8,7 @@ interface Props {
 
 const { project } = Astro.props;
 const vimeoUrl = `https://vimeo.com/${project.id}`;
+const eager = Boolean(project.featured);
 ---
 
 <article
@@ -30,8 +31,9 @@ const vimeoUrl = `https://vimeo.com/${project.id}`;
 				alt={`Still from ${project.title}`}
 				width="1280"
 				height="720"
-				loading="lazy"
+				loading={eager ? "eager" : "lazy"}
 				decoding="async"
+				fetchpriority={eager ? "high" : undefined}
 				referrerpolicy="no-referrer"
 			/>
 			<span class="project-card__wash" aria-hidden="true"></span>

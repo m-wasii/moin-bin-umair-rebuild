@@ -25,10 +25,6 @@ const { id, title, description, projects } = Astro.props;
 	</header>
 
 	<div class="project-grid">
-		{
-			projects.map((project) => (
-				<ProjectCard project={project} />
-			))
-		}
+		{projects.map((project) => <ProjectCard project={project} />)}
 	</div>
 </section>
