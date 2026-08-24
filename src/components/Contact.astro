@@ -1,10 +1,15 @@
 ---
-import { site } from '../data/site';
+import { site } from "../data/site";
 
 const year = new Date().getFullYear();
 ---
 
-<section class="contact" id="contact" aria-labelledby="contact-title" data-nav-section>
+<section
+	class="contact"
+	id="contact"
+	aria-labelledby="contact-title"
+	data-nav-section
+>
 	<header class="section-heading section-heading--contact" data-reveal>
 		<div class="section-heading__meta">
 			<p>03</p>
@@ -25,7 +30,7 @@ const year = new Date().getFullYear();
 
 	<footer class="site-footer">
 		<p>{site.name} © {year}</p>
-		<p>Filmmaker · Visual storyteller</p>
+		<p>{site.hero.tagline.join(" · ")}</p>
 		<a href="#home">Back to top ↑</a>
 	</footer>
 </section>
