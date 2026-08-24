@@ -610,28 +610,42 @@ main {
 	margin: 0;
 }
 
-.video-dialog {
-	width: min(94vw, 90rem);
-	max-width: none;
-	margin: auto;
-	padding: 0;
-	border: 0;
-	background: transparent;
-	color: var(--paper);
+html.video-open {
+	overflow: hidden;
 }
 
-.video-dialog::backdrop {
+.video-overlay {
+	position: fixed;
+	z-index: 200;
+	inset: 0;
+	display: grid;
+	padding: 1rem;
+	place-items: center;
+}
+
+.video-overlay[hidden] {
+	display: none;
+}
+
+.video-overlay__backdrop {
+	position: absolute;
+	inset: 0;
 	background: rgba(5, 10, 16, 0.84);
 	-webkit-backdrop-filter: blur(14px);
 	backdrop-filter: blur(14px);
 }
 
 .video-dialog__panel {
+	position: relative;
+	z-index: 1;
+	width: min(94vw, 90rem);
+	max-width: none;
 	overflow: hidden;
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 	background: var(--ink-soft);
 	box-shadow: 0 2rem 8rem rgba(0, 0, 0, 0.5);
+	color: var(--paper);
 }
 
 .video-dialog__header {
@@ -849,11 +863,12 @@ main {
 		display: none;
 	}
 
-	.video-dialog {
-		width: 100vw;
+	.video-overlay {
+		padding: 0;
 	}
 
 	.video-dialog__panel {
+		width: 100vw;
 		border-radius: 0;
 	}
 
