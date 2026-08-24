@@ -13,7 +13,7 @@
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
 	--font-sans: "Outfit", "Segoe UI", Arial, Helvetica, sans-serif;
-	--font-display: "Cormorant Garamond", "Times New Roman", Times, serif;
+	--font-display: "Libre Baskerville", "Times New Roman", Times, serif;
 }
 
 *,
@@ -183,7 +183,7 @@ main,
 	color: var(--paper);
 	font-family: var(--font-display);
 	font-size: 1.05rem;
-	font-weight: 500;
+	font-weight: 400;
 	letter-spacing: -0.02em;
 }
 
@@ -370,7 +370,7 @@ main,
 	max-width: 11ch;
 	font-family: var(--font-display);
 	font-size: clamp(3.4rem, 8.2vw, 7.4rem);
-	font-weight: 500;
+	font-weight: 400;
 	line-height: 0.9;
 	letter-spacing: -0.035em;
 	text-shadow: 0 0.35rem 1.5rem rgba(0, 0, 0, 0.35);
