@@ -45,7 +45,6 @@ function setIndicatorMetrics(metrics: {
 	y: number;
 	w: number;
 	h: number;
-	radius: number;
 }) {
 	if (!nav || !navIndicator) return;
 
@@ -53,10 +52,6 @@ function setIndicatorMetrics(metrics: {
 	nav.style.setProperty("--nav-indicator-y", `${metrics.y.toFixed(2)}px`);
 	nav.style.setProperty("--nav-indicator-w", `${metrics.w.toFixed(2)}px`);
 	nav.style.setProperty("--nav-indicator-h", `${metrics.h.toFixed(2)}px`);
-	nav.style.setProperty(
-		"--nav-indicator-radius",
-		`${Math.round(metrics.radius)}px`,
-	);
 	navIndicator.style.opacity = "1";
 }
 
@@ -68,57 +63,24 @@ function boltEase(amount: number) {
 	if (amount <= 0) return 0;
 	if (amount >= 1) return 1;
 
-	if (amount < 0.42) {
-		return amount * amount * 0.22;
+	if (amount < 0.45) {
+		return amount * amount * 0.35;
 	}
 
-	const rush = (amount - 0.42) / 0.58;
-	return 0.039 + rush * rush * rush * 0.961;
+	const rush = (amount - 0.45) / 0.55;
+	return 0.071 + rush * rush * rush * 0.929;
 }
 
-function morphIndicatorShape(
+function slideIndicatorMetrics(
 	from: { x: number; y: number; w: number; h: number },
 	to: { x: number; y: number; w: number; h: number },
-	easedProgress: number,
-	rawProgress: number,
+	amount: number,
 ) {
-	const stretch = Math.sin(rawProgress * Math.PI);
-	const left = lerp(from.x, to.x, easedProgress);
-	const right = lerp(from.x + from.w, to.x + to.w, easedProgress);
-	const width = Math.max(right - left, 4);
-	const baseHeight = lerp(from.h, to.h, easedProgress);
-	const height = Math.max(baseHeight * (1 - stretch * 0.08), 4);
-	const baseY = lerp(from.y, to.y, easedProgress);
-	const y = baseY + (baseHeight - height) / 2;
-	const settledRadius = Math.min(height / 2, 999);
-	const stretchedRadius = Math.max(height * 0.34, 6);
-	const radius = lerp(
-		settledRadius,
-		stretchedRadius,
-		Math.min(
-			1,
-			stretch * 0.85 + (rawProgress >= 0.72 ? (rawProgress - 0.72) / 0.28 : 0),
-		),
-	);
-
 	return {
-		x: left,
-		y,
-		w: width,
-		h: height,
-		radius,
-	};
-}
-
-function settledIndicatorMetrics(metrics: {
-	x: number;
-	y: number;
-	w: number;
-	h: number;
-}) {
-	return {
-		...metrics,
-		radius: Math.min(metrics.h / 2, 999),
+		x: lerp(from.x, to.x, amount),
+		y: lerp(from.y, to.y, amount),
+		w: lerp(from.w, to.w, amount),
+		h: lerp(from.h, to.h, amount),
 	};
 }
 
@@ -189,13 +151,10 @@ function updateNavIndicatorFromScroll() {
 
 	if (isTransitioning) {
 		setIndicatorMetrics(
-			morphIndicatorShape(fromMetrics, toMetrics, easedProgress, rawProgress),
+			slideIndicatorMetrics(fromMetrics, toMetrics, easedProgress),
 		);
-		nav.classList.toggle("is-nav-approaching", rawProgress < 0.72);
-		nav.classList.toggle("is-nav-bolting", rawProgress >= 0.72);
 	} else {
-		setIndicatorMetrics(settledIndicatorMetrics(fromMetrics));
-		nav.classList.remove("is-nav-approaching", "is-nav-bolting");
+		setIndicatorMetrics(fromMetrics);
 	}
 
 	const activeIndex =
@@ -232,7 +191,7 @@ function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 	const metrics = cachedLinkMetrics[navLinks.indexOf(current)];
 	if (!metrics) return;
 
-	setIndicatorMetrics(settledIndicatorMetrics(metrics));
+	setIndicatorMetrics(metrics);
 }
 
 function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
@@ -355,11 +314,7 @@ sections.forEach((section) => sectionObserver.observe(section));
 
 reducedMotion.addEventListener("change", () => {
 	if (reducedMotion.matches) {
-		nav?.classList.remove(
-			"is-scroll-tracking",
-			"is-nav-approaching",
-			"is-nav-bolting",
-		);
+		nav?.classList.remove("is-scroll-tracking");
 		setActiveNavigation();
 		return;
 	}
