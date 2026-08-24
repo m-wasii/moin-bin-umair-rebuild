@@ -4,11 +4,9 @@ import { formatDuration } from "../data/projects";
 
 interface Props {
 	project: Project;
-	index: number;
 }
 
-const { project, index } = Astro.props;
-const projectNumber = String(index + 1).padStart(2, "0");
+const { project } = Astro.props;
 const vimeoUrl = `https://vimeo.com/${project.id}`;
 ---
 
@@ -41,19 +39,16 @@ const vimeoUrl = `https://vimeo.com/${project.id}`;
 				<svg viewBox="0 0 24 24">
 					<path d="m9 7 8 5-8 5V7Z"></path>
 				</svg>
+				<span>Play</span>
 			</span>
-			<span class="project-card__number" aria-hidden="true"
-				>{projectNumber}</span
-			>
+			<figcaption class="project-card__meta">
+				<h3>{project.title}</h3>
+				<p>
+					<span>{project.year}</span>
+					<span aria-hidden="true">·</span>
+					<span>{formatDuration(project.duration)}</span>
+				</p>
+			</figcaption>
 		</figure>
-
-		<div class="project-card__meta">
-			<h3>{project.title}</h3>
-			<p>
-				<span>{project.year}</span>
-				<span aria-hidden="true">/</span>
-				<span>{formatDuration(project.duration)}</span>
-			</p>
-		</div>
 	</a>
 </article>

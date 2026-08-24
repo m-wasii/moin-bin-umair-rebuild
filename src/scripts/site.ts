@@ -90,7 +90,25 @@ const sectionObserver = new IntersectionObserver(
 sections.forEach((section) => sectionObserver.observe(section));
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const atmosphere = document.querySelector<HTMLElement>("[data-atmosphere]");
 const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]");
+
+if (atmosphere && !reducedMotion.matches) {
+	window.addEventListener(
+		"pointermove",
+		(event) => {
+			atmosphere.style.setProperty(
+				"--pointer-x",
+				`${(event.clientX / window.innerWidth) * 100}%`,
+			);
+			atmosphere.style.setProperty(
+				"--pointer-y",
+				`${(event.clientY / window.innerHeight) * 100}%`,
+			);
+		},
+		{ passive: true },
+	);
+}
 
 if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 	revealItems.forEach((item) => item.classList.add("is-visible"));

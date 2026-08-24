@@ -23,7 +23,7 @@ export const projects: Project[] = [
 	},
 	{
 		id: "898735203",
-		title: "The Hook — Behind the Scenes",
+		title: "The Hook - Behind the Scenes",
 		category: "commercial",
 		year: 2023,
 		duration: 79,
@@ -77,15 +77,6 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1946129668-289e7a07b9b93a96d757a66b06c445692574cef623453229f3f9bd2126ab0215-d_1280x720?region=us",
 	},
 	{
-		id: "1026358790",
-		title: "Smoke and Mirrors — Trailer",
-		category: "art",
-		year: 2024,
-		duration: 48,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1946128345-fdb1fdfe2c2de2548e573908a35e8f4fb9a895fe9848ee15eaa406cf10e280c0-d_1280x720?region=us",
-	},
-	{
 		id: "973619906",
 		title: "Islamabad",
 		category: "art",
@@ -96,7 +87,7 @@ export const projects: Project[] = [
 	},
 	{
 		id: "911992966",
-		title: "By Chance — Trailer",
+		title: "By Chance - Trailer",
 		category: "art",
 		year: 2024,
 		duration: 57,

@@ -10,20 +10,17 @@ const year = new Date().getFullYear();
 	aria-labelledby="contact-title"
 	data-nav-section
 >
-	<header class="section-heading section-heading--contact" data-reveal>
-		<div class="section-heading__meta">
-			<p>03</p>
-			<p>Enquiries</p>
-		</div>
+	<header class="section-heading" data-reveal>
+		<p class="eyebrow">Contact</p>
 		<h2 id="contact-title">Let’s make something worth watching.</h2>
-		<p class="section-heading__description">
+		<p class="section-heading__count">
 			Commercial films, narrative projects, and creative collaborations.
 		</p>
 	</header>
 
 	<div class="contact__actions" data-reveal>
-		<a class="text-link" href={site.vimeoUrl} target="_blank" rel="noreferrer">
-			<span>Visit Vimeo</span>
+		<a class="button" href={site.vimeoUrl} target="_blank" rel="noreferrer">
+			Visit Vimeo
 			<span aria-hidden="true">↗</span>
 		</a>
 	</div>
@@ -31,6 +28,6 @@ const year = new Date().getFullYear();
 	<footer class="site-footer">
 		<p>{site.name} © {year}</p>
 		<p>{site.hero.tagline.join(" · ")}</p>
-		<a href="#home">Back to top ↑</a>
+		<a href="#home">Back to top</a>
 	</footer>
 </section>

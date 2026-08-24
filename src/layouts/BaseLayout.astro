@@ -34,7 +34,7 @@ const structuredData = {
 		/>
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
-		<meta name="theme-color" content="#050505" />
+		<meta name="theme-color" content="#0b1520" />
 		<meta name="color-scheme" content="dark" />
 
 		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
@@ -46,8 +46,14 @@ const structuredData = {
 		<meta name="twitter:card" content="summary_large_image" />
 
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Outfit:wght@400;500;600&display=swap"
+		/>
 
 		<title>{title}</title>
 		<script is:inline>
@@ -60,6 +66,14 @@ const structuredData = {
 		/>
 	</head>
 	<body>
+		<div class="atmosphere" data-atmosphere aria-hidden="true">
+			<div class="atmosphere__wash"></div>
+			<div class="atmosphere__orb atmosphere__orb--warm"></div>
+			<div class="atmosphere__orb atmosphere__orb--cool"></div>
+			<div class="atmosphere__orb atmosphere__orb--low"></div>
+			<div class="atmosphere__follow" data-atmosphere-follow></div>
+			<div class="atmosphere__grain"></div>
+		</div>
 		<a class="skip-link" href="#main-content">Skip to selected work</a>
 		<slot />
 		<script src="../scripts/site.ts"></script>

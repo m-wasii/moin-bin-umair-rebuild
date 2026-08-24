@@ -3,29 +3,33 @@ import { site } from "../data/site";
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
-	<div class="hero__media" aria-hidden="true">
-		<video
-			autoplay
-			muted
-			loop
-			playsinline
-			preload="metadata"
-			poster="/media/hero-poster.webp"
-			tabindex="-1"
-			data-hero-video
-		>
-			<source src="/media/hero-loop.mp4" type="video/mp4" />
-		</video>
-		<div class="hero__veil"></div>
-		<div class="hero__grain"></div>
+	<div class="hero__copy">
+		<p class="eyebrow">{site.hero.tagline.join(" · ")}</p>
+		<h1 id="hero-title">
+			Moin Bin <em>Umair</em>
+		</h1>
+		<p class="hero__lede">{site.hero.lede}</p>
+		<a class="button" href="#commercial">Watch the work</a>
 	</div>
 
-	<h1 class="sr-only" id="hero-title">{site.name}</h1>
-
-	<div class="hero__footer">
-		<p class="hero__tagline">{site.hero.tagline.join(" · ")}</p>
+	<div class="hero__stage">
+		<div class="hero__media">
+			<video
+				autoplay
+				muted
+				loop
+				playsinline
+				preload="metadata"
+				poster="/media/hero-poster.webp"
+				tabindex="-1"
+				data-hero-video
+			>
+				<source src="/media/hero-loop.mp4" type="video/mp4" />
+			</video>
+			<div class="hero__veil"></div>
+		</div>
 		<a class="hero__scroll" href="#commercial">
-			<span>Explore the work</span>
+			<span>Scroll into the reel</span>
 			<svg viewBox="0 0 18 18" aria-hidden="true">
 				<path d="M9 2v13M4 10l5 5 5-5"></path>
 			</svg>

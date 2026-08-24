@@ -1,4 +1,4 @@
-# Moin Bin Umair — Portfolio
+# Moin Bin Umair - Portfolio
 
 A single-page Astro portfolio for filmmaker Moin Bin Umair. The site replaces the
 Focus template with a minimal, cinematic presentation centered on the work.
