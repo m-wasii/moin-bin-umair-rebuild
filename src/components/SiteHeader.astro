@@ -1,5 +1,5 @@
 ---
-import { navigation, site } from '../data/site';
+import { navigation, site } from "../data/site";
 ---
 
 <header class="site-header" data-header>
@@ -24,16 +24,23 @@ import { navigation, site } from '../data/site';
 		<span aria-hidden="true"></span>
 	</button>
 
-	<nav class="site-nav" id="primary-navigation" aria-label="Primary navigation" data-nav>
-		{navigation.map((item, index) => (
-			<a
-				class="site-nav__link"
-				href={item.href}
-				data-nav-link
-				aria-current={index === 0 ? 'page' : undefined}
-			>
-				{item.label}
-			</a>
-		))}
+	<nav
+		class="site-nav"
+		id="primary-navigation"
+		aria-label="Primary navigation"
+		data-nav
+	>
+		{
+			navigation.map((item, index) => (
+				<a
+					class="site-nav__link"
+					href={item.href}
+					data-nav-link
+					aria-current={index === 0 ? "page" : undefined}
+				>
+					{item.label}
+				</a>
+			))
+		}
 	</nav>
 </header>

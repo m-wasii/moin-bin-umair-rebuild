@@ -1,6 +1,6 @@
 ---
-import type { Project } from '../data/projects';
-import { formatDuration } from '../data/projects';
+import type { Project } from "../data/projects";
+import { formatDuration } from "../data/projects";
 
 interface Props {
 	project: Project;
@@ -8,11 +8,14 @@ interface Props {
 }
 
 const { project, index } = Astro.props;
-const projectNumber = String(index + 1).padStart(2, '0');
+const projectNumber = String(index + 1).padStart(2, "0");
 const vimeoUrl = `https://vimeo.com/${project.id}`;
 ---
 
-<article class:list={['project-card', { 'project-card--featured': project.featured }]} data-reveal>
+<article
+	class:list={["project-card", { "project-card--featured": project.featured }]}
+	data-reveal
+>
 	<a
 		class="project-card__link"
 		href={vimeoUrl}
@@ -39,7 +42,9 @@ const vimeoUrl = `https://vimeo.com/${project.id}`;
 					<path d="m9 7 8 5-8 5V7Z"></path>
 				</svg>
 			</span>
-			<span class="project-card__number" aria-hidden="true">{projectNumber}</span>
+			<span class="project-card__number" aria-hidden="true"
+				>{projectNumber}</span
+			>
 		</figure>
 
 		<div class="project-card__meta">
