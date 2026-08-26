@@ -28,15 +28,16 @@ const t = useTranslations(lang);
 		<div class="hero__grain"></div>
 	</div>
 
-	<h1 class="sr-only" id="hero-title">{site.name}</h1>
-
-	<div class="hero__footer">
-		<p class="hero__tagline">{t("hero.tagline")}</p>
-		<a class="hero__scroll" href="#commercial">
-			<span>{t("hero.explore")}</span>
-			<svg viewBox="0 0 18 18" aria-hidden="true">
-				<path d="M9 2v13M4 10l5 5 5-5"></path>
-			</svg>
-		</a>
+	<div class="hero__content">
+		<h1 class="hero__title" id="hero-title">{site.name}</h1>
+		<div class="hero__footer">
+			<p class="hero__tagline">{t("hero.tagline")}</p>
+			<a class="hero__scroll" href="#commercial">
+				<span>{t("hero.explore")}</span>
+				<svg viewBox="0 0 18 18" aria-hidden="true">
+					<path d="M9 2v13M4 10l5 5 5-5"></path>
+				</svg>
+			</a>
+		</div>
 	</div>
 </section>
