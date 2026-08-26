@@ -22,10 +22,25 @@
 		rgba(245, 158, 11, 0.16),
 		transparent 55%
 	);
+	--stage-glow-top-left: radial-gradient(
+		ellipse 85% 30% at 12% 10%,
+		rgba(255, 107, 0, 0.12),
+		transparent 52%
+	);
+	--stage-glow-top-center: radial-gradient(
+		ellipse 70% 26% at 50% 4%,
+		rgba(245, 158, 11, 0.1),
+		transparent 55%
+	);
 	--stage-glow-mid: radial-gradient(
 		ellipse 75% 28% at 12% 38%,
 		rgba(255, 107, 0, 0.09),
 		transparent 52%
+	);
+	--stage-glow-mid-right: radial-gradient(
+		ellipse 70% 26% at 88% 42%,
+		rgba(245, 158, 11, 0.1),
+		transparent 50%
 	);
 	--stage-glow-low: radial-gradient(
 		ellipse 88% 34% at 82% 68%,
@@ -39,7 +54,10 @@
 	);
 	--stage:
 		var(--stage-glow-top),
+		var(--stage-glow-top-left),
+		var(--stage-glow-top-center),
 		var(--stage-glow-mid),
+		var(--stage-glow-mid-right),
 		var(--stage-glow-low),
 		var(--stage-glow-end),
 		var(--ink);
