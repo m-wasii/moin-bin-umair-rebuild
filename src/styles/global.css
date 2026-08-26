@@ -17,8 +17,8 @@
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
 	--tungsten-deep: #1a1208;
-	--font-sans: "Sora", "Avenir Next", "Segoe UI", sans-serif;
-	--font-display: "Syne", "Avenir Next", "Segoe UI", sans-serif;
+	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
+	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
 
 *,
@@ -133,7 +133,7 @@ main {
 	align-items: center;
 	justify-content: space-between;
 	padding: 0.35rem 0.4rem 0.35rem 1.15rem;
-	border: 1px solid transparent;
+	border: 2px solid transparent;
 	border-radius: 999px;
 	transition:
 		background-color 250ms ease,
@@ -213,7 +213,7 @@ main {
 	align-items: center;
 	gap: 0.15rem;
 	padding: 0.2rem;
-	border: 1px solid var(--line);
+	border: 2px solid var(--line);
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.04);
 	transition: border-color 250ms ease;
@@ -292,7 +292,7 @@ main {
 .nav-toggle > span:not(.sr-only) {
 	position: absolute;
 	width: 1.4rem;
-	height: 1.5px;
+	height: 2px;
 	background: currentColor;
 	transition:
 		transform 200ms ease,
@@ -389,9 +389,9 @@ main {
 	color: var(--peach);
 	font-family: var(--font-display);
 	font-size: clamp(3.2rem, 9.5vw, 8.5rem);
-	font-weight: 800;
-	line-height: 0.92;
-	letter-spacing: -0.035em;
+	font-weight: 700;
+	line-height: 0.95;
+	letter-spacing: -0.02em;
 	text-wrap: balance;
 	opacity: 0;
 	transform: translateY(1.1rem);
@@ -406,7 +406,7 @@ main {
 	gap: 2rem;
 	width: 100%;
 	padding-top: 1.15rem;
-	border-top: 1px solid var(--line);
+	border-top: 2px solid var(--line);
 	opacity: 0;
 	transform: translateY(0.85rem);
 	animation: hero-rise 800ms cubic-bezier(0.22, 1, 0.36, 1) 280ms forwards;
@@ -448,7 +448,7 @@ main {
 	fill: none;
 	stroke: currentColor;
 	stroke-linecap: square;
-	stroke-width: 1.2;
+	stroke-width: 2;
 	transition: transform 180ms ease;
 }
 
@@ -465,7 +465,7 @@ main {
 
 .work-section {
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
-	border-top: 1px solid var(--line);
+	border-top: 2px solid var(--line);
 }
 
 .section-heading {
@@ -482,7 +482,7 @@ main {
 	align-items: center;
 	justify-content: space-between;
 	padding-bottom: 1rem;
-	border-bottom: 1px solid var(--line);
+	border-bottom: 2px solid var(--line);
 }
 
 .section-heading__meta p {
@@ -497,8 +497,9 @@ main {
 	margin: 0;
 	font-family: var(--font-display);
 	font-size: clamp(4rem, 9vw, 10rem);
-	font-weight: 800;
-	line-height: 0.84;
+	font-weight: 700;
+	line-height: 0.88;
+	letter-spacing: -0.02em;
 	text-transform: uppercase;
 }
 
@@ -534,7 +535,7 @@ main {
 	aspect-ratio: 16 / 9;
 	overflow: hidden;
 	margin: 0;
-	border: 1px solid var(--line);
+	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: #16110c;
 }
@@ -575,7 +576,7 @@ main {
 	align-items: center;
 	gap: 0.4rem;
 	padding: 0.42rem 0.7rem 0.42rem 0.55rem;
-	border: 1px solid rgba(245, 158, 11, 0.42);
+	border: 2px solid rgba(245, 158, 11, 0.42);
 	border-radius: 999px;
 	background: rgba(10, 8, 6, 0.66);
 	color: var(--paper);
@@ -698,7 +699,7 @@ main {
 		radial-gradient(ellipse 80% 55% at 85% 15%, rgba(245, 158, 11, 0.14), transparent 55%),
 		var(--ink);
 	color: var(--peach);
-	border-top: 1px solid var(--line);
+	border-top: 2px solid var(--line);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 	overflow: hidden;
 }
@@ -752,7 +753,7 @@ main {
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 0.9rem 0;
-	border-bottom: 1px solid var(--amber);
+	border-bottom: 2px solid var(--amber);
 	color: var(--amber);
 	font-family: var(--font-sans);
 	font-size: 0.95rem;
@@ -782,7 +783,7 @@ main {
 	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
-	border-top: 1px solid var(--line);
+	border-top: 2px solid var(--line);
 	font-family: var(--font-sans);
 	font-size: 0.875rem;
 	font-weight: 600;
@@ -843,7 +844,7 @@ html.video-open {
 	max-width: 100%;
 	max-height: calc(100svh - (var(--video-dialog-inset) * 2));
 	overflow: hidden;
-	border: 1px solid var(--line);
+	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: var(--ink-soft);
 	box-shadow: 0 2rem 8rem rgba(0, 0, 0, 0.5);
@@ -926,7 +927,7 @@ html.video-open {
 }
 
 .video-dialog__about {
-	border: 1px solid transparent;
+	border: 2px solid transparent;
 	border-radius: 999px;
 	color: var(--muted);
 }
@@ -944,7 +945,7 @@ html.video-open {
 .video-dialog__close path {
 	fill: none;
 	stroke: currentColor;
-	stroke-width: 1.2;
+	stroke-width: 2;
 }
 
 .video-dialog__body {
@@ -987,7 +988,7 @@ html.video-open {
 	gap: 1rem;
 	min-height: 0;
 	padding: 1.15rem 1.2rem 1.25rem;
-	border-left: 1px solid var(--line);
+	border-left: 2px solid var(--line);
 	background: linear-gradient(
 		180deg,
 		rgba(255, 237, 213, 0.04),
@@ -1024,7 +1025,7 @@ html.video-open {
 	justify-content: space-between;
 	gap: 0.75rem;
 	padding: 1rem;
-	border-top: 1px solid var(--line);
+	border-top: 2px solid var(--line);
 	color: var(--paper);
 }
 
@@ -1240,7 +1241,7 @@ html.video-open {
 
 	.video-dialog__about-panel {
 		border-left: 0;
-		border-top: 1px solid var(--line);
+		border-top: 2px solid var(--line);
 		max-height: 40svh;
 	}
 }
