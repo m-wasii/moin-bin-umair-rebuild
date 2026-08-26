@@ -12,13 +12,9 @@ interface Props {
 }
 
 const { project } = Astro.props;
-<<<<<<< HEAD
 const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
-=======
-const vimeoUrl = `https://vimeo.com/${project.id}`;
 const isVertical = project.category === "shorts";
->>>>>>> cursor/vertical-shorts-93eb
 ---
 
 <article
@@ -39,12 +35,8 @@ const isVertical = project.category === "shorts";
 		data-video-id={project.id}
 		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
-<<<<<<< HEAD
-		aria-label={`Play ${project.title} on ${hostLabel}`}
-=======
 		data-video-orientation={isVertical ? "portrait" : "landscape"}
-		aria-label={`Play ${project.title} on Vimeo`}
->>>>>>> cursor/vertical-shorts-93eb
+		aria-label={`Play ${project.title} on ${hostLabel}`}
 	>
 		<figure class="project-card__frame">
 			<img
