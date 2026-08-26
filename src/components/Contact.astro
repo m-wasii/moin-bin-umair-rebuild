@@ -1,6 +1,13 @@
 ---
 import { site } from "../data/site";
+import { useTranslations, type Lang } from "../i18n/ui";
 
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
 const year = new Date().getFullYear();
 ---
 
@@ -13,23 +20,23 @@ const year = new Date().getFullYear();
 	<header class="section-heading section-heading--contact" data-reveal>
 		<div class="section-heading__meta">
 			<p>04</p>
-			<p>Enquiries</p>
+			<p>{t("contact.meta")}</p>
 		</div>
-		<h2 id="contact-title">Let’s make something worth watching.</h2>
+		<h2 id="contact-title">{t("contact.title")}</h2>
 		<p class="section-heading__description">
-			Commercial films, narrative projects, and creative collaborations.
+			{t("contact.description")}
 		</p>
 	</header>
 
 	<div class="contact__actions" data-reveal>
 		<a class="text-link" href={site.vimeoUrl} target="_blank" rel="noreferrer">
-			<span>Visit Vimeo</span>
+			<span>{t("contact.vimeo")}</span>
 			<span aria-hidden="true">↗</span>
 		</a>
 	</div>
 
 	<footer class="site-footer">
 		<p>{site.name} © {year}</p>
-		<a href="#home">Back to top ↑</a>
+		<a href="#home">{t("contact.backToTop")}</a>
 	</footer>
 </section>

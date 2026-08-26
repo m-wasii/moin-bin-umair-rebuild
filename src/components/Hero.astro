@@ -1,5 +1,13 @@
 ---
 import { site } from "../data/site";
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
@@ -23,9 +31,9 @@ import { site } from "../data/site";
 	<h1 class="sr-only" id="hero-title">{site.name}</h1>
 
 	<div class="hero__footer">
-		<p class="hero__tagline">{site.hero.tagline.join(" · ")}</p>
+		<p class="hero__tagline">{t("hero.tagline")}</p>
 		<a class="hero__scroll" href="#commercial">
-			<span>Explore the work</span>
+			<span>{t("hero.explore")}</span>
 			<svg viewBox="0 0 18 18" aria-hidden="true">
 				<path d="M9 2v13M4 10l5 5 5-5"></path>
 			</svg>
