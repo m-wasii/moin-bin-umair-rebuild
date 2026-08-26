@@ -300,7 +300,7 @@ main {
 	object-fit: cover;
 	object-position: center;
 	filter: saturate(0.72) contrast(1.08)
-		brightness(calc(0.72 - var(--hero-dim) * 0.32)) blur(var(--hero-blur));
+		brightness(calc(0.72 - var(--hero-dim) * 0.18)) blur(var(--hero-blur));
 	transform: scale(calc(1.01 + var(--hero-dim) * 0.06));
 	will-change: filter, transform;
 }
@@ -320,7 +320,7 @@ main {
 			transparent 44%,
 			rgba(5, 5, 5, 0.08)
 		),
-		rgba(5, 5, 5, calc(var(--hero-dim) * 0.58));
+		rgba(5, 5, 5, calc(var(--hero-dim) * 0.35));
 }
 
 .hero__grain {
@@ -394,7 +394,7 @@ main {
 	z-index: 1;
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
 	border-top: 1px solid var(--line);
-	background: rgba(5, 5, 5, 0.62);
+	background: rgba(5, 5, 5, 0.38);
 }
 
 .section-heading {

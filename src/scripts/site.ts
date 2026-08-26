@@ -281,7 +281,7 @@ function updateHeaderVisibility() {
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 const heroMedia = document.querySelector<HTMLElement>("[data-hero-media]");
 const heroSection = document.getElementById("home");
-const HERO_BLUR_MAX_PX = 16;
+const HERO_BLUR_MAX_PX = 20;
 
 function smoothstep(amount: number) {
 	const t = Math.min(Math.max(amount, 0), 1);
