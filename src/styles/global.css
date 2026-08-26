@@ -556,6 +556,40 @@ main {
 	color: var(--tungsten-deep);
 }
 
+.work-section--shorts .project-grid {
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	justify-items: center;
+	gap: clamp(1.5rem, 3vw, 2.5rem) clamp(0.85rem, 1.5vw, 1.5rem);
+}
+
+.work-section--shorts .project-card,
+.work-section--shorts .project-card--featured {
+	grid-column: span 3;
+	width: 100%;
+	max-width: 18rem;
+}
+
+.work-section--shorts .project-card__frame,
+.work-section--shorts .project-card--featured .project-card__frame {
+	aspect-ratio: 9 / 16;
+}
+
+.work-section--shorts .project-card__meta {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.35rem;
+}
+
+.work-section--shorts .project-card__meta h3 {
+	font-size: clamp(1.05rem, 1.3vw, 1.35rem);
+}
+
+.work-section__empty {
+	margin: 0;
+	color: var(--muted);
+	font-size: clamp(1rem, 1.2vw, 1.2rem);
+}
+
 .contact {
 	min-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
@@ -681,6 +715,17 @@ html.video-open {
 	color: var(--paper);
 }
 
+.video-dialog__panel--portrait {
+	width: min(
+		94vw,
+		28rem,
+		calc(
+			(100svh - (var(--video-dialog-inset) * 2) - var(--video-dialog-chrome)) *
+				9 / 16
+		)
+	);
+}
+
 .video-dialog__header {
 	display: flex;
 	flex-shrink: 0;
@@ -731,6 +776,10 @@ html.video-open {
 	min-height: 0;
 	width: 100%;
 	background: #000;
+}
+
+.video-dialog__panel--portrait .video-dialog__player {
+	aspect-ratio: 9 / 16;
 }
 
 .video-dialog__player iframe {
@@ -872,6 +921,17 @@ html.video-open {
 	.project-card,
 	.project-card--featured {
 		grid-column: 1;
+	}
+
+	.work-section--shorts .project-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		justify-items: stretch;
+	}
+
+	.work-section--shorts .project-card,
+	.work-section--shorts .project-card--featured {
+		grid-column: auto;
+		max-width: none;
 	}
 
 	.project-card--featured .project-card__frame {

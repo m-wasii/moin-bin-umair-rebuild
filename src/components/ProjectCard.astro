@@ -12,12 +12,23 @@ interface Props {
 }
 
 const { project } = Astro.props;
+<<<<<<< HEAD
 const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
+=======
+const vimeoUrl = `https://vimeo.com/${project.id}`;
+const isVertical = project.category === "shorts";
+>>>>>>> cursor/vertical-shorts-93eb
 ---
 
 <article
-	class:list={["project-card", { "project-card--featured": project.featured }]}
+	class:list={[
+		"project-card",
+		{
+			"project-card--featured": project.featured && !isVertical,
+			"project-card--vertical": isVertical,
+		},
+	]}
 	data-reveal
 >
 	<a
@@ -28,14 +39,19 @@ const hostLabel = projectHostLabel(project);
 		data-video-id={project.id}
 		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
+<<<<<<< HEAD
 		aria-label={`Play ${project.title} on ${hostLabel}`}
+=======
+		data-video-orientation={isVertical ? "portrait" : "landscape"}
+		aria-label={`Play ${project.title} on Vimeo`}
+>>>>>>> cursor/vertical-shorts-93eb
 	>
 		<figure class="project-card__frame">
 			<img
 				src={project.thumbnail}
 				alt={`Still from ${project.title}`}
-				width="1280"
-				height="720"
+				width={isVertical ? 1080 : 1280}
+				height={isVertical ? 1920 : 720}
 				loading="lazy"
 				decoding="async"
 				referrerpolicy="no-referrer"

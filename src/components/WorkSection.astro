@@ -14,7 +14,7 @@ const { id, number, title, description, projects } = Astro.props;
 ---
 
 <section
-	class="work-section"
+	class:list={["work-section", { "work-section--shorts": id === "shorts" }]}
 	id={id}
 	aria-labelledby={`${id}-title`}
 	data-nav-section
@@ -22,13 +22,29 @@ const { id, number, title, description, projects } = Astro.props;
 	<header class="section-heading" data-reveal>
 		<div class="section-heading__meta">
 			<p>{number}</p>
-			<p>{projects.length} projects</p>
+			<p>
+				{
+					projects.length === 0
+						? "Vertical"
+						: `${projects.length} ${projects.length === 1 ? "project" : "projects"}`
+				}
+			</p>
 		</div>
 		<h2 id={`${id}-title`}>{title}</h2>
 		<p class="section-heading__description">{description}</p>
 	</header>
 
-	<div class="project-grid">
-		{projects.map((project) => <ProjectCard project={project} />)}
-	</div>
+	{
+		projects.length > 0 ? (
+			<div class="project-grid">
+				{projects.map((project) => (
+					<ProjectCard project={project} />
+				))}
+			</div>
+		) : (
+			<p class="work-section__empty" data-reveal>
+				Vertical shorts will appear here.
+			</p>
+		)
+	}
 </section>
