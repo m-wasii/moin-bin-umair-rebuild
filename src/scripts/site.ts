@@ -281,7 +281,9 @@ function updateHeaderVisibility() {
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 const heroMedia = document.querySelector<HTMLElement>("[data-hero-media]");
 const heroSection = document.getElementById("home");
-const HERO_BLUR_MAX_PX = 20;
+const HERO_DIM_STEPS = 24;
+
+let lastHeroDimStep = -1;
 
 function smoothstep(amount: number) {
 	const t = Math.min(Math.max(amount, 0), 1);
@@ -292,19 +294,32 @@ function updateHeroBackdrop() {
 	if (!heroMedia || !heroSection) return;
 
 	if (reducedMotion.matches) {
-		heroMedia.style.setProperty("--hero-blur", "0px");
-		heroMedia.style.setProperty("--hero-dim", "0");
+		if (lastHeroDimStep !== 0) {
+			heroMedia.style.setProperty("--hero-dim", "0");
+			lastHeroDimStep = 0;
+		}
 		return;
 	}
 
 	const heroHeight = Math.max(heroSection.offsetHeight, 1);
 	const progress = smoothstep(window.scrollY / heroHeight);
+	const step = Math.round(progress * HERO_DIM_STEPS);
 
+	if (step === lastHeroDimStep) return;
+
+	lastHeroDimStep = step;
 	heroMedia.style.setProperty(
-		"--hero-blur",
-		`${(progress * HERO_BLUR_MAX_PX).toFixed(2)}px`,
+		"--hero-dim",
+		(step / HERO_DIM_STEPS).toFixed(3),
 	);
-	heroMedia.style.setProperty("--hero-dim", progress.toFixed(3));
+
+	if (!heroVideo) return;
+
+	if (progress >= 0.85) {
+		if (!heroVideo.paused) heroVideo.pause();
+	} else if (heroVideo.paused && !document.hidden) {
+		void heroVideo.play().catch(() => {});
+	}
 }
 
 function updateScrollChrome() {

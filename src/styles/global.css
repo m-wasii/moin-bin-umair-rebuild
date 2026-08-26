@@ -277,7 +277,6 @@ main {
 }
 
 .hero__media {
-	--hero-blur: 0px;
 	--hero-dim: 0;
 	position: fixed;
 	inset: 0;
@@ -288,6 +287,7 @@ main {
 }
 
 .hero__media video,
+.hero__blur-plate,
 .hero__veil,
 .hero__grain {
 	position: absolute;
@@ -299,10 +299,20 @@ main {
 	height: 100%;
 	object-fit: cover;
 	object-position: center;
-	filter: saturate(0.72) contrast(1.08)
-		brightness(calc(0.72 - var(--hero-dim) * 0.18)) blur(var(--hero-blur));
-	transform: scale(calc(1.01 + var(--hero-dim) * 0.06));
-	will-change: filter, transform;
+	filter: saturate(0.72) contrast(1.08) brightness(0.72);
+	transform: scale(1.01);
+}
+
+.hero__blur-plate {
+	inset: -2.5rem;
+	width: calc(100% + 5rem);
+	height: calc(100% + 5rem);
+	max-width: none;
+	object-fit: cover;
+	object-position: center;
+	filter: blur(18px) saturate(0.7) contrast(1.05) brightness(0.52);
+	opacity: var(--hero-dim);
+	transform: translateZ(0);
 }
 
 .hero__veil {
@@ -319,8 +329,14 @@ main {
 			rgba(5, 5, 5, 0.36),
 			transparent 44%,
 			rgba(5, 5, 5, 0.08)
-		),
-		rgba(5, 5, 5, calc(var(--hero-dim) * 0.35));
+		);
+}
+
+.hero__veil::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgba(5, 5, 5, calc(var(--hero-dim) * 0.3));
 }
 
 .hero__grain {
@@ -1130,7 +1146,10 @@ html.video-open {
 		display: none;
 		filter: none;
 		transform: none;
-		will-change: auto;
+	}
+
+	.hero__blur-plate {
+		display: none;
 	}
 
 	.js [data-reveal] {
