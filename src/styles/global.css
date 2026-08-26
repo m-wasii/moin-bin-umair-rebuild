@@ -45,7 +45,6 @@ body {
 	min-width: 0;
 	overflow-x: hidden;
 	background: var(--stage);
-	background-attachment: fixed;
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -1449,10 +1448,6 @@ html.video-open {
 @media (prefers-reduced-motion: reduce) {
 	html {
 		scroll-behavior: auto;
-	}
-
-	body {
-		background-attachment: scroll;
 	}
 
 	*,
