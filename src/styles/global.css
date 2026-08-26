@@ -181,7 +181,7 @@ main {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
-	color: var(--muted);
+	color: var(--amber);
 	font-family: var(--font-sans);
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -195,11 +195,11 @@ main {
 }
 
 .lang-switch__option:hover {
-	color: var(--paper);
+	color: var(--orange);
 }
 
 .lang-switch__option.is-active {
-	color: var(--amber);
+	color: var(--peach);
 	pointer-events: none;
 }
 
@@ -625,7 +625,7 @@ main {
 	flex: 0 0 auto;
 	gap: 0.4rem;
 	margin: 0;
-	color: rgba(255, 237, 213, 0.78);
+	color: var(--amber);
 	font-size: 0.85rem;
 	font-weight: 500;
 }
@@ -1104,7 +1104,7 @@ html.video-open {
 		padding: 0.85rem 0.2rem;
 		border-radius: 0;
 		border-bottom: 0;
-		color: var(--paper);
+		color: var(--amber);
 		font-size: clamp(2.1rem, 11vw, 3.6rem);
 		font-weight: 500;
 		line-height: 1.05;
@@ -1117,7 +1117,7 @@ html.video-open {
 	}
 
 	.site-nav__link[aria-current="page"] {
-		color: var(--amber-deep);
+		color: var(--peach);
 	}
 
 	.hero {
