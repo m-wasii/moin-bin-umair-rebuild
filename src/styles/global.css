@@ -691,14 +691,6 @@ main {
 	transform: scale(1.04);
 }
 
-.project-card__link:hover .project-card__wash {
-	background: linear-gradient(
-		180deg,
-		rgba(10, 8, 6, 0.02) 24%,
-		rgba(234, 88, 12, 0.42) 100%
-	);
-}
-
 .project-card__link:hover .project-card__play {
 	border-color: transparent;
 	background: var(--orange);
