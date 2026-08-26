@@ -751,9 +751,7 @@ main {
 	min-height: 100svh;
 	max-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
-	background:
-		radial-gradient(ellipse 70% 50% at 90% 10%, rgba(245, 158, 11, 0.22), transparent 55%),
-		var(--peach);
+	background: var(--peach);
 	color: var(--ink);
 	border-top: 2px solid rgba(5, 4, 3, 0.14);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
