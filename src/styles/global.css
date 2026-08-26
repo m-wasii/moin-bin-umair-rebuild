@@ -591,15 +591,22 @@ main {
 }
 
 .contact {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	height: 100svh;
 	min-height: 100svh;
+	max-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background: var(--paper);
 	color: var(--ink);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
+	overflow: hidden;
 }
 
 .contact .section-heading {
-	margin-bottom: clamp(3rem, 5vw, 5rem);
+	flex: 0 0 auto;
+	margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .section-heading--contact .section-heading__meta {
@@ -612,20 +619,21 @@ main {
 }
 
 .section-heading--contact h2 {
-	font-size: clamp(3rem, 6.2vw, 7rem);
+	font-size: clamp(2.6rem, 5.4vw, 6.2rem);
 	font-weight: 650;
-	line-height: 0.98;
+	line-height: 0.94;
 	text-transform: none;
 }
 
 .contact__actions {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
-	min-height: 18svh;
+	min-height: 0;
 	align-items: flex-end;
 	justify-content: flex-end;
 	gap: 0.25rem;
-	margin-bottom: clamp(4rem, 8vw, 8rem);
+	margin-bottom: clamp(2rem, 4vw, 3.5rem);
 }
 
 .contact__location {
@@ -661,6 +669,7 @@ main {
 
 .site-footer {
 	display: grid;
+	flex: 0 0 auto;
 	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
@@ -1056,8 +1065,7 @@ html.video-open {
 	}
 
 	.contact__actions {
-		min-height: 12svh;
-		margin-bottom: 4rem;
+		margin-bottom: 2.5rem;
 	}
 
 	.site-footer {
