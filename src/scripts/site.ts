@@ -465,7 +465,7 @@ const videoTitle = document.querySelector<HTMLElement>(
 	"[data-video-dialog-title]",
 );
 const videoDescription = document.querySelector<HTMLElement>(
-	"[data-video-description]",
+	"[data-video-dialog-description]",
 );
 const aboutToggle = document.querySelector<HTMLButtonElement>(
 	"[data-video-about-toggle]",
@@ -581,7 +581,8 @@ document.addEventListener("click", (event) => {
 	openVideoOverlay();
 });
 
-aboutToggle?.addEventListener("click", () => {
+aboutToggle?.addEventListener("click", (event) => {
+	event.stopPropagation();
 	setAboutPanelOpen(!aboutPanelOpen);
 });
 

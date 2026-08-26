@@ -747,6 +747,7 @@ html.video-open {
 	grid-template-columns: minmax(0, 1fr);
 	flex: 1 1 auto;
 	min-height: 0;
+	align-items: stretch;
 	overflow: hidden;
 }
 
@@ -758,12 +759,10 @@ html.video-open {
 	aspect-ratio: 16 / 9;
 	min-height: 0;
 	width: 100%;
+	max-height: 100%;
+	align-self: center;
+	justify-self: center;
 	background: #000;
-}
-
-.video-dialog__body--about-open .video-dialog__player {
-	aspect-ratio: auto;
-	height: 100%;
 }
 
 .video-dialog__player iframe {
@@ -1012,7 +1011,7 @@ html.video-open {
 	}
 
 	.video-dialog__body--about-open .video-dialog__player {
-		aspect-ratio: 16 / 9;
+		max-height: none;
 		height: auto;
 	}
 
