@@ -488,6 +488,7 @@ document.addEventListener("visibilitychange", syncHeroPlayback);
 syncHeroPlayback();
 
 const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
+const videoPanel = document.querySelector<HTMLElement>(".video-dialog__panel");
 const videoBackdrop = document.querySelector<HTMLElement>("[data-video-backdrop]");
 const videoClose = document.querySelector<HTMLButtonElement>("[data-video-close]");
 const videoPlayer = document.querySelector<HTMLElement>("[data-video-player]");
@@ -533,6 +534,7 @@ function closeVideoDialog() {
 	if (!isVideoOpen()) return;
 
 	videoPlayer?.replaceChildren();
+	videoPanel?.classList.remove("video-dialog__panel--portrait");
 	if (videoDialog) videoDialog.hidden = true;
 	unlockDocumentScroll();
 	previousFocus?.focus({ preventScroll: true });
@@ -579,6 +581,9 @@ document.addEventListener("click", (event) => {
 	iframe.title = title;
 	iframe.allow = "autoplay; fullscreen; picture-in-picture";
 	iframe.allowFullscreen = true;
+
+	const isPortrait = link.dataset.videoOrientation === "portrait";
+	videoPanel?.classList.toggle("video-dialog__panel--portrait", isPortrait);
 
 	videoTitle?.replaceChildren(document.createTextNode(title));
 	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;

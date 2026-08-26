@@ -30,8 +30,9 @@ npm run preview
 - Replace `public/media/hero-loop.mp4` and
   `public/media/hero-poster.webp` when the final showreel is available.
 
-Projects are grouped into Commercial, Art & Films, and Shorts in
-`src/data/projects.ts`. That split is easy to revise as the gallery grows.
+Projects are grouped into Commercial, Art & Films, and Shorts (vertical
+9:16 videos) in `src/data/projects.ts`. Add vertical shorts with
+`category: "shorts"`. That split is easy to revise as the gallery grows.
 
 ## Structure
 

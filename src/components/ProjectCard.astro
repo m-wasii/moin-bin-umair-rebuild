@@ -8,10 +8,17 @@ interface Props {
 
 const { project } = Astro.props;
 const vimeoUrl = `https://vimeo.com/${project.id}`;
+const isVertical = project.category === "shorts";
 ---
 
 <article
-	class:list={["project-card", { "project-card--featured": project.featured }]}
+	class:list={[
+		"project-card",
+		{
+			"project-card--featured": project.featured && !isVertical,
+			"project-card--vertical": isVertical,
+		},
+	]}
 	data-reveal
 >
 	<a
@@ -21,14 +28,15 @@ const vimeoUrl = `https://vimeo.com/${project.id}`;
 		data-video
 		data-video-id={project.id}
 		data-video-title={project.title}
+		data-video-orientation={isVertical ? "portrait" : "landscape"}
 		aria-label={`Play ${project.title} on Vimeo`}
 	>
 		<figure class="project-card__frame">
 			<img
 				src={project.thumbnail}
 				alt={`Still from ${project.title}`}
-				width="1280"
-				height="720"
+				width={isVertical ? 1080 : 1280}
+				height={isVertical ? 1920 : 720}
 				loading="lazy"
 				decoding="async"
 				referrerpolicy="no-referrer"
