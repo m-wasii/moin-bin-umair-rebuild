@@ -4,7 +4,7 @@
 	--paper: #ffedd5;
 	--peach: #ffedd5;
 	--white: #ffffff;
-	--muted: #b8a894;
+	--muted: #e8b45a;
 	--line: rgba(245, 158, 11, 0.22);
 	--line-strong: rgba(245, 158, 11, 0.48);
 	--gutter: clamp(1rem, 3vw, 3rem);
@@ -231,7 +231,7 @@ main {
 	height: var(--nav-indicator-h, 0);
 	z-index: 0;
 	border-radius: 999px;
-	background: rgba(245, 158, 11, 0.18);
+	background: var(--amber);
 	opacity: 0;
 	pointer-events: none;
 	transition:
@@ -260,7 +260,7 @@ main {
 	z-index: 1;
 	padding: 0.55rem 0.95rem;
 	border-radius: 999px;
-	color: var(--muted);
+	color: var(--amber);
 	font-size: 0.875rem;
 	font-weight: 600;
 	text-transform: uppercase;
@@ -268,11 +268,11 @@ main {
 }
 
 .site-nav__link:hover {
-	color: var(--amber);
+	color: var(--orange);
 }
 
 .site-nav__link[aria-current="page"] {
-	color: var(--amber-deep);
+	color: var(--ink);
 }
 
 .nav-toggle {
