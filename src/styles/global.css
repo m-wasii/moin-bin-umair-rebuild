@@ -276,27 +276,22 @@ main {
 	transform: rotate(-45deg);
 }
 
-.hero {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-end;
-	min-height: 100svh;
+.hero__media {
+	--hero-blur: 0px;
+	--hero-dim: 0;
+	position: fixed;
+	inset: 0;
+	z-index: 0;
 	overflow: hidden;
-	padding: calc(var(--header-height) + 1.25rem) var(--gutter) 1.6rem;
-	isolation: isolate;
+	background: #0a0d10;
+	pointer-events: none;
 }
 
-.hero__media,
+.hero__media video,
 .hero__veil,
 .hero__grain {
 	position: absolute;
 	inset: 0;
-}
-
-.hero__media {
-	z-index: -2;
-	background: #0a0d10;
 }
 
 .hero__media video {
@@ -304,8 +299,10 @@ main {
 	height: 100%;
 	object-fit: cover;
 	object-position: center;
-	filter: saturate(0.72) contrast(1.08) brightness(0.72);
-	transform: scale(1.01);
+	filter: saturate(0.72) contrast(1.08)
+		brightness(calc(0.72 - var(--hero-dim) * 0.32)) blur(var(--hero-blur));
+	transform: scale(calc(1.01 + var(--hero-dim) * 0.06));
+	will-change: filter, transform;
 }
 
 .hero__veil {
@@ -322,7 +319,8 @@ main {
 			rgba(5, 5, 5, 0.36),
 			transparent 44%,
 			rgba(5, 5, 5, 0.08)
-		);
+		),
+		rgba(5, 5, 5, calc(var(--hero-dim) * 0.58));
 }
 
 .hero__grain {
@@ -330,6 +328,16 @@ main {
 	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
 	mix-blend-mode: soft-light;
 	pointer-events: none;
+}
+
+.hero {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	min-height: 100svh;
+	padding: calc(var(--header-height) + 1.25rem) var(--gutter) 1.6rem;
 }
 
 .hero__footer {
@@ -382,8 +390,11 @@ main {
 }
 
 .work-section {
+	position: relative;
+	z-index: 1;
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
 	border-top: 1px solid var(--line);
+	background: rgba(5, 5, 5, 0.62);
 }
 
 .section-heading {
@@ -591,6 +602,8 @@ main {
 }
 
 .contact {
+	position: relative;
+	z-index: 1;
 	min-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background: var(--paper);
@@ -1115,6 +1128,9 @@ html.video-open {
 
 	.hero__media video {
 		display: none;
+		filter: none;
+		transform: none;
+		will-change: auto;
 	}
 
 	.js [data-reveal] {

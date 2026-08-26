@@ -278,10 +278,40 @@ function updateHeaderVisibility() {
 	header.removeAttribute("aria-hidden");
 }
 
+const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
+const heroMedia = document.querySelector<HTMLElement>("[data-hero-media]");
+const heroSection = document.getElementById("home");
+const HERO_BLUR_MAX_PX = 16;
+
+function smoothstep(amount: number) {
+	const t = Math.min(Math.max(amount, 0), 1);
+	return t * t * (3 - 2 * t);
+}
+
+function updateHeroBackdrop() {
+	if (!heroMedia || !heroSection) return;
+
+	if (reducedMotion.matches) {
+		heroMedia.style.setProperty("--hero-blur", "0px");
+		heroMedia.style.setProperty("--hero-dim", "0");
+		return;
+	}
+
+	const heroHeight = Math.max(heroSection.offsetHeight, 1);
+	const progress = smoothstep(window.scrollY / heroHeight);
+
+	heroMedia.style.setProperty(
+		"--hero-blur",
+		`${(progress * HERO_BLUR_MAX_PX).toFixed(2)}px`,
+	);
+	heroMedia.style.setProperty("--hero-dim", progress.toFixed(3));
+}
+
 function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
 	updateHeaderVisibility();
 	queueNavIndicatorUpdate();
+	updateHeroBackdrop();
 	scrollFrame = 0;
 }
 
@@ -439,6 +469,9 @@ const sectionObserver = new IntersectionObserver(
 sections.forEach((section) => sectionObserver.observe(section));
 
 reducedMotion.addEventListener("change", () => {
+	syncHeroPlayback();
+	updateHeroBackdrop();
+
 	if (reducedMotion.matches) {
 		wasNavTransitioning = false;
 		nav?.classList.remove("is-scroll-tracking", "is-nav-settling");
@@ -468,8 +501,6 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 	revealItems.forEach((item) => revealObserver.observe(item));
 }
 
-const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
-
 function syncHeroPlayback() {
 	if (!heroVideo) return;
 
@@ -483,7 +514,6 @@ function syncHeroPlayback() {
 	});
 }
 
-reducedMotion.addEventListener("change", syncHeroPlayback);
 document.addEventListener("visibilitychange", syncHeroPlayback);
 syncHeroPlayback();
 
