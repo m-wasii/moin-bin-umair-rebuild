@@ -1,13 +1,19 @@
 ---
 import type { Project } from "../data/projects";
-import { formatDuration } from "../data/projects";
+import {
+	formatDuration,
+	projectHostLabel,
+	projectProvider,
+	projectWatchUrl,
+} from "../data/projects";
 
 interface Props {
 	project: Project;
 }
 
 const { project } = Astro.props;
-const vimeoUrl = `https://vimeo.com/${project.id}`;
+const watchUrl = projectWatchUrl(project);
+const hostLabel = projectHostLabel(project);
 ---
 
 <article
@@ -16,12 +22,13 @@ const vimeoUrl = `https://vimeo.com/${project.id}`;
 >
 	<a
 		class="project-card__link"
-		href={vimeoUrl}
+		href={watchUrl}
 		rel="noreferrer"
 		data-video
 		data-video-id={project.id}
+		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
-		aria-label={`Play ${project.title} on Vimeo`}
+		aria-label={`Play ${project.title} on ${hostLabel}`}
 	>
 		<figure class="project-card__frame">
 			<img

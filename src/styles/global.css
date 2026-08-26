@@ -69,8 +69,14 @@ button {
 }
 
 ::selection {
-	background: var(--paper);
+	background-color: var(--paper);
 	color: var(--ink);
+}
+
+.contact::selection,
+.contact ::selection {
+	background-color: var(--ink);
+	color: var(--paper);
 }
 
 .sr-only {
@@ -149,7 +155,7 @@ main {
 	z-index: 102;
 	color: var(--paper);
 	font-family: var(--font-sans);
-	font-size: 0.875rem;
+	font-size: calc(0.875rem + 2pt);
 	font-weight: 600;
 	letter-spacing: -0.02em;
 	text-transform: uppercase;
@@ -596,7 +602,7 @@ main {
 
 .site-footer {
 	display: grid;
-	grid-template-columns: 1fr 1fr auto;
+	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
 	border-top: 1px solid rgba(5, 5, 5, 0.24);
@@ -875,10 +881,6 @@ html.video-open {
 
 	.site-footer {
 		grid-template-columns: 1fr auto;
-	}
-
-	.site-footer p:nth-child(2) {
-		display: none;
 	}
 
 	.video-overlay {
