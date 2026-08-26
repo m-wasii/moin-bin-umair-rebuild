@@ -5,6 +5,9 @@ export const site = {
 	description:
 		"Commercial work, short films, and visual stories by filmmaker Moin Bin Umair.",
 	vimeoUrl: "https://vimeo.com/moonshine123",
+	location: "Berlin, Germany",
+	email: "hello@example.com",
+	instagramUrl: "https://instagram.com/",
 	hero: {
 		tagline: ["Filmmaker", "Visual storyteller"],
 	},
