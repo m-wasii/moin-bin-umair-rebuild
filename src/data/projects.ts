@@ -1,4 +1,4 @@
-export type ProjectCategory = "commercial" | "art";
+export type ProjectCategory = "commercial" | "art" | "shorts";
 export type VideoProvider = "vimeo" | "youtube";
 
 export interface Project {
@@ -158,15 +158,6 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1946128345-fdb1fdfe2c2de2548e573908a35e8f4fb9a895fe9848ee15eaa406cf10e280c0-d_1280x720?region=us",
 	},
 	{
-		id: "973619906",
-		title: "Islamabad",
-		category: "art",
-		year: 2024,
-		duration: 330,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1887801527-1640e6d958ceeb350816514629484968a25f3ea92e88b6bdfb7f644c5e3f1790-d_1280x720?region=us",
-	},
-	{
 		id: "911992966",
 		title: "By Chance — Trailer",
 		category: "art",
@@ -174,15 +165,6 @@ export const projects: Project[] = [
 		duration: 57,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1796935574-0d2223e1e7bdccb1edd18ce47ceb40de4da5b42e29e9c06a71b0255023d9c55d-d_1280x720?region=us",
-	},
-	{
-		id: "911714914",
-		title: "Paris",
-		category: "art",
-		year: 2024,
-		duration: 66,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
 	},
 	{
 		id: "887016435",
@@ -194,6 +176,15 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1757351682-2af4bf2bc0a88470c35a8c7b5bf3ebf9771ca56818e2cfa99a571cf98dd9ab91-d_1280x720?region=us",
 	},
 	{
+		id: "973619906",
+		title: "Islamabad",
+		category: "art",
+		year: 2024,
+		duration: 330,
+		thumbnail:
+			"https://i.vimeocdn.com/video/1887801527-1640e6d958ceeb350816514629484968a25f3ea92e88b6bdfb7f644c5e3f1790-d_1280x720?region=us",
+	},
+	{
 		id: "887014384",
 		title: "Blackmail",
 		category: "art",
@@ -203,9 +194,19 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1757343482-5464f77343fc77bbd0f692b50b986b0986663852d6085244208b1b56fff35438-d_1280x720?region=us",
 	},
 	{
+		id: "911714914",
+		title: "Paris",
+		category: "shorts",
+		year: 2024,
+		duration: 66,
+		thumbnail:
+			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
+		featured: true,
+	},
+	{
 		id: "857425108",
 		title: "Memory",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 219,
 		thumbnail:
@@ -214,7 +215,7 @@ export const projects: Project[] = [
 	{
 		id: "857404107",
 		title: "A Chance",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 267,
 		thumbnail:
@@ -223,7 +224,7 @@ export const projects: Project[] = [
 	{
 		id: "854083915",
 		title: "Plate of Rice",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 300,
 		thumbnail:
@@ -232,7 +233,7 @@ export const projects: Project[] = [
 	{
 		id: "854082701",
 		title: "Writer's Block",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 283,
 		thumbnail:
@@ -246,6 +247,10 @@ export const commercialProjects = projects.filter(
 
 export const artProjects = projects.filter(
 	(project) => project.category === "art",
+);
+
+export const shortsProjects = projects.filter(
+	(project) => project.category === "shorts",
 );
 
 export function formatDuration(duration: number) {

@@ -4,7 +4,11 @@ import Hero from "../components/Hero.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import VideoDialog from "../components/VideoDialog.astro";
 import WorkSection from "../components/WorkSection.astro";
-import { artProjects, commercialProjects } from "../data/projects";
+import {
+	artProjects,
+	commercialProjects,
+	shortsProjects,
+} from "../data/projects";
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
@@ -26,8 +30,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 			id="art"
 			number="02"
 			title="Art & Films"
-			description="Narrative films, trailers, and personal work."
+			description="Longer narrative films and related trailers."
 			projects={artProjects}
+		/>
+
+		<WorkSection
+			id="shorts"
+			number="03"
+			title="Shorts"
+			description="Short films and intimate visual pieces."
+			projects={shortsProjects}
 		/>
 
 		<Contact />

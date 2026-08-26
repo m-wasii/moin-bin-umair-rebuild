@@ -14,5 +14,6 @@ export const navigation = [
 	{ label: "Home", href: "#home" },
 	{ label: "Commercial", href: "#commercial" },
 	{ label: "Art & Films", href: "#art" },
+	{ label: "Shorts", href: "#shorts" },
 	{ label: "Contact", href: "#contact" },
 ] as const;

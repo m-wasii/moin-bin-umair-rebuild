@@ -248,8 +248,39 @@ function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
 	}
 }
 
+function shouldHideHeaderForContact() {
+	const contact = document.getElementById("contact");
+	if (!contact || !header) return false;
+
+	const headerTop = parseFloat(getComputedStyle(header).top) || 0;
+	const headerBand = headerTop + header.offsetHeight;
+
+	return contact.getBoundingClientRect().top <= headerBand;
+}
+
+function updateHeaderVisibility() {
+	if (!header) return;
+
+	const hidden = shouldHideHeaderForContact();
+	const wasHidden = header.classList.contains("site-header--hidden");
+
+	header.classList.toggle("site-header--hidden", hidden);
+	header.toggleAttribute("inert", hidden);
+
+	if (hidden) {
+		header.setAttribute("aria-hidden", "true");
+		if (!wasHidden) {
+			closeNavigation();
+		}
+		return;
+	}
+
+	header.removeAttribute("aria-hidden");
+}
+
 function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
+	updateHeaderVisibility();
 	queueNavIndicatorUpdate();
 	scrollFrame = 0;
 }
