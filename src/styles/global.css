@@ -17,12 +17,32 @@
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
 	--tungsten-deep: #1a1208;
-	--stage-glow: radial-gradient(
-		ellipse 80% 55% at 85% 15%,
-		rgba(245, 158, 11, 0.14),
+	--stage-glow-top: radial-gradient(
+		ellipse 90% 32% at 85% 6%,
+		rgba(245, 158, 11, 0.16),
 		transparent 55%
 	);
-	--stage: var(--stage-glow), var(--ink);
+	--stage-glow-mid: radial-gradient(
+		ellipse 75% 28% at 12% 38%,
+		rgba(255, 107, 0, 0.09),
+		transparent 52%
+	);
+	--stage-glow-low: radial-gradient(
+		ellipse 88% 34% at 82% 68%,
+		rgba(245, 158, 11, 0.15),
+		transparent 55%
+	);
+	--stage-glow-end: radial-gradient(
+		ellipse 80% 30% at 30% 92%,
+		rgba(217, 119, 6, 0.12),
+		transparent 50%
+	);
+	--stage:
+		var(--stage-glow-top),
+		var(--stage-glow-mid),
+		var(--stage-glow-low),
+		var(--stage-glow-end),
+		var(--ink);
 	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -44,7 +64,7 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--stage);
+	background: var(--ink);
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -131,6 +151,12 @@ button {
 main {
 	position: relative;
 	z-index: 1;
+}
+
+main {
+	background: var(--stage);
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
 }
 
 .site-header {
