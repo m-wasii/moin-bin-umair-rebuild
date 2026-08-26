@@ -1,5 +1,11 @@
 {
 	"name": "moin-bin-umair",
-	"compatibility_date": "2026-08-24",
-	"pages_build_output_dir": "./dist",
+	"compatibility_date": "2025-08-01",
+	"compatibility_flags": ["nodejs_compat"],
+	// Workers + Assets (not Pages). SESSION is used by Keystatic / Astro sessions.
+	"kv_namespaces": [
+		{
+			"binding": "SESSION"
+		}
+	]
 }

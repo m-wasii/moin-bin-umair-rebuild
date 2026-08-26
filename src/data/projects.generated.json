@@ -1,6 +1,6 @@
 {
-	"generatedAt": "2026-08-26T16:06:23.522Z",
-	"source": "src/data/catalog.json",
+	"generatedAt": "2026-08-26T16:20:36.453Z",
+	"source": "src/content/videos + src/data/video-settings.json",
 	"projects": [
 		{
 			"id": "sjiSRTSbapA",

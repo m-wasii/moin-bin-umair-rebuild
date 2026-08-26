@@ -14,6 +14,8 @@ npm run dev
 
 The development server opens at `http://localhost:4321`.
 
+Keystatic (no login locally): [http://127.0.0.1:4321/keystatic](http://127.0.0.1:4321/keystatic)
+
 Useful checks:
 
 ```sh
@@ -22,83 +24,117 @@ npm run build
 npm run preview
 ```
 
-## Content
+## Content dashboard (Keystatic)
 
-Portfolio films are listed in `src/data/catalog.json`. That is the only file the
-client needs to edit to add or reorder work.
+Portfolio films are managed in **Keystatic**. Each video is a JSON file under
+`src/content/videos/`.
 
-### Add a video
-
-1. Upload to Vimeo (public on `moonshine123`) or copy a YouTube link.
-2. Append an entry to `src/data/catalog.json`:
-
-```json
-{
-  "url": "https://vimeo.com/123456789",
-  "category": "commercial"
-}
+```text
+Public site          dashboard.yourdomain.com
+(www / apex)         └─ Cloudflare Access (Google login)
+                     └─ Keystatic UI (/keystatic)
+                     └─ Saves into GitHub (content/* branches)
+                     └─ GitHub Action runs npm run sync:videos
 ```
 
-Categories: `commercial`, `art`, or `shorts` (vertical 9:16).
+### Add a video (local)
 
-Optional fields: `title`, `description`, `featured`, `year`, `duration`,
-`thumbnail`.
+1. `npm run dev` → open `/keystatic`
+2. **Videos** → **Create entry**
+3. Paste Vimeo/YouTube URL, pick category, save
+4. `npm run sync:videos`
+5. Commit `src/content/videos/*` and `src/data/projects.generated.json`
 
-- **Vimeo:** title, year, duration, and thumbnail are filled automatically.
-- **YouTube:** title and thumbnail are filled automatically; set `year` and
-  `duration` (seconds) in the catalog, or add a repo secret `YOUTUBE_API_KEY`
-  so the sync can read duration from the YouTube Data API.
+### Add a video (production dashboard)
 
-3. Run the sync (or push the catalog change and let GitHub Actions do it):
+1. Open `https://dashboard.yourdomain.com` → **Sign in with Google** (Cloudflare Access)
+2. Sign in to Keystatic with **GitHub** (needs write access on this repo)
+3. Add/edit videos and save (creates a `content/…` branch / commit)
+4. Merge; the Sync videos Action refreshes `projects.generated.json`
+
+Optional fields: title override, description, featured, year, duration, sort order.
+
+- **Vimeo:** title, year, duration, thumbnail auto-filled by sync
+- **YouTube:** set **year** + **duration** (seconds), or set repo/Action secret `YOUTUBE_API_KEY`
+
+Vimeo account for auto-fill: **Video settings** in Keystatic (`src/data/video-settings.json`).
+
+Site chrome / profile link: `src/data/site.ts`.  
+Hero reel: `public/media/hero-loop.mp4` + `public/media/hero-poster.webp`.  
+German about-copy: `src/i18n/project-descriptions.ts`.
+
+### Why Google + GitHub?
+
+| Layer | Who | Purpose |
+| ----- | --- | ------- |
+| Cloudflare Access (Google) | Client / editors you allowlist | Gates `dashboard.*` — only those Google accounts can open it |
+| Keystatic (GitHub) | Same people as GitHub repo collaborators | Keystatic can only write files via GitHub OAuth |
+
+Keystatic does not support Google as its CMS login. Google sits in front (Access);
+GitHub is how edits land in the repo.
+
+## Deploy to Cloudflare Workers
+
+This project uses the Cloudflare adapter (Workers + Assets). The public site and
+`dashboard.*` are the same Worker with different hostnames.
+
+1. Push this repository to GitHub (`m-wasii/moin-bin-umair-rebuild`).
+2. Create / connect a **Worker** (not Pages) for this repo, or deploy with:
 
 ```sh
-npm run sync:videos
+npm run build
+npx wrangler deploy
 ```
 
-This refreshes `src/data/projects.generated.json`. Commit both files. A weekly
-workflow also re-syncs Vimeo metadata.
+3. **Custom domains** on the Worker:
 
-Site name and Vimeo profile: `src/data/site.ts`.  
-Hero reel: replace `public/media/hero-loop.mp4` and `public/media/hero-poster.webp`.  
-German about-copy for projects: `src/i18n/project-descriptions.ts`.
+   - `yourdomain.com` / `www` → public site
+   - `dashboard.yourdomain.com` → Keystatic (same Worker)
 
+4. **Environment variables / secrets** — see `.env.example`:
+
+   - `SITE` = `https://yourdomain.com`
+   - `PUBLIC_DASHBOARD_URL` = `https://dashboard.yourdomain.com`
+   - `KEYSTATIC_GITHUB_CLIENT_ID` / `CLIENT_SECRET` / `KEYSTATIC_SECRET`
+   - `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG`
+   - Optional: `KEYSTATIC_GITHUB_REPO_OWNER`, `KEYSTATIC_GITHUB_REPO_NAME`
+   - Optional while testing Access: `DASHBOARD_ENFORCE_CF_ACCESS=false`
+
+5. **KV** — Astro provisions a `SESSION` binding (used for Keystatic auth cookies).
+   Confirm it exists under the Worker bindings if deploy does not auto-create it.
+
+6. **Google login (Cloudflare Access)**
+
+   1. Zero Trust → Access → Applications → Add → Self-hosted
+   2. Domain: `dashboard.yourdomain.com` (all paths)
+   3. Identity provider: **Google**
+   4. Policy: allowlist editor emails (or a Workspace group)
+   5. Do **not** put the public site hostname in this Access app
+
+7. **Keystatic GitHub App**
+
+   - Open `/keystatic` and follow Keystatic’s GitHub App connect flow, or paste
+     existing app credentials into Worker secrets
+   - Callback URL:
+     `https://dashboard.yourdomain.com/api/keystatic/github/oauth/callback`
+   - Editors need **write** access on the GitHub repo
+
+Until Access is configured, production dashboard routes return **401**
+(`DASHBOARD_ENFORCE_CF_ACCESS`). Set `false` only during bring-up.
 
 ## Structure
 
 ```text
 src/
   components/   Page sections and project UI
-  data/         Portfolio content
+  content/      Keystatic video entries
+  data/         Generated projects + site settings
   layouts/      Document metadata and global shell
   pages/        Astro routes
   scripts/      Navigation, reveal, and video-dialog behavior
   styles/       Global visual system
+  middleware.ts Dashboard host + Access gate
 public/
   media/        Optimized hero media
-```
-
-The Vimeo player is only loaded after a visitor selects a project. This keeps the
-initial page lightweight while retaining a no-JavaScript fallback to Vimeo.
-
-## Deploy to Cloudflare Pages
-
-This is a static Astro site. No Cloudflare adapter is required.
-
-1. Push this repository to GitHub (already at
-   `https://github.com/m-wasii/moin-bin-umair-rebuild`).
-2. In the [Cloudflare dashboard](https://dash.cloudflare.com/), go to **Workers & Pages** → **Create** → **Pages** → **Import an existing Git repository**.
-3. Select `m-wasii/moin-bin-umair-rebuild` and use these build settings:
-
-   - Framework preset: `Astro`
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Node version: from `.nvmrc` (`22.12.0`). If the build still uses Node 18, set the environment variable `NODE_VERSION` to `22.12.0` and use build system v3.
-
-The live URL will be `https://moin-bin-umair.pages.dev` (or the project name you choose). Add a custom domain under **Custom domains** when you have one, then set a `SITE` environment variable to that URL (for example `https://moinbinumair.com`) so canonical and Open Graph tags stay correct.
-
-To publish a one-off build from this machine instead of Git:
-
-```sh
-npm run build
-npx wrangler pages deploy ./dist
+keystatic.config.ts
 ```

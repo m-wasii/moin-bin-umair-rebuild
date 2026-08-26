@@ -31,7 +31,7 @@ export function projectHostLabel(project: Pick<Project, "provider">) {
 	return projectProvider(project) === "youtube" ? "YouTube" : "Vimeo";
 }
 
-/** Portfolio films. Edit `catalog.json`, then run `npm run sync:videos`. */
+/** Portfolio films. Edit in Keystatic, then run `npm run sync:videos`. */
 export const projects = generated.projects as Project[];
 
 export const commercialProjects = projects.filter(

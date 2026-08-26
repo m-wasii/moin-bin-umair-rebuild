@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 /**
- * Sync portfolio projects from src/data/catalog.json.
+ * Sync portfolio projects from Keystatic content.
  *
  * Client workflow:
- * 1. Add a Vimeo or YouTube URL + category to catalog.json
- * 2. Run `npm run sync:videos` (or wait for the GitHub Action)
- * 3. Commit the updated projects.generated.json
+ * 1. Open http://127.0.0.1:4321/keystatic while `npm run dev` is running
+ * 2. Add/edit a video (URL + category; optional title/description/year/duration)
+ * 3. Run `npm run sync:videos` (or wait for the GitHub Action)
+ * 4. Commit the updated content files + projects.generated.json
  *
  * Vimeo: title/year/duration/thumbnail are fetched automatically (optional overrides).
- * YouTube: title/thumbnail are fetched; duration and year should be set in the catalog
+ * YouTube: title/thumbnail are fetched; duration and year should be set in Keystatic
  *          (or provide YOUTUBE_API_KEY to fill duration automatically).
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
-const catalogPath = join(root, "src/data/catalog.json");
+const settingsPath = join(root, "src/data/video-settings.json");
+const videosDir = join(root, "src/content/videos");
 const outputPath = join(root, "src/data/projects.generated.json");
 
 const CATEGORIES = new Set(["commercial", "art", "shorts"]);
@@ -36,6 +38,8 @@ const CATEGORIES = new Set(["commercial", "art", "shorts"]);
  * @property {number} [duration]
  * @property {string} [thumbnail]
  * @property {boolean} [featured]
+ * @property {number} [sortOrder]
+ * @property {string} [slug]
  *
  * @typedef {object} Project
  * @property {string} id
@@ -247,43 +251,95 @@ function parseIso8601Duration(iso) {
 	return hours * 3600 + minutes * 60 + seconds;
 }
 
-/** @type {{ vimeoUser: string, entries: CatalogEntry[] }} */
-const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
+/**
+ * @returns {CatalogEntry[]}
+ */
+function loadVideoEntries() {
+	let files;
+	try {
+		files = readdirSync(videosDir).filter((name) => name.endsWith(".json"));
+	} catch {
+		fail(`Missing videos folder at src/content/videos. Add videos in Keystatic.`);
+	}
 
-if (!catalog.vimeoUser || typeof catalog.vimeoUser !== "string") {
-	fail("catalog.json must include a string vimeoUser.");
+	/** @type {CatalogEntry[]} */
+	const entries = files.map((file) => {
+		const raw = JSON.parse(readFileSync(join(videosDir, file), "utf8"));
+		/** @type {CatalogEntry} */
+		const entry = {
+			url: String(raw.url ?? ""),
+			category: raw.category,
+			slug: file.replace(/\.json$/, ""),
+			sortOrder: Number(raw.sortOrder ?? 100),
+		};
+
+		if (typeof raw.title === "string" && raw.title.trim()) {
+			entry.title = raw.title.trim();
+		}
+		if (typeof raw.description === "string" && raw.description.trim()) {
+			entry.description = raw.description.trim();
+		}
+		if (raw.year != null && raw.year !== "") entry.year = Number(raw.year);
+		if (raw.duration != null && raw.duration !== "") {
+			entry.duration = Number(raw.duration);
+		}
+		if (raw.featured) entry.featured = true;
+		if (typeof raw.thumbnail === "string" && raw.thumbnail.trim()) {
+			entry.thumbnail = raw.thumbnail.trim();
+		}
+
+		return entry;
+	});
+
+	entries.sort((a, b) => {
+		const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
+		if (order !== 0) return order;
+		return String(a.slug).localeCompare(String(b.slug));
+	});
+
+	return entries;
 }
 
-if (!Array.isArray(catalog.entries)) {
-	fail("catalog.json must include an entries array.");
+/** @type {{ vimeoUser?: string }} */
+const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
+const vimeoUser = settings.vimeoUser;
+
+if (!vimeoUser || typeof vimeoUser !== "string") {
+	fail("src/data/video-settings.json must include a string vimeoUser.");
+}
+
+const entries = loadVideoEntries();
+if (entries.length === 0) {
+	fail("No videos found in src/content/videos. Add some in Keystatic.");
 }
 
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;
-const vimeoVideos = await fetchVimeoVideos(catalog.vimeoUser);
+const vimeoVideos = await fetchVimeoVideos(vimeoUser);
 console.log(
-	`sync-videos: loaded ${vimeoVideos.size} public Vimeo videos for ${catalog.vimeoUser}`,
+	`sync-videos: loaded ${vimeoVideos.size} public Vimeo videos for ${vimeoUser}`,
 );
 
 /** @type {Project[]} */
 const projects = [];
 const seen = new Set();
 
-for (const [index, entry] of catalog.entries.entries()) {
-	if (!entry?.url) fail(`entries[${index}] is missing url.`);
+for (const [index, entry] of entries.entries()) {
+	const label = entry.slug ?? `videos[${index}]`;
+	if (!entry?.url) fail(`${label} is missing url.`);
 	if (!CATEGORIES.has(entry.category)) {
 		fail(
-			`entries[${index}] has invalid category "${entry.category}". Use commercial, art, or shorts.`,
+			`${label} has invalid category "${entry.category}". Use commercial, art, or shorts.`,
 		);
 	}
 
 	const { provider, id } = parseVideoUrl(entry.url);
 	const key = `${provider}:${id}`;
-	if (seen.has(key)) fail(`Duplicate catalog entry for ${entry.url}`);
+	if (seen.has(key)) fail(`Duplicate video entry for ${entry.url}`);
 	seen.add(key);
 
 	const project =
 		provider === "vimeo"
-			? projectFromVimeo(id, vimeoVideos.get(id), entry, catalog.vimeoUser)
+			? projectFromVimeo(id, vimeoVideos.get(id), entry, vimeoUser)
 			: await projectFromYoutube(id, entry, youtubeApiKey);
 
 	projects.push(project);
@@ -292,7 +348,7 @@ for (const [index, entry] of catalog.entries.entries()) {
 
 const payload = {
 	generatedAt: new Date().toISOString(),
-	source: "src/data/catalog.json",
+	source: "src/content/videos + src/data/video-settings.json",
 	projects,
 };
 

@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "src/data/catalog.json"
+      - "src/content/videos/**"
+      - "src/data/video-settings.json"
       - "scripts/sync-videos.mjs"
       - ".github/workflows/sync-videos.yml"
 
@@ -25,7 +26,7 @@ jobs:
           node-version-file: ".nvmrc"
           cache: npm
 
-      - name: Sync catalog → projects
+      - name: Sync Keystatic videos → projects
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: npm run sync:videos
@@ -39,5 +40,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/projects.generated.json
-          git commit -m "chore: sync portfolio videos from catalog"
+          git commit -m "chore: sync portfolio videos from Keystatic"
           git push
