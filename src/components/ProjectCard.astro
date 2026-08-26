@@ -1,35 +1,50 @@
 ---
 import type { Project } from "../data/projects";
-import { formatDuration } from "../data/projects";
+import {
+	formatDuration,
+	projectHostLabel,
+	projectProvider,
+	projectWatchUrl,
+} from "../data/projects";
 
 interface Props {
 	project: Project;
 }
 
 const { project } = Astro.props;
-const vimeoUrl = `https://vimeo.com/${project.id}`;
+const watchUrl = projectWatchUrl(project);
+const hostLabel = projectHostLabel(project);
+const isVertical = project.category === "shorts";
 ---
 
 <article
-	class:list={["project-card", { "project-card--featured": project.featured }]}
+	class:list={[
+		"project-card",
+		{
+			"project-card--featured": project.featured && !isVertical,
+			"project-card--vertical": isVertical,
+		},
+	]}
 	data-reveal
 >
 	<a
 		class="project-card__link"
-		href={vimeoUrl}
+		href={watchUrl}
 		rel="noreferrer"
 		data-video
 		data-video-id={project.id}
+		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
-		data-video-description={project.description}
-		aria-label={`Play ${project.title} on Vimeo`}
+		data-video-description={project.description ?? ""}
+		data-video-orientation={isVertical ? "portrait" : "landscape"}
+		aria-label={`Play ${project.title} on ${hostLabel}`}
 	>
 		<figure class="project-card__frame">
 			<img
 				src={project.thumbnail}
 				alt={`Still from ${project.title}`}
-				width="1280"
-				height="720"
+				width={isVertical ? 1080 : 1280}
+				height={isVertical ? 1920 : 720}
 				loading="lazy"
 				decoding="async"
 				referrerpolicy="no-referrer"

@@ -30,8 +30,9 @@ npm run preview
 - Replace `public/media/hero-loop.mp4` and
   `public/media/hero-poster.webp` when the final showreel is available.
 
-The current Commercial / Art & Films split is inferred from the original Vimeo
-gallery and is intentionally easy to revise.
+Projects are grouped into Commercial, Art & Films, and Shorts (vertical
+9:16 videos) in `src/data/projects.ts`. Add vertical shorts with
+`category: "shorts"`. That split is easy to revise as the gallery grows.
 
 ## Structure
 

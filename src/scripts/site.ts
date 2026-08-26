@@ -248,8 +248,39 @@ function queueNavIndicatorUpdate(activeLink?: HTMLAnchorElement) {
 	}
 }
 
+function shouldHideHeaderForContact() {
+	const contact = document.getElementById("contact");
+	if (!contact || !header) return false;
+
+	const headerTop = parseFloat(getComputedStyle(header).top) || 0;
+	const headerBand = headerTop + header.offsetHeight;
+
+	return contact.getBoundingClientRect().top <= headerBand;
+}
+
+function updateHeaderVisibility() {
+	if (!header) return;
+
+	const hidden = shouldHideHeaderForContact();
+	const wasHidden = header.classList.contains("site-header--hidden");
+
+	header.classList.toggle("site-header--hidden", hidden);
+	header.toggleAttribute("inert", hidden);
+
+	if (hidden) {
+		header.setAttribute("aria-hidden", "true");
+		if (!wasHidden) {
+			closeNavigation();
+		}
+		return;
+	}
+
+	header.removeAttribute("aria-hidden");
+}
+
 function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
+	updateHeaderVisibility();
 	queueNavIndicatorUpdate();
 	scrollFrame = 0;
 }
@@ -457,6 +488,7 @@ document.addEventListener("visibilitychange", syncHeroPlayback);
 syncHeroPlayback();
 
 const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
+const videoPanel = document.querySelector<HTMLElement>(".video-dialog__panel");
 const videoBackdrop = document.querySelector<HTMLElement>("[data-video-backdrop]");
 const videoClose = document.querySelector<HTMLButtonElement>("[data-video-close]");
 const videoPlayer = document.querySelector<HTMLElement>("[data-video-player]");
@@ -475,6 +507,9 @@ const aboutPanel = document.querySelector<HTMLElement>(
 );
 const externalLink = document.querySelector<HTMLAnchorElement>(
 	"[data-video-external]",
+);
+const externalLinkLabel = document.querySelector<HTMLElement>(
+	"[data-video-external-label]",
 );
 let previousFocus: HTMLElement | null = null;
 let lockedScrollY = 0;
@@ -521,6 +556,7 @@ function closeVideoDialog() {
 
 	videoPlayer?.replaceChildren();
 	if (videoDescription) videoDescription.textContent = "";
+	videoPanel?.classList.remove("video-dialog__panel--portrait");
 	if (videoDialog) videoDialog.hidden = true;
 	unlockDocumentScroll();
 	previousFocus?.focus({ preventScroll: true });
@@ -557,6 +593,7 @@ document.addEventListener("click", (event) => {
 	const videoId = link.dataset.videoId;
 	const title = link.dataset.videoTitle ?? "Project film";
 	const description = link.dataset.videoDescription?.trim() ?? "";
+	const provider = link.dataset.videoProvider === "youtube" ? "youtube" : "vimeo";
 	if (!videoId) return;
 
 	event.preventDefault();
@@ -564,17 +601,37 @@ document.addEventListener("click", (event) => {
 	previousFocus = link;
 
 	const iframe = document.createElement("iframe");
-	iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&dnt=1`;
+	iframe.src =
+		provider === "youtube"
+			? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
+			: `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&dnt=1`;
 	iframe.title = title;
-	iframe.allow = "autoplay; fullscreen; picture-in-picture";
+	iframe.allow =
+		provider === "youtube"
+			? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+			: "autoplay; fullscreen; picture-in-picture";
 	iframe.allowFullscreen = true;
+	iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+	const isPortrait = link.dataset.videoOrientation === "portrait";
+	videoPanel?.classList.toggle("video-dialog__panel--portrait", isPortrait);
 
 	videoTitle?.replaceChildren(document.createTextNode(title));
 	if (videoDescription) {
 		videoDescription.textContent =
 			description || "No description available for this film yet.";
 	}
-	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;
+	if (externalLink) {
+		externalLink.href =
+			provider === "youtube"
+				? `https://www.youtube.com/watch?v=${videoId}`
+				: `https://vimeo.com/${videoId}`;
+	}
+	externalLinkLabel?.replaceChildren(
+		document.createTextNode(
+			provider === "youtube" ? "Open on YouTube" : "Open on Vimeo",
+		),
+	);
 	if (aboutToggle) aboutToggle.hidden = !description;
 	setAboutPanelOpen(Boolean(description));
 	videoPlayer.replaceChildren(iframe);
