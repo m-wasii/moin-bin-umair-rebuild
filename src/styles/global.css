@@ -163,7 +163,7 @@ main {
 	z-index: 102;
 	color: var(--paper);
 	font-family: var(--font-sans);
-	font-size: calc(0.875rem + 2pt);
+	font-size: calc(0.875rem + 2pt + 2px);
 	font-weight: 600;
 	letter-spacing: -0.02em;
 	text-transform: uppercase;
