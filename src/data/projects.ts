@@ -1,4 +1,5 @@
 export type ProjectCategory = "commercial" | "art" | "shorts";
+export type VideoProvider = "vimeo" | "youtube";
 
 export interface Project {
 	id: string;
@@ -8,9 +9,80 @@ export interface Project {
 	duration: number;
 	thumbnail: string;
 	featured?: boolean;
+	provider?: VideoProvider;
+}
+
+export function projectProvider(
+	project: Pick<Project, "provider">,
+): VideoProvider {
+	return project.provider ?? "vimeo";
+}
+
+export function projectWatchUrl(project: Pick<Project, "id" | "provider">) {
+	return projectProvider(project) === "youtube"
+		? `https://www.youtube.com/watch?v=${project.id}`
+		: `https://vimeo.com/${project.id}`;
+}
+
+export function projectHostLabel(project: Pick<Project, "provider">) {
+	return projectProvider(project) === "youtube" ? "YouTube" : "Vimeo";
 }
 
 export const projects: Project[] = [
+	{
+		id: "sjiSRTSbapA",
+		title: "Christoph Eisinger — Mind-Body-Problem",
+		category: "commercial",
+		year: 2025,
+		duration: 211,
+		thumbnail: "https://i.ytimg.com/vi/sjiSRTSbapA/maxresdefault.jpg",
+		provider: "youtube",
+	},
+	{
+		id: "H_dfdFn-jXI",
+		title: "Must Have Been Love",
+		category: "commercial",
+		year: 2026,
+		duration: 858,
+		thumbnail: "https://i.ytimg.com/vi/H_dfdFn-jXI/maxresdefault.jpg",
+		provider: "youtube",
+	},
+	{
+		id: "sr_Tbt_CJzs",
+		title: "Gunaah",
+		category: "commercial",
+		year: 2026,
+		duration: 540,
+		thumbnail: "https://i.ytimg.com/vi/sr_Tbt_CJzs/maxresdefault.jpg",
+		provider: "youtube",
+	},
+	{
+		id: "KCUuiU0U2xc",
+		title: "Doosri Aurat",
+		category: "commercial",
+		year: 2026,
+		duration: 1022,
+		thumbnail: "https://i.ytimg.com/vi/KCUuiU0U2xc/maxresdefault.jpg",
+		provider: "youtube",
+	},
+	{
+		id: "MjOCLZLCF-M",
+		title: "Our Sweet Story",
+		category: "commercial",
+		year: 2026,
+		duration: 701,
+		thumbnail: "https://i.ytimg.com/vi/MjOCLZLCF-M/maxresdefault.jpg",
+		provider: "youtube",
+	},
+	{
+		id: "Sq9pNdyW8TU",
+		title: "Bandh Darwaza",
+		category: "commercial",
+		year: 2025,
+		duration: 1562,
+		thumbnail: "https://i.ytimg.com/vi/Sq9pNdyW8TU/maxresdefault.jpg",
+		provider: "youtube",
+	},
 	{
 		id: "941885206",
 		title: "Mr Spex",

@@ -497,6 +497,9 @@ const videoTitle = document.querySelector<HTMLElement>(
 const externalLink = document.querySelector<HTMLAnchorElement>(
 	"[data-video-external]",
 );
+const externalLinkLabel = document.querySelector<HTMLElement>(
+	"[data-video-external-label]",
+);
 let previousFocus: HTMLElement | null = null;
 let lockedScrollY = 0;
 
@@ -568,6 +571,7 @@ document.addEventListener("click", (event) => {
 
 	const videoId = link.dataset.videoId;
 	const title = link.dataset.videoTitle ?? "Project film";
+	const provider = link.dataset.videoProvider === "youtube" ? "youtube" : "vimeo";
 	if (!videoId) return;
 
 	event.preventDefault();
@@ -575,13 +579,30 @@ document.addEventListener("click", (event) => {
 	previousFocus = link;
 
 	const iframe = document.createElement("iframe");
-	iframe.src = `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&dnt=1`;
+	iframe.src =
+		provider === "youtube"
+			? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`
+			: `https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0&dnt=1`;
 	iframe.title = title;
-	iframe.allow = "autoplay; fullscreen; picture-in-picture";
+	iframe.allow =
+		provider === "youtube"
+			? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+			: "autoplay; fullscreen; picture-in-picture";
 	iframe.allowFullscreen = true;
+	iframe.referrerPolicy = "strict-origin-when-cross-origin";
 
 	videoTitle?.replaceChildren(document.createTextNode(title));
-	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;
+	if (externalLink) {
+		externalLink.href =
+			provider === "youtube"
+				? `https://www.youtube.com/watch?v=${videoId}`
+				: `https://vimeo.com/${videoId}`;
+	}
+	externalLinkLabel?.replaceChildren(
+		document.createTextNode(
+			provider === "youtube" ? "Open on YouTube" : "Open on Vimeo",
+		),
+	);
 	videoPlayer.replaceChildren(iframe);
 	openVideoOverlay();
 });
