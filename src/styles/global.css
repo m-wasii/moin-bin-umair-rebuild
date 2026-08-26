@@ -17,6 +17,12 @@
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
 	--tungsten-deep: #1a1208;
+	--stage-glow: radial-gradient(
+		ellipse 80% 55% at 85% 15%,
+		rgba(245, 158, 11, 0.14),
+		transparent 55%
+	);
+	--stage: var(--stage-glow), var(--ink);
 	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -38,7 +44,8 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--ink);
+	background: var(--stage);
+	background-attachment: fixed;
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -1379,6 +1386,10 @@ html.video-open {
 @media (prefers-reduced-motion: reduce) {
 	html {
 		scroll-behavior: auto;
+	}
+
+	body {
+		background-attachment: scroll;
 	}
 
 	*,
