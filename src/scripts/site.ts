@@ -217,7 +217,9 @@ function updateNavIndicatorFromScroll() {
 function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 	if (!nav || !navIndicator) return;
 
-	measureLinkMetrics();
+	if (!cachedLinkMetrics.length) {
+		measureLinkMetrics();
+	}
 
 	if (!reducedMotion.matches) {
 		updateNavIndicatorFromScroll();
@@ -281,9 +283,10 @@ function updateHeaderVisibility() {
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 const heroMedia = document.querySelector<HTMLElement>("[data-hero-media]");
 const heroSection = document.getElementById("home");
-const HERO_DIM_STEPS = 24;
+const HERO_DIM_STEPS = 20;
 
 let lastHeroDimStep = -1;
+let heroInView = true;
 
 function smoothstep(amount: number) {
 	const t = Math.min(Math.max(amount, 0), 1);
@@ -312,14 +315,29 @@ function updateHeroBackdrop() {
 		"--hero-dim",
 		(step / HERO_DIM_STEPS).toFixed(3),
 	);
+}
 
+function syncHeroPlayback() {
 	if (!heroVideo) return;
 
-	if (progress >= 0.85) {
-		if (!heroVideo.paused) heroVideo.pause();
-	} else if (heroVideo.paused && !document.hidden) {
-		void heroVideo.play().catch(() => {});
+	if (reducedMotion.matches || document.hidden || !heroInView) {
+		heroVideo.pause();
+		return;
 	}
+
+	void heroVideo.play().catch(() => {
+		// The poster remains visible if autoplay is unavailable.
+	});
+}
+
+if (heroSection && "IntersectionObserver" in window) {
+	new IntersectionObserver(
+		([entry]) => {
+			heroInView = entry.isIntersecting;
+			syncHeroPlayback();
+		},
+		{ rootMargin: "0px", threshold: 0 },
+	).observe(heroSection);
 }
 
 function updateScrollChrome() {
@@ -514,19 +532,6 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 	);
 
 	revealItems.forEach((item) => revealObserver.observe(item));
-}
-
-function syncHeroPlayback() {
-	if (!heroVideo) return;
-
-	if (reducedMotion.matches || document.hidden) {
-		heroVideo.pause();
-		return;
-	}
-
-	void heroVideo.play().catch(() => {
-		// The poster remains visible if autoplay is unavailable.
-	});
 }
 
 document.addEventListener("visibilitychange", syncHeroPlayback);
