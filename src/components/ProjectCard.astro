@@ -35,6 +35,7 @@ const isVertical = project.category === "shorts";
 		data-video-id={project.id}
 		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
+		data-video-description={project.description ?? ""}
 		data-video-orientation={isVertical ? "portrait" : "landscape"}
 		aria-label={`Play ${project.title} on ${hostLabel}`}
 	>

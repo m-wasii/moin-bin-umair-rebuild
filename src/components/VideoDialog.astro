@@ -8,15 +8,36 @@
 	>
 		<header class="video-dialog__header">
 			<p id="video-dialog-title" data-video-dialog-title>Project film</p>
-			<button class="video-dialog__close" type="button" data-video-close>
-				<span>Close</span>
-				<svg viewBox="0 0 18 18" aria-hidden="true">
-					<path d="m3 3 12 12M15 3 3 15"></path>
-				</svg>
-			</button>
+			<div class="video-dialog__actions">
+				<button
+					class="video-dialog__about"
+					type="button"
+					data-video-about-toggle
+					aria-expanded="true"
+					aria-controls="video-dialog-about"
+				>
+					About
+				</button>
+				<button class="video-dialog__close" type="button" data-video-close>
+					<span>Close</span>
+					<svg viewBox="0 0 18 18" aria-hidden="true">
+						<path d="m3 3 12 12M15 3 3 15"></path>
+					</svg>
+				</button>
+			</div>
 		</header>
 
-		<div class="video-dialog__player" data-video-player></div>
+		<div class="video-dialog__body" data-video-body>
+			<div class="video-dialog__player" data-video-player></div>
+			<aside
+				class="video-dialog__about-panel"
+				id="video-dialog-about"
+				data-video-about-panel
+			>
+				<p class="video-dialog__about-label">About this film</p>
+				<p class="video-dialog__description" data-video-dialog-description></p>
+			</aside>
+		</div>
 
 		<a
 			class="video-dialog__external"

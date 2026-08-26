@@ -671,6 +671,7 @@ html.video-open {
 .video-overlay {
 	--video-dialog-inset: 1.25rem;
 	--video-dialog-chrome: 7.5rem;
+	--video-about-width: 18.5rem;
 	position: fixed;
 	z-index: 200;
 	inset: 0;
@@ -715,6 +716,17 @@ html.video-open {
 	color: var(--paper);
 }
 
+.video-dialog__panel:has(.video-dialog__body--about-open) {
+	width: min(
+		94vw,
+		90rem,
+		calc(
+			(100svh - (var(--video-dialog-inset) * 2) - var(--video-dialog-chrome)) *
+				16 / 9 + var(--video-about-width)
+		)
+	);
+}
+
 .video-dialog__panel--portrait {
 	width: min(
 		94vw,
@@ -726,18 +738,30 @@ html.video-open {
 	);
 }
 
+.video-dialog__panel--portrait:has(.video-dialog__body--about-open) {
+	width: min(
+		94vw,
+		calc(28rem + var(--video-about-width)),
+		calc(
+			(100svh - (var(--video-dialog-inset) * 2) - var(--video-dialog-chrome)) *
+				9 / 16 + var(--video-about-width)
+		)
+	);
+}
+
 .video-dialog__header {
 	display: flex;
 	flex-shrink: 0;
 	min-height: 4rem;
 	align-items: center;
 	justify-content: space-between;
-	gap: 2rem;
+	gap: 1.25rem;
 	padding: 0.75rem 1rem 0.75rem 1.2rem;
 }
 
 .video-dialog__header p,
 .video-dialog__close,
+.video-dialog__about,
 .video-dialog__external {
 	margin: 0;
 	font-size: 0.9rem;
@@ -749,14 +773,33 @@ html.video-open {
 	font-size: 1.1rem;
 }
 
+.video-dialog__actions {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.video-dialog__about,
 .video-dialog__close {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.65rem;
-	padding: 0.5rem;
+	padding: 0.5rem 0.7rem;
 	border: 0;
 	background: transparent;
 	cursor: pointer;
+}
+
+.video-dialog__about {
+	border: 1px solid transparent;
+	border-radius: 999px;
+	color: var(--muted);
+}
+
+.video-dialog__about[aria-expanded="true"] {
+	border-color: var(--line);
+	color: var(--paper);
 }
 
 .video-dialog__close svg {
@@ -770,11 +813,26 @@ html.video-open {
 	stroke-width: 1.2;
 }
 
-.video-dialog__player {
-	aspect-ratio: 16 / 9;
+.video-dialog__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	flex: 1 1 auto;
 	min-height: 0;
+	align-items: stretch;
+	overflow: hidden;
+}
+
+.video-dialog__body--about-open {
+	grid-template-columns: minmax(0, 1fr) var(--video-about-width);
+}
+
+.video-dialog__player {
+	aspect-ratio: 16 / 9;
+	min-height: 0;
 	width: 100%;
+	max-height: 100%;
+	align-self: center;
+	justify-self: center;
 	background: #000;
 }
 
@@ -789,13 +847,51 @@ html.video-open {
 	border: 0;
 }
 
+.video-dialog__about-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	min-height: 0;
+	padding: 1.15rem 1.2rem 1.25rem;
+	border-left: 1px solid var(--line);
+	background: linear-gradient(
+		180deg,
+		rgba(241, 239, 233, 0.04),
+		rgba(241, 239, 233, 0.01)
+	);
+	overflow: auto;
+}
+
+.video-dialog__about-panel[hidden] {
+	display: none;
+}
+
+.video-dialog__about-label {
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.video-dialog__description {
+	margin: 0;
+	flex: 1 1 auto;
+	color: var(--paper);
+	font-size: 0.98rem;
+	line-height: 1.55;
+}
+
 .video-dialog__external {
 	display: flex;
 	flex-shrink: 0;
 	align-items: center;
 	justify-content: space-between;
+	gap: 0.75rem;
 	padding: 1rem;
 	border-top: 1px solid var(--line);
+	color: var(--paper);
 }
 
 .js [data-reveal] {
@@ -959,6 +1055,7 @@ html.video-open {
 
 	.video-overlay {
 		--video-dialog-inset: 0rem;
+		--video-about-width: 100%;
 		padding: 0;
 	}
 
@@ -972,11 +1069,33 @@ html.video-open {
 		border-radius: 0;
 	}
 
+	.video-dialog__panel:has(.video-dialog__body--about-open) {
+		width: 100vw;
+		height: 100svh;
+	}
+
 	.video-dialog__header p {
-		max-width: 60%;
+		max-width: 48%;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.video-dialog__body--about-open {
+		grid-template-columns: 1fr;
+		grid-template-rows: minmax(0, 1fr) auto;
+		overflow: auto;
+	}
+
+	.video-dialog__body--about-open .video-dialog__player {
+		max-height: none;
+		height: auto;
+	}
+
+	.video-dialog__about-panel {
+		border-left: 0;
+		border-top: 1px solid var(--line);
+		max-height: 40svh;
 	}
 }
 

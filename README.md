@@ -24,7 +24,7 @@ npm run preview
 
 ## Content
 
-- Edit project titles, categories, durations, and Vimeo IDs in
+- Edit project titles, categories, durations, descriptions, and Vimeo IDs in
   `src/data/projects.ts`.
 - Edit portfolio metadata and the Vimeo profile in `src/data/site.ts`.
 - Replace `public/media/hero-loop.mp4` and
