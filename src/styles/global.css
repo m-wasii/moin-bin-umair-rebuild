@@ -133,7 +133,15 @@ main {
 	transition:
 		background-color 250ms ease,
 		border-color 250ms ease,
-		box-shadow 250ms ease;
+		box-shadow 250ms ease,
+		opacity 280ms ease,
+		transform 280ms ease;
+}
+
+.site-header--hidden {
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(-0.75rem);
 }
 
 .site-header--scrolled {
@@ -547,6 +555,7 @@ main {
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background: var(--paper);
 	color: var(--ink);
+	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 }
 
 .contact .section-heading {
