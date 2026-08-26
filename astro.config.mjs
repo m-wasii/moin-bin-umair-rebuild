@@ -7,7 +7,7 @@ import cloudflare from "@astrojs/cloudflare";
 
 const site = process.env.SITE || process.env.CF_PAGES_URL;
 // Keystatic's local API is happier on Node. Use the Cloudflare adapter for
- // `build` / `preview` / production only (dashboard.domain.com on Workers).
+// `build` / `preview` / production only (dashboard.domain.com on Workers).
 const isDevCommand = process.argv.includes("dev");
 
 // https://astro.build/config
