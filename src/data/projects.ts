@@ -38,6 +38,7 @@ export const projects: Project[] = [
 		duration: 211,
 		thumbnail: "https://i.ytimg.com/vi/sjiSRTSbapA/maxresdefault.jpg",
 		provider: "youtube",
+		featured: true,
 	},
 	{
 		id: "H_dfdFn-jXI",
@@ -94,7 +95,6 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1845163634-895d5a0e006df08fefa4d667f13df3ff658f031f0840f9eaf709f43168ab98bf-d_1280x720?region=us",
 		description:
 			"A polished commercial cut for Mr Spex, built around clean product beats and a confident visual rhythm.",
-		featured: true,
 	},
 	{
 		id: "898735203",
