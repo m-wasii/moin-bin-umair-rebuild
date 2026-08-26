@@ -436,6 +436,7 @@ navIndicator?.addEventListener("transitionend", (event) => {
 
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
 window.addEventListener("resize", () => {
+	measureLinkMetrics();
 	queueScrollChromeUpdate();
 	queueNavIndicatorUpdate();
 });
