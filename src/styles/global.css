@@ -654,7 +654,7 @@ html.video-open {
 		90rem,
 		calc(
 			(100svh - (var(--video-dialog-inset) * 2) - var(--video-dialog-chrome)) *
-				16 / 9 + var(--video-about-width)
+				16 / 9
 		)
 	);
 	max-width: 100%;
@@ -665,6 +665,17 @@ html.video-open {
 	background: var(--ink-soft);
 	box-shadow: 0 2rem 8rem rgba(0, 0, 0, 0.5);
 	color: var(--paper);
+}
+
+.video-dialog__panel:has(.video-dialog__body--about-open) {
+	width: min(
+		94vw,
+		90rem,
+		calc(
+			(100svh - (var(--video-dialog-inset) * 2) - var(--video-dialog-chrome)) *
+				16 / 9 + var(--video-about-width)
+		)
+	);
 }
 
 .video-dialog__header {
