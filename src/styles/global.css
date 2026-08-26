@@ -195,12 +195,12 @@ main {
 	transition: color 180ms ease;
 }
 
-.lang-switch__option:hover,
-.lang-switch__option.is-active {
+.lang-switch__option:hover {
 	color: var(--paper);
 }
 
 .lang-switch__option.is-active {
+	color: var(--tungsten);
 	pointer-events: none;
 }
 
