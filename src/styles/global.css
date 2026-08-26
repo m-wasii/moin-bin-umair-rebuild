@@ -429,31 +429,6 @@ main {
 	pointer-events: none;
 }
 
-.hero__content {
-	position: relative;
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	justify-content: flex-end;
-	gap: clamp(1.5rem, 4vw, 3rem);
-	width: 100%;
-}
-
-.hero__title {
-	margin: 0;
-	max-width: 14ch;
-	color: var(--peach);
-	font-family: var(--font-display);
-	font-size: clamp(3.2rem, 9.5vw, 8.5rem);
-	font-weight: 700;
-	line-height: 0.95;
-	letter-spacing: -0.02em;
-	text-wrap: balance;
-	opacity: 0;
-	transform: translateY(1.1rem);
-	animation: hero-rise 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
-}
-
 .hero__footer {
 	position: relative;
 	display: flex;
@@ -461,11 +436,12 @@ main {
 	justify-content: space-between;
 	gap: 2rem;
 	width: 100%;
+	margin-top: auto;
 	padding-top: 1.15rem;
 	border-top: 2px solid var(--line);
 	opacity: 0;
 	transform: translateY(0.85rem);
-	animation: hero-rise 800ms cubic-bezier(0.22, 1, 0.36, 1) 280ms forwards;
+	animation: hero-rise 800ms cubic-bezier(0.22, 1, 0.36, 1) 160ms forwards;
 }
 
 .hero__tagline {
@@ -619,9 +595,7 @@ main {
 		rgba(10, 8, 6, 0.04) 30%,
 		rgba(10, 8, 6, 0.82) 100%
 	);
-	transition:
-		opacity 400ms ease,
-		background 400ms ease;
+	pointer-events: none;
 }
 
 .project-card__play {
@@ -1214,11 +1188,6 @@ html.video-open {
 
 	.hero {
 		padding-bottom: 1rem;
-	}
-
-	.hero__title {
-		font-size: clamp(2.8rem, 14vw, 4.6rem);
-		max-width: 12ch;
 	}
 
 	.hero__media video {
