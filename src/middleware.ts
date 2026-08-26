@@ -1,5 +1,13 @@
 import { defineMiddleware } from "astro:middleware";
 
+function isPreviewHost(host: string) {
+	const normalized = host.split(":")[0]?.toLowerCase() ?? "";
+	return (
+		normalized.endsWith(".workers.dev") ||
+		normalized.endsWith(".pages.dev")
+	);
+}
+
 function isDashboardHost(host: string) {
 	const normalized = host.split(":")[0]?.toLowerCase() ?? "";
 	return (
@@ -56,8 +64,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	// In production, keep the CMS on the dashboard host only.
-	// Locally, /keystatic stays on localhost for easier editing.
-	if (!import.meta.env.DEV && !onDashboard && keystaticPath) {
+	// Locally and on *.workers.dev / *.pages.dev previews, /keystatic stays on-host.
+	if (
+		!import.meta.env.DEV &&
+		!onDashboard &&
+		!isPreviewHost(host) &&
+		keystaticPath
+	) {
 		const target = new URL(
 			`${url.pathname}${url.search}`,
 			`${dashboardOrigin(url)}/`,
