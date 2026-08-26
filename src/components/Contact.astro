@@ -22,8 +22,18 @@ const year = new Date().getFullYear();
 	</header>
 
 	<div class="contact__actions" data-reveal>
-		<a class="text-link" href={site.vimeoUrl} target="_blank" rel="noreferrer">
-			<span>Visit Vimeo</span>
+		<p class="contact__location">{site.location}</p>
+		<a class="text-link" href={`mailto:${site.email}`}>
+			<span>Email</span>
+			<span aria-hidden="true">↗</span>
+		</a>
+		<a
+			class="text-link"
+			href={site.instagramUrl}
+			target="_blank"
+			rel="noreferrer"
+		>
+			<span>Instagram</span>
 			<span aria-hidden="true">↗</span>
 		</a>
 	</div>
