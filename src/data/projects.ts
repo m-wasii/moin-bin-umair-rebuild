@@ -1,4 +1,4 @@
-export type ProjectCategory = "commercial" | "art";
+export type ProjectCategory = "commercial" | "art" | "shorts";
 
 export interface Project {
 	id: string;
@@ -104,15 +104,6 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1796935574-0d2223e1e7bdccb1edd18ce47ceb40de4da5b42e29e9c06a71b0255023d9c55d-d_1280x720?region=us",
 	},
 	{
-		id: "911714914",
-		title: "Paris",
-		category: "art",
-		year: 2024,
-		duration: 66,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
-	},
-	{
 		id: "887016435",
 		title: "By Chance",
 		category: "art",
@@ -131,9 +122,19 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1757343482-5464f77343fc77bbd0f692b50b986b0986663852d6085244208b1b56fff35438-d_1280x720?region=us",
 	},
 	{
+		id: "911714914",
+		title: "Paris",
+		category: "shorts",
+		year: 2024,
+		duration: 66,
+		thumbnail:
+			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
+		featured: true,
+	},
+	{
 		id: "857425108",
 		title: "Memory",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 219,
 		thumbnail:
@@ -142,7 +143,7 @@ export const projects: Project[] = [
 	{
 		id: "857404107",
 		title: "A Chance",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 267,
 		thumbnail:
@@ -151,7 +152,7 @@ export const projects: Project[] = [
 	{
 		id: "854083915",
 		title: "Plate of Rice",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 300,
 		thumbnail:
@@ -160,7 +161,7 @@ export const projects: Project[] = [
 	{
 		id: "854082701",
 		title: "Writer's Block",
-		category: "art",
+		category: "shorts",
 		year: 2023,
 		duration: 283,
 		thumbnail:
@@ -174,6 +175,10 @@ export const commercialProjects = projects.filter(
 
 export const artProjects = projects.filter(
 	(project) => project.category === "art",
+);
+
+export const shortsProjects = projects.filter(
+	(project) => project.category === "shorts",
 );
 
 export function formatDuration(duration: number) {
