@@ -826,10 +826,10 @@ main {
 	max-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background:
-		radial-gradient(ellipse 80% 55% at 85% 15%, rgba(245, 158, 11, 0.14), transparent 55%),
-		var(--ink);
-	color: var(--peach);
-	border-top: 2px solid var(--line);
+		radial-gradient(ellipse 70% 50% at 90% 10%, rgba(245, 158, 11, 0.22), transparent 55%),
+		var(--peach);
+	color: var(--ink);
+	border-top: 2px solid rgba(5, 4, 3, 0.14);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 	overflow: hidden;
 }
@@ -840,12 +840,12 @@ main {
 }
 
 .section-heading--contact .section-heading__meta {
-	border-color: var(--line);
+	border-color: rgba(5, 4, 3, 0.18);
 }
 
 .section-heading--contact .section-heading__meta p,
 .section-heading--contact .section-heading__description {
-	color: var(--muted);
+	color: rgba(5, 4, 3, 0.58);
 }
 
 .section-heading--contact h2 {
@@ -853,7 +853,7 @@ main {
 	font-weight: 700;
 	line-height: 0.94;
 	text-transform: none;
-	color: var(--peach);
+	color: var(--ink);
 }
 
 .contact__actions {
@@ -873,18 +873,18 @@ main {
 	font-size: 0.95rem;
 	font-weight: 600;
 	text-transform: uppercase;
-	color: var(--muted);
+	color: rgba(5, 4, 3, 0.58);
 }
 
-.text-link {
+.contact .text-link {
 	display: flex;
 	width: min(100%, 24rem);
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 0.9rem 0;
-	border-bottom: 2px solid var(--amber);
-	color: var(--amber);
+	border-bottom: 2px solid var(--amber-deep);
+	color: var(--amber-deep);
 	font-family: var(--font-sans);
 	font-size: 0.95rem;
 	font-weight: 600;
@@ -894,38 +894,38 @@ main {
 		border-color 180ms ease;
 }
 
-.text-link:hover {
-	color: var(--orange);
-	border-color: var(--orange);
+.contact .text-link:hover {
+	color: var(--orange-deep);
+	border-color: var(--orange-deep);
 }
 
-.text-link span:last-child {
+.contact .text-link span:last-child {
 	transition: transform 180ms ease;
 }
 
-.text-link:hover span:last-child {
+.contact .text-link:hover span:last-child {
 	transform: translate(3px, -3px);
 }
 
-.site-footer {
+.contact .site-footer {
 	display: grid;
 	flex: 0 0 auto;
 	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
-	border-top: 2px solid var(--line);
+	border-top: 2px solid rgba(5, 4, 3, 0.18);
 	font-family: var(--font-sans);
 	font-size: 0.875rem;
 	font-weight: 600;
 	text-transform: uppercase;
-	color: var(--muted);
+	color: rgba(5, 4, 3, 0.58);
 }
 
-.site-footer a:hover {
-	color: var(--amber);
+.contact .site-footer a:hover {
+	color: var(--amber-deep);
 }
 
-.site-footer p {
+.contact .site-footer p {
 	margin: 0;
 }
 
