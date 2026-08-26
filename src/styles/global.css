@@ -78,6 +78,12 @@ button {
 	color: var(--ink);
 }
 
+.contact::selection,
+.contact ::selection {
+	background-color: var(--ink);
+	color: var(--paper);
+}
+
 .sr-only {
 	position: absolute;
 	width: 1px;
