@@ -24,15 +24,44 @@ npm run preview
 
 ## Content
 
-- Edit project titles, categories, durations, descriptions, and Vimeo IDs in
-  `src/data/projects.ts`.
-- Edit portfolio metadata and the Vimeo profile in `src/data/site.ts`.
-- Replace `public/media/hero-loop.mp4` and
-  `public/media/hero-poster.webp` when the final showreel is available.
+Portfolio films are listed in `src/data/catalog.json`. That is the only file the
+client needs to edit to add or reorder work.
 
-Projects are grouped into Commercial, Art & Films, and Shorts (vertical
-9:16 videos) in `src/data/projects.ts`. Add vertical shorts with
-`category: "shorts"`. That split is easy to revise as the gallery grows.
+### Add a video
+
+1. Upload to Vimeo (public on `moonshine123`) or copy a YouTube link.
+2. Append an entry to `src/data/catalog.json`:
+
+```json
+{
+  "url": "https://vimeo.com/123456789",
+  "category": "commercial"
+}
+```
+
+Categories: `commercial`, `art`, or `shorts` (vertical 9:16).
+
+Optional fields: `title`, `description`, `featured`, `year`, `duration`,
+`thumbnail`.
+
+- **Vimeo:** title, year, duration, and thumbnail are filled automatically.
+- **YouTube:** title and thumbnail are filled automatically; set `year` and
+  `duration` (seconds) in the catalog, or add a repo secret `YOUTUBE_API_KEY`
+  so the sync can read duration from the YouTube Data API.
+
+3. Run the sync (or push the catalog change and let GitHub Actions do it):
+
+```sh
+npm run sync:videos
+```
+
+This refreshes `src/data/projects.generated.json`. Commit both files. A weekly
+workflow also re-syncs Vimeo metadata.
+
+Site name and Vimeo profile: `src/data/site.ts`.  
+Hero reel: replace `public/media/hero-loop.mp4` and `public/media/hero-poster.webp`.  
+German about-copy for projects: `src/i18n/project-descriptions.ts`.
+
 
 ## Structure
 

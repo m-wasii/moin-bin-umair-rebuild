@@ -1,0 +1,43 @@
+name: Sync videos
+
+on:
+  schedule:
+    # Refresh Vimeo metadata weekly (Monday 06:00 UTC)
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/data/catalog.json"
+      - "scripts/sync-videos.mjs"
+      - ".github/workflows/sync-videos.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+
+      - name: Sync catalog → projects
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: npm run sync:videos
+
+      - name: Commit updated projects
+        run: |
+          if git diff --quiet -- src/data/projects.generated.json; then
+            echo "No project changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/projects.generated.json
+          git commit -m "chore: sync portfolio videos from catalog"
+          git push

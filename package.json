@@ -14,7 +14,8 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"preview": "astro preview",
-		"astro": "astro"
+		"astro": "astro",
+		"sync:videos": "node scripts/sync-videos.mjs"
 	},
 	"dependencies": {
 		"astro": "^7.2.4"
