@@ -86,15 +86,6 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1946128345-fdb1fdfe2c2de2548e573908a35e8f4fb9a895fe9848ee15eaa406cf10e280c0-d_1280x720?region=us",
 	},
 	{
-		id: "973619906",
-		title: "Islamabad",
-		category: "art",
-		year: 2024,
-		duration: 330,
-		thumbnail:
-			"https://i.vimeocdn.com/video/1887801527-1640e6d958ceeb350816514629484968a25f3ea92e88b6bdfb7f644c5e3f1790-d_1280x720?region=us",
-	},
-	{
 		id: "911992966",
 		title: "By Chance — Trailer",
 		category: "art",
@@ -113,13 +104,14 @@ export const projects: Project[] = [
 			"https://i.vimeocdn.com/video/1757351682-2af4bf2bc0a88470c35a8c7b5bf3ebf9771ca56818e2cfa99a571cf98dd9ab91-d_1280x720?region=us",
 	},
 	{
-		id: "887014384",
-		title: "Blackmail",
-		category: "art",
-		year: 2023,
-		duration: 380,
+		id: "973619906",
+		title: "Islamabad",
+		category: "shorts",
+		year: 2024,
+		duration: 330,
 		thumbnail:
-			"https://i.vimeocdn.com/video/1757343482-5464f77343fc77bbd0f692b50b986b0986663852d6085244208b1b56fff35438-d_1280x720?region=us",
+			"https://i.vimeocdn.com/video/1887801527-1640e6d958ceeb350816514629484968a25f3ea92e88b6bdfb7f644c5e3f1790-d_1280x720?region=us",
+		featured: true,
 	},
 	{
 		id: "911714914",
@@ -129,7 +121,15 @@ export const projects: Project[] = [
 		duration: 66,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
-		featured: true,
+	},
+	{
+		id: "887014384",
+		title: "Blackmail",
+		category: "shorts",
+		year: 2023,
+		duration: 380,
+		thumbnail:
+			"https://i.vimeocdn.com/video/1757343482-5464f77343fc77bbd0f692b50b986b0986663852d6085244208b1b56fff35438-d_1280x720?region=us",
 	},
 	{
 		id: "857425108",
