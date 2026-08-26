@@ -460,14 +460,32 @@ const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
 const videoBackdrop = document.querySelector<HTMLElement>("[data-video-backdrop]");
 const videoClose = document.querySelector<HTMLButtonElement>("[data-video-close]");
 const videoPlayer = document.querySelector<HTMLElement>("[data-video-player]");
+const videoBody = document.querySelector<HTMLElement>("[data-video-body]");
 const videoTitle = document.querySelector<HTMLElement>(
 	"[data-video-dialog-title]",
+);
+const videoDescription = document.querySelector<HTMLElement>(
+	"[data-video-description]",
+);
+const aboutToggle = document.querySelector<HTMLButtonElement>(
+	"[data-video-about-toggle]",
+);
+const aboutPanel = document.querySelector<HTMLElement>(
+	"[data-video-about-panel]",
 );
 const externalLink = document.querySelector<HTMLAnchorElement>(
 	"[data-video-external]",
 );
 let previousFocus: HTMLElement | null = null;
 let lockedScrollY = 0;
+let aboutPanelOpen = true;
+
+function setAboutPanelOpen(open: boolean) {
+	aboutPanelOpen = open;
+	videoBody?.classList.toggle("video-dialog__body--about-open", open);
+	aboutToggle?.setAttribute("aria-expanded", open ? "true" : "false");
+	if (aboutPanel) aboutPanel.hidden = !open;
+}
 
 function lockDocumentScroll() {
 	lockedScrollY = window.scrollY;
@@ -502,6 +520,7 @@ function closeVideoDialog() {
 	if (!isVideoOpen()) return;
 
 	videoPlayer?.replaceChildren();
+	if (videoDescription) videoDescription.textContent = "";
 	if (videoDialog) videoDialog.hidden = true;
 	unlockDocumentScroll();
 	previousFocus?.focus({ preventScroll: true });
@@ -537,6 +556,7 @@ document.addEventListener("click", (event) => {
 
 	const videoId = link.dataset.videoId;
 	const title = link.dataset.videoTitle ?? "Project film";
+	const description = link.dataset.videoDescription?.trim() ?? "";
 	if (!videoId) return;
 
 	event.preventDefault();
@@ -550,9 +570,19 @@ document.addEventListener("click", (event) => {
 	iframe.allowFullscreen = true;
 
 	videoTitle?.replaceChildren(document.createTextNode(title));
+	if (videoDescription) {
+		videoDescription.textContent =
+			description || "No description available for this film yet.";
+	}
 	if (externalLink) externalLink.href = `https://vimeo.com/${videoId}`;
+	if (aboutToggle) aboutToggle.hidden = !description;
+	setAboutPanelOpen(Boolean(description));
 	videoPlayer.replaceChildren(iframe);
 	openVideoOverlay();
+});
+
+aboutToggle?.addEventListener("click", () => {
+	setAboutPanelOpen(!aboutPanelOpen);
 });
 
 videoClose?.addEventListener("click", closeVideoDialog);

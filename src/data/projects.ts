@@ -7,6 +7,7 @@ export interface Project {
 	year: number;
 	duration: number;
 	thumbnail: string;
+	description: string;
 	featured?: boolean;
 }
 
@@ -19,6 +20,8 @@ export const projects: Project[] = [
 		duration: 46,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1845163634-895d5a0e006df08fefa4d667f13df3ff658f031f0840f9eaf709f43168ab98bf-d_1280x720?region=us",
+		description:
+			"A polished commercial cut for Mr Spex, built around clean product beats and a confident visual rhythm.",
 		featured: true,
 	},
 	{
@@ -29,6 +32,8 @@ export const projects: Project[] = [
 		duration: 79,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1775724249-ab8493333fbcd720f4127ef33f3b0e01acff434f1590f8f4a379d8e22f6af84d-d_1280x720?region=us",
+		description:
+			"A behind-the-scenes look at The Hook, capturing the energy of set, crew, and the craft behind the final film.",
 	},
 	{
 		id: "887931494",
@@ -38,6 +43,8 @@ export const projects: Project[] = [
 		duration: 55,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1758709820-aabb923eb02a5de1d3b8516d2e3a0fa282b128984fd9dc36e12c10021086027f-d_1280x720?region=us",
+		description:
+			"A short commercial piece for Helpers A.D, focused on warm characters and a clear, persuasive narrative arc.",
 	},
 	{
 		id: "887931489",
@@ -47,6 +54,8 @@ export const projects: Project[] = [
 		duration: 16,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1758709347-41bbce800f5d43b24d278300a09fb1f67e7180782aedb873a82e3d476871fab4-d_1280x720?region=us",
+		description:
+			"A brief, high-tempo spot for Dresscode A.D., designed to land style and attitude in under twenty seconds.",
 	},
 	{
 		id: "838576202",
@@ -56,6 +65,8 @@ export const projects: Project[] = [
 		duration: 203,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1687596871-28bf77650fa98913d58a39f5826756fc15e403d2bf89a869bf412ba9c9a297f3-d_1280x720?region=us",
+		description:
+			"A longer-form commercial film that centers everyday farming life with grounded storytelling and cinematic scale.",
 	},
 	{
 		id: "898735413",
@@ -65,6 +76,8 @@ export const projects: Project[] = [
 		duration: 652,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1775725392-344c18ebccaaf32c9fb7760d65e20250de731b7b2fcb18855506372c096a7c49-d_1280x720?region=us",
+		description:
+			"A meditative short film about unspoken emotion, paced with quiet imagery and a lingering sense of atmosphere.",
 		featured: true,
 	},
 	{
@@ -75,6 +88,8 @@ export const projects: Project[] = [
 		duration: 724,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1946129668-289e7a07b9b93a96d757a66b06c445692574cef623453229f3f9bd2126ab0215-d_1280x720?region=us",
+		description:
+			"An art film exploring illusion and performance, where what is shown and what is withheld keep shifting places.",
 	},
 	{
 		id: "1026358790",
@@ -84,6 +99,8 @@ export const projects: Project[] = [
 		duration: 48,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1946128345-fdb1fdfe2c2de2548e573908a35e8f4fb9a895fe9848ee15eaa406cf10e280c0-d_1280x720?region=us",
+		description:
+			"A compact trailer that teases the tone and visual language of Smoke and Mirrors.",
 	},
 	{
 		id: "973619906",
@@ -93,6 +110,8 @@ export const projects: Project[] = [
 		duration: 330,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1887801527-1640e6d958ceeb350816514629484968a25f3ea92e88b6bdfb7f644c5e3f1790-d_1280x720?region=us",
+		description:
+			"A city portrait of Islamabad told through texture, light, and the quieter rhythms of place.",
 	},
 	{
 		id: "911992966",
@@ -102,6 +121,8 @@ export const projects: Project[] = [
 		duration: 57,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1796935574-0d2223e1e7bdccb1edd18ce47ceb40de4da5b42e29e9c06a71b0255023d9c55d-d_1280x720?region=us",
+		description:
+			"A short trailer for By Chance, introducing the film’s sense of coincidence and emotional drift.",
 	},
 	{
 		id: "911714914",
@@ -111,6 +132,8 @@ export const projects: Project[] = [
 		duration: 66,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1796379990-75d6fc9f0d283fd5a07aa6f4990514ef11a4da87055263dcd7102e31ffccfc31-d_1280x720?region=us",
+		description:
+			"A brief visual essay from Paris, attentive to mood, movement, and the city’s fleeting details.",
 	},
 	{
 		id: "887016435",
@@ -120,6 +143,8 @@ export const projects: Project[] = [
 		duration: 820,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1757351682-2af4bf2bc0a88470c35a8c7b5bf3ebf9771ca56818e2cfa99a571cf98dd9ab91-d_1280x720?region=us",
+		description:
+			"A feature-length short about chance encounters and the fragile turns that redirect a life.",
 	},
 	{
 		id: "887014384",
@@ -129,6 +154,8 @@ export const projects: Project[] = [
 		duration: 380,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1757343482-5464f77343fc77bbd0f692b50b986b0986663852d6085244208b1b56fff35438-d_1280x720?region=us",
+		description:
+			"A tense narrative short where pressure, secrecy, and moral compromise tighten frame by frame.",
 	},
 	{
 		id: "857425108",
@@ -138,6 +165,8 @@ export const projects: Project[] = [
 		duration: 219,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1714541062-8f12aca81855d950ad336e8d6c75b93adee558daf865540b6067eadfd5307a96-d_1280x720?region=us",
+		description:
+			"A reflective piece on recollection and loss, shaped by soft imagery and an intimate pace.",
 	},
 	{
 		id: "857404107",
@@ -147,6 +176,8 @@ export const projects: Project[] = [
 		duration: 267,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1714515349-df080ce7cc04deffcd3e76be72537e03534dd5456708f5bf794cc1ca1031c138-d_1280x720?region=us",
+		description:
+			"A character-driven short about one opening — and what it costs to take it.",
 	},
 	{
 		id: "854083915",
@@ -156,6 +187,8 @@ export const projects: Project[] = [
 		duration: 300,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1709891417-28720745fdb8b2e41fdc29a6828ef7de7151ffeeed662288a9f2388d647d693a-d_1280x720?region=us",
+		description:
+			"An intimate film built around a simple meal, using small gestures to reveal a larger emotional world.",
 	},
 	{
 		id: "854082701",
@@ -165,6 +198,8 @@ export const projects: Project[] = [
 		duration: 283,
 		thumbnail:
 			"https://i.vimeocdn.com/video/1709889113-3fdb4cf5c5a76f0e4551abde7c8ecc4b5c48577b2acf2331d529c34bb942a98e-d_1280x720?region=us",
+		description:
+			"A portrait of creative paralysis, tracing the restless loop between blank page and restless mind.",
 	},
 ];
 
