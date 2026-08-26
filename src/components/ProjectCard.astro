@@ -6,15 +6,20 @@ import {
 	projectProvider,
 	projectWatchUrl,
 } from "../data/projects";
+import { localizedProjectDescription } from "../i18n/project-descriptions";
+import { useTranslations, type Lang } from "../i18n/ui";
 
 interface Props {
 	project: Project;
+	lang: Lang;
 }
 
-const { project } = Astro.props;
+const { project, lang } = Astro.props;
+const t = useTranslations(lang);
 const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
 const isVertical = project.category === "shorts";
+const description = localizedProjectDescription(project, lang);
 ---
 
 <article
@@ -35,14 +40,14 @@ const isVertical = project.category === "shorts";
 		data-video-id={project.id}
 		data-video-provider={projectProvider(project)}
 		data-video-title={project.title}
-		data-video-description={project.description ?? ""}
+		data-video-description={description}
 		data-video-orientation={isVertical ? "portrait" : "landscape"}
-		aria-label={`Play ${project.title} on ${hostLabel}`}
+		aria-label={t("card.playAria", { title: project.title, host: hostLabel })}
 	>
 		<figure class="project-card__frame">
 			<img
 				src={project.thumbnail}
-				alt={`Still from ${project.title}`}
+				alt={t("card.stillAlt", { title: project.title })}
 				width={isVertical ? 1080 : 1280}
 				height={isVertical ? 1920 : 720}
 				loading="lazy"
@@ -54,7 +59,7 @@ const isVertical = project.category === "shorts";
 				<svg viewBox="0 0 24 24">
 					<path d="m9 7 8 5-8 5V7Z"></path>
 				</svg>
-				<span>Play</span>
+				<span>{t("card.play")}</span>
 			</span>
 			<figcaption class="project-card__meta">
 				<h3>{project.title}</h3>

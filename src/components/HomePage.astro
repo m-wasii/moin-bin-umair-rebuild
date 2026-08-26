@@ -1,0 +1,60 @@
+---
+import Contact from "./Contact.astro";
+import Hero from "./Hero.astro";
+import SiteHeader from "./SiteHeader.astro";
+import VideoDialog from "./VideoDialog.astro";
+import WorkSection from "./WorkSection.astro";
+import {
+	artProjects,
+	commercialProjects,
+	shortsProjects,
+} from "../data/projects";
+import { useTranslations, type Lang } from "../i18n/ui";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang}>
+	<SiteHeader lang={lang} />
+
+	<main id="main-content">
+		<Hero lang={lang} />
+
+		<WorkSection
+			id="commercial"
+			number="01"
+			title={t("section.commercial.title")}
+			description={t("section.commercial.description")}
+			projects={commercialProjects}
+			lang={lang}
+		/>
+
+		<WorkSection
+			id="art"
+			number="02"
+			title={t("section.art.title")}
+			description={t("section.art.description")}
+			projects={artProjects}
+			lang={lang}
+		/>
+
+		<WorkSection
+			id="shorts"
+			number="03"
+			title={t("section.shorts.title")}
+			description={t("section.shorts.description")}
+			projects={shortsProjects}
+			lang={lang}
+		/>
+
+		<Contact lang={lang} />
+	</main>
+
+	<VideoDialog lang={lang} />
+</BaseLayout>

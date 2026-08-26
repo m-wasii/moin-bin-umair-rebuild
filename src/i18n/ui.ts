@@ -1,0 +1,152 @@
+export const locales = ["en", "de"] as const;
+
+export type Lang = (typeof locales)[number];
+
+export const defaultLang: Lang = "en";
+
+export const PREFERRED_LANG_KEY = "preferred-lang";
+
+const ui = {
+	en: {
+		"meta.title": "Moin Bin Umair — Filmmaker",
+		"meta.description":
+			"Commercial work, short films, and visual stories by filmmaker Moin Bin Umair.",
+		"meta.jobTitle": "Filmmaker",
+		"a11y.skip": "Skip to selected work",
+		"a11y.home": "home",
+		"a11y.navToggle": "Toggle navigation",
+		"a11y.primaryNav": "Primary navigation",
+		"a11y.langSwitch": "Language",
+		"nav.home": "Home",
+		"nav.commercial": "Commercial",
+		"nav.art": "Art & Films",
+		"nav.shorts": "Shorts",
+		"nav.contact": "Contact",
+		"hero.tagline": "Filmmaker · Visual storyteller",
+		"hero.explore": "Explore the work",
+		"section.commercial.title": "Commercial",
+		"section.commercial.description":
+			"Brand films, campaigns, and behind-the-scenes projects.",
+		"section.art.title": "Art & Films",
+		"section.art.description":
+			"Narrative films, trailers, and personal work.",
+		"section.shorts.title": "Shorts",
+		"section.shorts.description": "Vertical short-form videos.",
+		"section.meta.vertical": "Vertical",
+		"section.meta.project": "project",
+		"section.meta.projects": "projects",
+		"section.shorts.empty": "Vertical shorts will appear here.",
+		"contact.meta": "Enquiries",
+		"contact.titleHtml":
+			"Let’s make<br />something<br />worth<br />watching.",
+		"contact.description":
+			"Commercial films, narrative projects, and creative collaborations.",
+		"contact.email": "Email",
+		"contact.instagram": "Instagram",
+		"contact.backToTop": "Back to top ↑",
+		"card.play": "Play",
+		"card.playAria": "Play {title} on {host}",
+		"card.stillAlt": "Still from {title}",
+		"dialog.projectFilm": "Project film",
+		"dialog.about": "About",
+		"dialog.close": "Close",
+		"dialog.aboutLabel": "About this film",
+		"dialog.openVimeo": "Open on Vimeo",
+		"dialog.openYoutube": "Open on YouTube",
+		"dialog.noDescription": "No description available for this film yet.",
+		"lang.en": "EN",
+		"lang.de": "DE",
+	},
+	de: {
+		"meta.title": "Moin Bin Umair — Filmemacher",
+		"meta.description":
+			"Werbefilme, Kurzfilme und visuelle Geschichten von Filmemacher Moin Bin Umair.",
+		"meta.jobTitle": "Filmemacher",
+		"a11y.skip": "Zur ausgewählten Arbeit springen",
+		"a11y.home": "Start",
+		"a11y.navToggle": "Navigation umschalten",
+		"a11y.primaryNav": "Hauptnavigation",
+		"a11y.langSwitch": "Sprache",
+		"nav.home": "Home",
+		"nav.commercial": "Werbung",
+		"nav.art": "Kunst & Filme",
+		"nav.shorts": "Shorts",
+		"nav.contact": "Kontakt",
+		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
+		"hero.explore": "Arbeit entdecken",
+		"section.commercial.title": "Werbung",
+		"section.commercial.description":
+			"Markenfilme, Kampagnen und Behind-the-Scenes-Projekte.",
+		"section.art.title": "Kunst & Filme",
+		"section.art.description":
+			"Spielfilme, Trailer und persönliche Arbeiten.",
+		"section.shorts.title": "Shorts",
+		"section.shorts.description": "Vertikale Kurzvideos.",
+		"section.meta.vertical": "Vertikal",
+		"section.meta.project": "Projekt",
+		"section.meta.projects": "Projekte",
+		"section.shorts.empty": "Vertikale Shorts erscheinen hier.",
+		"contact.meta": "Anfragen",
+		"contact.titleHtml":
+			"Lass uns<br />etwas machen,<br />das man<br />sehen will.",
+		"contact.description":
+			"Werbefilme, narrative Projekte und kreative Zusammenarbeiten.",
+		"contact.email": "E-Mail",
+		"contact.instagram": "Instagram",
+		"contact.backToTop": "Nach oben ↑",
+		"card.play": "Abspielen",
+		"card.playAria": "{title} auf {host} abspielen",
+		"card.stillAlt": "Standbild aus {title}",
+		"dialog.projectFilm": "Projektfilm",
+		"dialog.about": "Über",
+		"dialog.close": "Schließen",
+		"dialog.aboutLabel": "Über diesen Film",
+		"dialog.openVimeo": "Auf Vimeo öffnen",
+		"dialog.openYoutube": "Auf YouTube öffnen",
+		"dialog.noDescription":
+			"Für diesen Film liegt noch keine Beschreibung vor.",
+		"lang.en": "EN",
+		"lang.de": "DE",
+	},
+} as const;
+
+export type UiKey = keyof (typeof ui)["en"];
+
+export function isLang(value: string): value is Lang {
+	return locales.includes(value as Lang);
+}
+
+export function getLangFromUrl(url: URL): Lang {
+	const [, maybeLocale] = url.pathname.split("/");
+	if (maybeLocale && isLang(maybeLocale)) {
+		return maybeLocale;
+	}
+	return defaultLang;
+}
+
+export function useTranslations(lang: Lang) {
+	return function t(key: UiKey, vars?: Record<string, string | number>) {
+		let value: string = ui[lang][key] ?? ui[defaultLang][key];
+		if (vars) {
+			for (const [name, replacement] of Object.entries(vars)) {
+				value = value.replaceAll(`{${name}}`, String(replacement));
+			}
+		}
+		return value;
+	};
+}
+
+export function localizedHomePath(lang: Lang) {
+	return lang === defaultLang ? "/" : `/${lang}/`;
+}
+
+export function getNavigation(lang: Lang) {
+	const t = useTranslations(lang);
+	return [
+		{ label: t("nav.home"), href: "#home" },
+		{ label: t("nav.commercial"), href: "#commercial" },
+		{ label: t("nav.art"), href: "#art" },
+		{ label: t("nav.shorts"), href: "#shorts" },
+		{ label: t("nav.contact"), href: "#contact" },
+	] as const;
+}

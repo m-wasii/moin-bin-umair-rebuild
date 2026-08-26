@@ -1,15 +1,32 @@
 ---
 import "../styles/global.css";
 import { site } from "../data/site";
+import {
+	defaultLang,
+	localizedHomePath,
+	PREFERRED_LANG_KEY,
+	useTranslations,
+	type Lang,
+} from "../i18n/ui";
 
 interface Props {
-	title?: string;
-	description?: string;
+	lang?: Lang;
 }
 
-const { title = site.title, description = site.description } = Astro.props;
+const { lang = defaultLang } = Astro.props;
+const t = useTranslations(lang);
 
-const canonicalUrl = Astro.site?.toString();
+const title = t("meta.title");
+const description = t("meta.description");
+
+const enPath = localizedHomePath("en");
+const dePath = localizedHomePath("de");
+const canonicalPath = localizedHomePath(lang);
+const canonicalUrl = Astro.site
+	? new URL(canonicalPath, Astro.site).href
+	: undefined;
+const enUrl = Astro.site ? new URL(enPath, Astro.site).href : enPath;
+const deUrl = Astro.site ? new URL(dePath, Astro.site).href : dePath;
 const ogImage = Astro.site
 	? new URL("/media/hero-poster.webp", Astro.site).href
 	: "/media/hero-poster.webp";
@@ -18,14 +35,14 @@ const structuredData = {
 	"@context": "https://schema.org",
 	"@type": "Person",
 	name: site.name,
-	jobTitle: "Filmmaker",
+	jobTitle: t("meta.jobTitle"),
 	url: canonicalUrl,
-	sameAs: [site.vimeoUrl],
+	sameAs: [site.vimeoUrl, site.instagramUrl],
 };
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta
@@ -38,9 +55,13 @@ const structuredData = {
 		<meta name="color-scheme" content="dark" />
 
 		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+		<link rel="alternate" hreflang="en" href={enUrl} />
+		<link rel="alternate" hreflang="de" href={deUrl} />
+		<link rel="alternate" hreflang="x-default" href={enUrl} />
 		<meta property="og:type" content="website" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
+		<meta property="og:locale" content={lang === "de" ? "de_DE" : "en_US"} />
 		{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
 		<meta property="og:image" content={ogImage} />
 		<meta name="twitter:card" content="summary_large_image" />
@@ -49,11 +70,52 @@ const structuredData = {
 		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
 		<link rel="preconnect" href="https://i.ytimg.com" crossorigin />
-		<link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin />
+		<link
+			rel="preconnect"
+			href="https://www.youtube-nocookie.com"
+			crossorigin
+		/>
 
 		<title>{title}</title>
-		<script is:inline>
+		<script is:inline define:vars={{ PREFERRED_LANG_KEY, enPath, dePath, lang }}>
 			document.documentElement.classList.add("js");
+			(function () {
+				try {
+					var stored = localStorage.getItem(PREFERRED_LANG_KEY);
+					var target = null;
+
+					if (stored === "en" || stored === "de") {
+						target = stored === "de" ? dePath : enPath;
+					} else {
+						var languages = navigator.languages && navigator.languages.length
+							? Array.from(navigator.languages)
+							: [navigator.language || ""];
+						var prefersDe = false;
+						for (var i = 0; i < languages.length; i++) {
+							var code = String(languages[i] || "").toLowerCase();
+							if (code.startsWith("de")) {
+								prefersDe = true;
+								break;
+							}
+							if (code.startsWith("en")) {
+								break;
+							}
+						}
+						if (prefersDe && lang !== "de") {
+							target = dePath;
+						}
+					}
+
+					if (!target) return;
+
+					var current = location.pathname;
+					if (!current.endsWith("/")) current += "/";
+					var normalizedTarget = target.endsWith("/") ? target : target + "/";
+					if (current === normalizedTarget || current === target) return;
+
+					location.replace(target + location.search + location.hash);
+				} catch (e) {}
+			})();
 		</script>
 		<script
 			type="application/ld+json"
@@ -62,7 +124,7 @@ const structuredData = {
 		/>
 	</head>
 	<body>
-		<a class="skip-link" href="#main-content">Skip to selected work</a>
+		<a class="skip-link" href="#main-content">{t("a11y.skip")}</a>
 		<slot />
 		<script src="../scripts/site.ts"></script>
 	</body>

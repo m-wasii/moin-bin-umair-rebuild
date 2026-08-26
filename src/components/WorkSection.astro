@@ -1,5 +1,6 @@
 ---
 import type { Project } from "../data/projects";
+import { useTranslations, type Lang } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
 interface Props {
@@ -8,9 +9,20 @@ interface Props {
 	title: string;
 	description: string;
 	projects: Project[];
+	lang: Lang;
 }
 
-const { id, number, title, description, projects } = Astro.props;
+const { id, number, title, description, projects, lang } = Astro.props;
+const t = useTranslations(lang);
+
+const metaLabel =
+	projects.length === 0
+		? t("section.meta.vertical")
+		: `${projects.length} ${
+				projects.length === 1
+					? t("section.meta.project")
+					: t("section.meta.projects")
+			}`;
 ---
 
 <section
@@ -22,13 +34,7 @@ const { id, number, title, description, projects } = Astro.props;
 	<header class="section-heading" data-reveal>
 		<div class="section-heading__meta">
 			<p>{number}</p>
-			<p>
-				{
-					projects.length === 0
-						? "Vertical"
-						: `${projects.length} ${projects.length === 1 ? "project" : "projects"}`
-				}
-			</p>
+			<p>{metaLabel}</p>
 		</div>
 		<h2 id={`${id}-title`}>{title}</h2>
 		<p class="section-heading__description">{description}</p>
@@ -38,12 +44,12 @@ const { id, number, title, description, projects } = Astro.props;
 		projects.length > 0 ? (
 			<div class="project-grid">
 				{projects.map((project) => (
-					<ProjectCard project={project} />
+					<ProjectCard project={project} lang={lang} />
 				))}
 			</div>
 		) : (
 			<p class="work-section__empty" data-reveal>
-				Vertical shorts will appear here.
+				{t("section.shorts.empty")}
 			</p>
 		)
 	}

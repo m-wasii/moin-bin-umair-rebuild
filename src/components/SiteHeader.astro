@@ -1,43 +1,116 @@
 ---
-import { navigation, site } from "../data/site";
+import { site } from "../data/site";
+import {
+	getNavigation,
+	localizedHomePath,
+	PREFERRED_LANG_KEY,
+	useTranslations,
+	type Lang,
+} from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const navigation = getNavigation(lang);
+const enHref = localizedHomePath("en");
+const deHref = localizedHomePath("de");
 ---
 
 <header class="site-header" data-header>
-	<a class="site-brand" href="#home" aria-label={`${site.name}, home`}>
+	<a
+		class="site-brand"
+		href="#home"
+		aria-label={`${site.name}, ${t("a11y.home")}`}
+	>
 		<span class="site-brand__name">{site.name}</span>
 	</a>
 
-	<button
-		class="nav-toggle"
-		type="button"
-		aria-expanded="false"
-		aria-controls="primary-navigation"
-		data-nav-toggle
-	>
-		<span class="sr-only">Toggle navigation</span>
-		<span aria-hidden="true"></span>
-		<span aria-hidden="true"></span>
-	</button>
+	<div class="site-header__end">
+		<nav
+			class="lang-switch"
+			aria-label={t("a11y.langSwitch")}
+			data-lang-switch
+		>
+			<a
+				class:list={["lang-switch__option", { "is-active": lang === "en" }]}
+				href={enHref}
+				hreflang="en"
+				lang="en"
+				aria-current={lang === "en" ? "true" : undefined}
+				data-lang-option="en"
+				data-lang-href={enHref}
+			>
+				{t("lang.en")}
+			</a>
+			<span class="lang-switch__sep" aria-hidden="true">|</span>
+			<a
+				class:list={["lang-switch__option", { "is-active": lang === "de" }]}
+				href={deHref}
+				hreflang="de"
+				lang="de"
+				aria-current={lang === "de" ? "true" : undefined}
+				data-lang-option="de"
+				data-lang-href={deHref}
+			>
+				{t("lang.de")}
+			</a>
+		</nav>
 
-	<nav
-		class="site-nav"
-		id="primary-navigation"
-		aria-label="Primary navigation"
-		data-nav
-	>
-		<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
-		></span>
-		{
-			navigation.map((item, index) => (
-				<a
-					class="site-nav__link"
-					href={item.href}
-					data-nav-link
-					aria-current={index === 0 ? "page" : undefined}
-				>
-					{item.label}
-				</a>
-			))
-		}
-	</nav>
+		<button
+			class="nav-toggle"
+			type="button"
+			aria-expanded="false"
+			aria-controls="primary-navigation"
+			data-nav-toggle
+		>
+			<span class="sr-only">{t("a11y.navToggle")}</span>
+			<span aria-hidden="true"></span>
+			<span aria-hidden="true"></span>
+		</button>
+
+		<nav
+			class="site-nav"
+			id="primary-navigation"
+			aria-label={t("a11y.primaryNav")}
+			data-nav
+		>
+			<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
+			></span>
+			{
+				navigation.map((item, index) => (
+					<a
+						class="site-nav__link"
+						href={item.href}
+						data-nav-link
+						aria-current={index === 0 ? "page" : undefined}
+					>
+						{item.label}
+					</a>
+				))
+			}
+		</nav>
+	</div>
 </header>
+
+<script is:inline define:vars={{ PREFERRED_LANG_KEY }}>
+	document.querySelectorAll("[data-lang-option]").forEach((node) => {
+		node.addEventListener("click", (event) => {
+			const link = event.currentTarget;
+			if (!(link instanceof HTMLAnchorElement)) return;
+
+			const nextLang = link.dataset.langOption;
+			const base = link.dataset.langHref || link.getAttribute("href") || "/";
+			if (nextLang === "en" || nextLang === "de") {
+				try {
+					localStorage.setItem(PREFERRED_LANG_KEY, nextLang);
+				} catch (e) {}
+			}
+
+			event.preventDefault();
+			location.assign(base + location.search + location.hash);
+		});
+	});
+</script>

@@ -591,7 +591,9 @@ document.addEventListener("click", (event) => {
 	}
 
 	const videoId = link.dataset.videoId;
-	const title = link.dataset.videoTitle ?? "Project film";
+	const fallbackTitle =
+		videoDialog?.dataset.labelProjectFilm ?? "Project film";
+	const title = link.dataset.videoTitle ?? fallbackTitle;
 	const description = link.dataset.videoDescription?.trim() ?? "";
 	const provider = link.dataset.videoProvider === "youtube" ? "youtube" : "vimeo";
 	if (!videoId) return;
@@ -619,7 +621,9 @@ document.addEventListener("click", (event) => {
 	videoTitle?.replaceChildren(document.createTextNode(title));
 	if (videoDescription) {
 		videoDescription.textContent =
-			description || "No description available for this film yet.";
+			description ||
+			videoDialog?.dataset.labelNoDescription ||
+			"No description available for this film yet.";
 	}
 	if (externalLink) {
 		externalLink.href =
@@ -629,7 +633,9 @@ document.addEventListener("click", (event) => {
 	}
 	externalLinkLabel?.replaceChildren(
 		document.createTextNode(
-			provider === "youtube" ? "Open on YouTube" : "Open on Vimeo",
+			provider === "youtube"
+				? (videoDialog?.dataset.labelOpenYoutube ?? "Open on YouTube")
+				: (videoDialog?.dataset.labelOpenVimeo ?? "Open on Vimeo"),
 		),
 	);
 	if (aboutToggle) aboutToggle.hidden = !description;

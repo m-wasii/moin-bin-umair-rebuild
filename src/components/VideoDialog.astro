@@ -1,4 +1,23 @@
-<div class="video-overlay" data-video-dialog hidden>
+---
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div
+	class="video-overlay"
+	data-video-dialog
+	data-label-project-film={t("dialog.projectFilm")}
+	data-label-open-vimeo={t("dialog.openVimeo")}
+	data-label-open-youtube={t("dialog.openYoutube")}
+	data-label-no-description={t("dialog.noDescription")}
+	hidden
+>
 	<div class="video-overlay__backdrop" data-video-backdrop aria-hidden="true"></div>
 	<div
 		class="video-dialog__panel"
@@ -7,7 +26,9 @@
 		aria-labelledby="video-dialog-title"
 	>
 		<header class="video-dialog__header">
-			<p id="video-dialog-title" data-video-dialog-title>Project film</p>
+			<p id="video-dialog-title" data-video-dialog-title>
+				{t("dialog.projectFilm")}
+			</p>
 			<div class="video-dialog__actions">
 				<button
 					class="video-dialog__about"
@@ -16,10 +37,10 @@
 					aria-expanded="true"
 					aria-controls="video-dialog-about"
 				>
-					About
+					{t("dialog.about")}
 				</button>
 				<button class="video-dialog__close" type="button" data-video-close>
-					<span>Close</span>
+					<span>{t("dialog.close")}</span>
 					<svg viewBox="0 0 18 18" aria-hidden="true">
 						<path d="m3 3 12 12M15 3 3 15"></path>
 					</svg>
@@ -34,7 +55,7 @@
 				id="video-dialog-about"
 				data-video-about-panel
 			>
-				<p class="video-dialog__about-label">About this film</p>
+				<p class="video-dialog__about-label">{t("dialog.aboutLabel")}</p>
 				<p class="video-dialog__description" data-video-dialog-description></p>
 			</aside>
 		</div>
@@ -46,7 +67,7 @@
 			rel="noreferrer"
 			data-video-external
 		>
-			<span data-video-external-label>Open on Vimeo</span>
+			<span data-video-external-label>{t("dialog.openVimeo")}</span>
 			<span aria-hidden="true">↗</span>
 		</a>
 	</div>
