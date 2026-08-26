@@ -842,11 +842,15 @@ main {
 }
 
 .contact .section-heading {
-	flex: 0 0 auto;
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 0;
 	margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .section-heading--contact .section-heading__meta {
+	flex: 0 0 auto;
 	border-color: rgba(5, 4, 3, 0.18);
 }
 
@@ -855,7 +859,26 @@ main {
 	color: rgba(5, 4, 3, 0.58);
 }
 
+.contact__body {
+	display: grid;
+	flex: 1 1 auto;
+	grid-template-columns: minmax(0, 1.4fr) minmax(14rem, 0.85fr);
+	gap: clamp(2rem, 5vw, 5rem);
+	align-items: stretch;
+	min-height: 0;
+	padding-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.contact__lead {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 1.5rem;
+	min-width: 0;
+}
+
 .section-heading--contact h2 {
+	margin: 0;
 	font-size: clamp(2.6rem, 5.4vw, 6.2rem);
 	font-weight: 700;
 	line-height: 0.94;
@@ -863,24 +886,37 @@ main {
 	color: var(--ink);
 }
 
-.contact__actions {
-	display: flex;
-	flex: 1 1 auto;
-	flex-direction: column;
-	min-height: 0;
-	align-items: flex-end;
-	justify-content: flex-end;
-	gap: 0.25rem;
-	margin-bottom: clamp(2rem, 4vw, 3.5rem);
-}
-
 .contact__location {
-	margin-bottom: 1rem;
+	margin: 0;
 	font-family: var(--font-sans);
 	font-size: 0.95rem;
 	font-weight: 600;
 	text-transform: uppercase;
 	color: rgba(5, 4, 3, 0.58);
+}
+
+.contact__aside {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 2rem;
+	min-width: 0;
+	text-align: right;
+}
+
+.section-heading--contact .section-heading__description {
+	max-width: 22rem;
+	margin: 0;
+}
+
+.contact__actions {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0.25rem;
+	width: min(100%, 22rem);
+	margin: 0;
 }
 
 .contact .text-link {
@@ -1329,8 +1365,25 @@ html.video-open {
 		padding-top: 3rem;
 	}
 
+	.contact__body {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		padding-top: 1.5rem;
+	}
+
+	.contact__lead {
+		gap: 1.15rem;
+	}
+
+	.contact__aside {
+		align-items: flex-start;
+		text-align: left;
+		gap: 1.5rem;
+	}
+
 	.contact__actions {
-		margin-bottom: 2.5rem;
+		width: 100%;
+		margin-bottom: 0;
 	}
 
 	.site-footer {
