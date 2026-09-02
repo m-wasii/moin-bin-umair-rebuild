@@ -1714,9 +1714,11 @@ html.video-open {
 		height: auto;
 	}
 
-	.work-section--shorts .project-card:only-child {
+	.work-section--shorts .project-card:only-child,
+	.work-section--shorts .project-card:last-child:nth-child(odd) {
 		grid-column: 1 / -1;
 		max-width: 18rem;
+		justify-self: center;
 	}
 
 	.work-section--shorts .project-card__frame,
