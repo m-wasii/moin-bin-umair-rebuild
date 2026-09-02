@@ -81,7 +81,30 @@ Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
 
 - `https://mbu-pr-<number>.wasi-workdesk.workers.dev`
 
-GitHub Actions needs repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to publish those hosts automatically. Or from the branch:
+GitHub Actions publishes those hosts when two **repository** secrets exist
+([Settings → Secrets and variables → Actions](https://github.com/m-wasii/moin-bin-umair-rebuild/settings/secrets/actions)):
+
+| Secret | Value |
+| --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Account ID from `npx wrangler whoami`, or Workers & Pages → Overview in the [Cloudflare dashboard](https://dash.cloudflare.com/) |
+| `CLOUDFLARE_API_TOKEN` | API token created below (shown only once) |
+
+Create the token at [Account API tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Edit Cloudflare Workers**. Confirm it has:
+
+- Account · Cloudflare Workers · Edit
+- Account · Workers R2 Storage · Edit (needed for the `MEDIA` / `moin-media` binding)
+- Account resources: only this Cloudflare account
+
+Then re-run the **Worker preview** workflow on the pull request.
+
+From a machine that can already deploy (`wrangler whoami` works):
+
+```sh
+gh secret set CLOUDFLARE_API_TOKEN -R m-wasii/moin-bin-umair-rebuild
+gh secret set CLOUDFLARE_ACCOUNT_ID -R m-wasii/moin-bin-umair-rebuild
+```
+
+Do not commit the token. Manual preview from a branch:
 
 ```sh
 npm run build
