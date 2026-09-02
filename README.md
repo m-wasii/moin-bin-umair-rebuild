@@ -81,7 +81,7 @@ Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
 
 - `https://mbu-pr-<number>.wasi-workdesk.workers.dev`
 
-GitHub Actions needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Or from the branch:
+GitHub Actions needs repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to publish those hosts automatically. Or from the branch:
 
 ```sh
 npm run build
