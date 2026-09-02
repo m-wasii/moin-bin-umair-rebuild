@@ -687,7 +687,7 @@ main {
 .photo-overlay {
 	position: fixed;
 	inset: 0;
-	z-index: 80;
+	z-index: 220;
 	display: grid;
 	place-items: center;
 	padding: 1.25rem;
