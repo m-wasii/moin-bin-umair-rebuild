@@ -20,6 +20,12 @@ const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
 const isVertical = project.category === "shorts";
 const description = localizedProjectDescription(project, lang);
+const kind =
+	project.category === "commercial"
+		? t("section.commercial.title")
+		: project.category === "art"
+			? t("section.art.title")
+			: t("section.shorts.title");
 ---
 
 <article
@@ -62,6 +68,7 @@ const description = localizedProjectDescription(project, lang);
 				<span>{t("card.play")}</span>
 			</span>
 			<figcaption class="project-card__meta">
+				<p class="project-card__kind">{kind}</p>
 				<h3>{project.title}</h3>
 				<p>
 					<span>{project.year}</span>
