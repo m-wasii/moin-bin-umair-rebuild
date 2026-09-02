@@ -887,6 +887,19 @@ main {
 	transform: rotate(12deg);
 }
 
+html.album-open {
+	overflow: hidden;
+}
+
+html.album-open .site-header {
+	opacity: 0;
+	pointer-events: none;
+}
+
+html.album-open main {
+	z-index: 210;
+}
+
 .album-overlay {
 	position: fixed;
 	inset: 0;

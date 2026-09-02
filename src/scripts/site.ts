@@ -776,6 +776,7 @@ function closeAlbum() {
 	);
 	if (!panel) return;
 	panel.hidden = true;
+	document.documentElement.classList.remove("album-open");
 	unlockDocumentScroll();
 	albumFocus?.focus({ preventScroll: true });
 	albumFocus = null;
@@ -794,6 +795,7 @@ function openAlbum(category: string, trigger?: HTMLElement | null) {
 	albumFocus = trigger ?? albumFocus;
 	if (panel.hidden) {
 		lockDocumentScroll();
+		document.documentElement.classList.add("album-open");
 		panel.hidden = false;
 	}
 	panel
