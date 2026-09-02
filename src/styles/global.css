@@ -149,6 +149,7 @@ main {
 	padding: 0.35rem 0.4rem 0.35rem 1.15rem;
 	border: 2px solid transparent;
 	border-radius: 999px;
+	color: var(--paper);
 	transition:
 		background-color 250ms ease,
 		border-color 250ms ease,
@@ -530,6 +531,7 @@ main {
 .project-card {
 	grid-column: span 6;
 	min-width: 0;
+	color: var(--paper);
 }
 
 .project-card--featured {
@@ -749,6 +751,7 @@ main {
 	display: grid;
 	place-items: center;
 	padding: 1.25rem;
+	color: var(--paper);
 }
 
 .photo-overlay[hidden] {
