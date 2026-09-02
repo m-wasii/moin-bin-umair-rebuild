@@ -66,7 +66,7 @@ German about-copy: `src/i18n/project-descriptions.ts`.
 
 ## Deploy to Cloudflare Workers
 
-1. Connect this GitHub repo to a **Worker** (not Pages), or:
+1. Connect this GitHub repo to the **mbu Worker** (not a Pages project), or deploy from CI / the CLI:
 
 ```sh
 npm run deploy
@@ -76,6 +76,17 @@ That builds once and publishes two Workers that share the `MEDIA` bucket:
 
 - `mbu` → https://mbu.wasi-workdesk.workers.dev
 - `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
+
+Pull requests upload a Worker **version** (not production) with an aliased preview URL:
+
+- `https://pr-<number>-mbu.wasi-workdesk.workers.dev`
+
+GitHub Actions needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Or from the branch:
+
+```sh
+npm run build
+npx wrangler versions upload --preview-alias pr-26
+```
 
 2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
    the first deploy (or whenever seed stills change), upload catalogs and

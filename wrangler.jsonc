@@ -3,11 +3,12 @@
 	"compatibility_date": "2025-08-01",
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": true,
-	"preview_urls": false,
+	"preview_urls": true,
 	// Binding name is MEDIA (matches src/lib/store.ts), not the default moin_media.
 	// Public site: https://mbu.wasi-workdesk.workers.dev
 	// Dashboard:   npx wrangler deploy --name dashboard
 	//              → https://dashboard.wasi-workdesk.workers.dev
+	// Branch previews: wrangler versions upload --preview-alias <slug>
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",

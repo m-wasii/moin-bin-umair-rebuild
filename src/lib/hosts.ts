@@ -7,9 +7,7 @@ export function hostnameOf(url: URL) {
 
 export function isPreviewHost(host: string) {
 	const normalized = host.split(":")[0]?.toLowerCase() ?? "";
-	return (
-		normalized.endsWith(".workers.dev") || normalized.endsWith(".pages.dev")
-	);
+	return normalized.endsWith(".workers.dev");
 }
 
 export function isDashboardHost(host: string) {
@@ -59,7 +57,7 @@ export function dashboardOrigin(url: URL) {
 		return `${url.protocol}//dashboard.${account}`;
 	}
 
-	// pages.dev and other preview hosts keep /dashboard on-host
+	// Versioned workers.dev previews that are not worker.account.workers.dev
 	if (isPreviewHost(host)) {
 		return `${url.protocol}//${url.host}`;
 	}

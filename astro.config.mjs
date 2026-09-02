@@ -2,7 +2,7 @@
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 
-const site = process.env.SITE || process.env.CF_PAGES_URL;
+const site = process.env.SITE;
 
 export default defineConfig({
 	site,
