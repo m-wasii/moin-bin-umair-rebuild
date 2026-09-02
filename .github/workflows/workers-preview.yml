@@ -2,7 +2,7 @@ name: Worker preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
 concurrency:
   group: worker-preview-${{ github.event.pull_request.number }}
@@ -14,7 +14,8 @@ permissions:
 
 jobs:
   preview:
-    name: Upload Worker version
+    name: Deploy preview Worker
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -28,25 +29,20 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Upload aliased Worker preview
-        id: upload
+      - name: Deploy preview Worker
+        id: deploy
         run: |
           set -euo pipefail
-          alias="pr-${{ github.event.pull_request.number }}"
-          npx wrangler versions upload \
-            --preview-alias "$alias" \
+          name="mbu-pr-${{ github.event.pull_request.number }}"
+          npx wrangler deploy --name "$name" \
             --message "PR ${{ github.event.pull_request.number }} @ ${GITHUB_SHA:0:7}" \
             | tee wrangler-preview.log
-          alias_url="$(sed -n 's/.*Preview Alias URL:[[:space:]]*//p' wrangler-preview.log | tr -d '[:space:]' | tail -n 1)"
-          version_url="$(sed -n 's/.*Version Preview URL:[[:space:]]*//p' wrangler-preview.log | tr -d '[:space:]' | tail -n 1)"
-          url="${alias_url:-$version_url}"
+          url="$(sed -n 's/^[[:space:]]*https:\/\/.*\.workers\.dev.*/&/p' wrangler-preview.log | tr -d '[:space:]' | tail -n 1)"
           if [ -z "$url" ]; then
-            echo "Could not find a workers.dev preview URL in wrangler output." >&2
-            exit 1
+            url="https://${name}.wasi-workdesk.workers.dev"
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "alias_url=$alias_url" >> "$GITHUB_OUTPUT"
-          echo "version_url=$version_url" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
       - name: Comment preview URL
         uses: actions/github-script@v7
         with:
@@ -59,7 +55,7 @@ jobs:
               "",
               url,
               "",
-              "Aliased `workers.dev` URL for this PR. Production (`mbu`) is unchanged.",
+              "This is a dedicated Worker (`mbu-pr-${{ github.event.pull_request.number }}`), not Pages. Production `mbu` is unchanged.",
             ].join("\n");
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
@@ -85,4 +81,23 @@ jobs:
               body,
             });
         env:
-          PREVIEW_URL: ${{ steps.upload.outputs.url }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+
+  cleanup:
+    name: Delete preview Worker
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Delete preview Worker
+        run: |
+          npx wrangler delete --name "mbu-pr-${{ github.event.pull_request.number }}" --force
+        continue-on-error: true
