@@ -1,24 +1,12 @@
 .dash {
 	margin: 0;
 	min-height: 100svh;
-	background-color: #080605;
+	background-color: #0d0c0b;
 	background-image:
-		repeating-linear-gradient(
-			90deg,
-			rgba(245, 158, 11, 0.14) 0,
-			rgba(245, 158, 11, 0.14) 1px,
-			transparent 1px,
-			transparent 266px
-		),
-		repeating-linear-gradient(
-			0deg,
-			rgba(245, 158, 11, 0.14) 0,
-			rgba(245, 158, 11, 0.14) 1px,
-			transparent 1px,
-			transparent 400px
-		);
-	background-position: 0 100%;
-	color: #ffedd5;
+		linear-gradient(to right, rgba(193, 122, 34, 0.18) 1px, transparent 1px),
+		linear-gradient(to bottom, rgba(193, 122, 34, 0.18) 1px, transparent 1px);
+	background-size: calc(100% / 12) 4.5rem;
+	color: #efe6d6;
 	font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
@@ -42,7 +30,7 @@
 }
 
 .dash-bar__nav a {
-	color: #e8b45a;
+	color: #c17a22;
 	text-decoration: none;
 	font-weight: 600;
 	text-transform: uppercase;
@@ -133,7 +121,7 @@
 	padding: 0.7rem 1rem;
 	border: 0;
 	border-radius: 999px;
-	background: #f59e0b;
+	background: #c17a22;
 	color: #1a1208;
 	font-weight: 700;
 	cursor: pointer;
@@ -141,7 +129,7 @@
 
 .dash-delete {
 	background: transparent;
-	color: #e8b45a;
+	color: #c17a22;
 	border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
