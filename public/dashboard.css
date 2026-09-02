@@ -1,12 +1,8 @@
 .dash {
 	margin: 0;
 	min-height: 100svh;
-	background-color: #0d0c0b;
-	background-image:
-		linear-gradient(to right, rgba(193, 122, 34, 0.18) 1px, transparent 1px),
-		linear-gradient(to bottom, rgba(193, 122, 34, 0.18) 1px, transparent 1px);
-	background-size: calc(100% / 12) 4.5rem;
-	color: #efe6d6;
+	background: #161310;
+	color: #f0e6d4;
 	font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
@@ -15,7 +11,7 @@
 	align-items: center;
 	gap: 1.5rem;
 	padding: 1rem 1.5rem;
-	border-bottom: 1px solid rgba(245, 158, 11, 0.22);
+	border-bottom: 1px solid rgba(211, 84, 17, 0.22);
 }
 
 .dash-bar__brand {
@@ -30,7 +26,7 @@
 }
 
 .dash-bar__nav a {
-	color: #c17a22;
+	color: #d35411;
 	text-decoration: none;
 	font-weight: 600;
 	text-transform: uppercase;
@@ -74,8 +70,8 @@
 
 .dash-banner {
 	padding: 0.9rem 1rem;
-	border: 1px solid rgba(245, 158, 11, 0.4);
-	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(211, 84, 17, 0.4);
+	background: rgba(211, 84, 17, 0.08);
 }
 
 .dash-form {
@@ -102,7 +98,7 @@
 .dash-form select,
 .dash-form textarea {
 	padding: 0.65rem 0.7rem;
-	border: 1px solid rgba(245, 158, 11, 0.28);
+	border: 1px solid rgba(211, 84, 17, 0.28);
 	border-radius: 0.4rem;
 	background: #111;
 	color: inherit;
@@ -121,7 +117,7 @@
 	padding: 0.7rem 1rem;
 	border: 0;
 	border-radius: 999px;
-	background: #c17a22;
+	background: #d35411;
 	color: #1a1208;
 	font-weight: 700;
 	cursor: pointer;
@@ -129,8 +125,8 @@
 
 .dash-delete {
 	background: transparent;
-	color: #c17a22;
-	border: 1px solid rgba(245, 158, 11, 0.35);
+	color: #d35411;
+	border: 1px solid rgba(211, 84, 17, 0.35);
 }
 
 .dash-form__status[data-error="true"] {
@@ -149,7 +145,7 @@
 .dash-table th,
 .dash-table td {
 	padding: 0.75rem 0.5rem;
-	border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+	border-bottom: 1px solid rgba(211, 84, 17, 0.18);
 	text-align: left;
 }
 

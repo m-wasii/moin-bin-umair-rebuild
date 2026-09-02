@@ -1,25 +1,24 @@
 :root {
-	--ink: #0d0c0b;
-	--ink-soft: #161412;
-	--paper: #efe6d6;
-	--peach: #efe6d6;
-	--white: #ffffff;
-	--amber: #c17a22;
-	--amber-deep: #9a6018;
-	--muted: #9a804c;
-	--line: color-mix(in srgb, var(--amber) 28%, transparent);
+	--ink: #161310;
+	--ink-soft: #1f1b17;
+	--paper: #f0e6d4;
+	--peach: #f0e6d4;
+	--white: #fff8ee;
+	--amber: #d35411;
+	--amber-deep: #a83f0c;
+	--muted: #6e5c48;
+	--line: color-mix(in srgb, var(--ink) 14%, transparent);
 	--line-strong: var(--amber);
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
-	--radius: 0.9rem;
-	--panel: rgba(13, 12, 11, 0.84);
+	--radius: 0.2rem;
+	--panel: rgba(22, 19, 16, 0.9);
 	--orange: var(--amber-deep);
 	--orange-deep: var(--amber-deep);
 	--tungsten: var(--amber);
 	--tungsten-deep: var(--ink);
-	--grid-line: color-mix(in srgb, var(--amber) 20%, transparent);
-	--grid-row: 4.5rem;
-	--stage: var(--ink);
+	--spine: 0.55rem;
+	--stage: var(--paper);
 	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -31,8 +30,8 @@
 }
 
 html {
-	background: var(--ink);
-	color: var(--paper);
+	background: var(--paper);
+	color: var(--ink);
 	scroll-behavior: smooth;
 	scroll-padding-top: calc(var(--header-height) + 1rem);
 }
@@ -41,8 +40,8 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--ink);
-	color: var(--paper);
+	background: var(--paper);
+	color: var(--ink);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
 	line-height: 1.5;
@@ -77,14 +76,16 @@ button {
 }
 
 ::selection {
-	background-color: var(--paper);
+	background-color: var(--amber);
 	color: var(--ink);
 }
 
+.hero::selection,
+.hero ::selection,
 .contact::selection,
 .contact ::selection {
-	background-color: var(--ink);
-	color: var(--paper);
+	background-color: var(--amber);
+	color: var(--ink);
 }
 
 .sr-only {
@@ -134,29 +135,6 @@ main {
 	background: var(--stage);
 }
 
-main::before {
-	content: "";
-	position: absolute;
-	top: 100svh;
-	right: var(--gutter);
-	bottom: 0;
-	left: var(--gutter);
-	z-index: 0;
-	pointer-events: none;
-	border-right: 1px solid var(--grid-line);
-	border-left: 1px solid var(--grid-line);
-	background-image:
-		linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-		linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-	background-size: calc(100% / 12) var(--grid-row);
-	background-repeat: repeat;
-}
-
-main > * {
-	position: relative;
-	z-index: 1;
-}
-
 .site-header {
 	position: fixed;
 	z-index: 100;
@@ -186,7 +164,7 @@ main > * {
 }
 
 .site-header--scrolled {
-	border-color: var(--line);
+	border-color: color-mix(in srgb, var(--amber) 42%, transparent);
 	background: var(--panel);
 	box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.32);
 	-webkit-backdrop-filter: blur(18px);
@@ -249,7 +227,7 @@ main > * {
 	align-items: center;
 	gap: 0.15rem;
 	padding: 0.2rem;
-	border: 1px solid var(--line);
+	border: 1px solid color-mix(in srgb, var(--amber) 38%, transparent);
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.04);
 	transition: border-color 250ms ease;
@@ -369,6 +347,8 @@ main > * {
 	overflow: hidden;
 	padding: calc(var(--header-height) + 1.25rem) var(--gutter) 1.6rem;
 	isolation: isolate;
+	background: var(--ink);
+	color: var(--paper);
 }
 
 .hero__media,
@@ -418,7 +398,7 @@ main > * {
 	width: 100%;
 	margin-top: auto;
 	padding-top: 1.15rem;
-	border-top: 1px solid var(--line);
+	border-top: 3px solid var(--amber);
 	opacity: 0;
 	transform: translateY(0.85rem);
 	animation: hero-rise 800ms cubic-bezier(0.22, 1, 0.36, 1) 160ms forwards;
@@ -477,6 +457,9 @@ main > * {
 
 .work-section {
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
+	background: var(--paper);
+	color: var(--ink);
+	border-left: var(--spine) solid var(--amber);
 }
 
 .section-heading {
@@ -485,17 +468,6 @@ main > * {
 	gap: clamp(1.5rem, 4vw, 4rem);
 	align-items: end;
 	margin-bottom: clamp(3rem, 6vw, 5.5rem);
-	padding: 1.25rem 1.4rem 1.5rem;
-	border: 1px solid transparent;
-	background-color: transparent;
-	transition:
-		border-color 480ms ease,
-		background-color 480ms ease;
-}
-
-.section-heading.is-visible {
-	border-color: var(--amber);
-	background-color: var(--ink-soft);
 }
 
 .section-heading__meta {
@@ -504,7 +476,7 @@ main > * {
 	align-items: center;
 	justify-content: space-between;
 	padding-bottom: 0.85rem;
-	border-bottom: 1px solid var(--grid-line);
+	border-bottom: 1px solid var(--line);
 }
 
 .section-heading__meta p {
@@ -516,12 +488,27 @@ main > * {
 	text-transform: uppercase;
 }
 
+.section-heading__index {
+	display: grid;
+	place-items: center;
+	width: 2.7rem;
+	height: 2.7rem;
+	margin: 0;
+	background: var(--amber);
+	color: var(--ink);
+	font-family: var(--font-display);
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	line-height: 1;
+}
+
 .section-heading h2 {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(2.35rem, 5vw, 4.5rem);
+	font-size: clamp(2.8rem, 6.2vw, 5.6rem);
 	font-weight: 600;
-	line-height: 0.94;
+	line-height: 0.9;
 	letter-spacing: -0.03em;
 	text-transform: uppercase;
 }
@@ -825,6 +812,7 @@ main > * {
 }
 
 .contact {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
@@ -832,15 +820,31 @@ main > * {
 	min-height: 100svh;
 	max-height: 100svh;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
-	background: var(--peach);
-	color: var(--ink);
-	border-top: 2px solid rgba(44, 18, 4, 0.18);
+	background: var(--ink);
+	color: var(--paper);
+	border-left: var(--spine) solid var(--amber);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 	overflow: hidden;
 }
 
-.contact .section-heading,
-.contact .section-heading.is-visible {
+.contact::after {
+	content: "05";
+	position: absolute;
+	right: 3vw;
+	bottom: -0.18em;
+	font-family: var(--font-display);
+	font-size: clamp(8rem, 22vw, 16rem);
+	font-weight: 800;
+	line-height: 0.8;
+	letter-spacing: -0.06em;
+	color: var(--amber);
+	opacity: 0.22;
+	pointer-events: none;
+}
+
+.contact .section-heading {
+	position: relative;
+	z-index: 1;
 	display: flex;
 	flex: 1 1 auto;
 	flex-direction: column;
@@ -848,20 +852,22 @@ main > * {
 	gap: 0;
 	min-height: 0;
 	margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
-	padding: 0;
-	border: 0;
-	background: transparent;
 }
 
 .section-heading--contact .section-heading__meta {
 	flex: 0 0 auto;
 	width: 100%;
-	border-color: rgba(44, 18, 4, 0.22);
+	border-color: color-mix(in srgb, var(--paper) 18%, transparent);
 }
 
 .section-heading--contact .section-heading__meta p,
 .section-heading--contact .section-heading__description {
-	color: rgba(44, 18, 4, 0.72);
+	color: color-mix(in srgb, var(--paper) 62%, transparent);
+}
+
+.section-heading--contact .section-heading__index {
+	background: var(--amber);
+	color: var(--ink);
 }
 
 .contact__body {
@@ -894,7 +900,7 @@ main > * {
 	letter-spacing: -0.02em;
 	text-transform: none;
 	text-align: left;
-	color: var(--ink);
+	color: var(--paper);
 }
 
 .contact__location {
@@ -904,7 +910,7 @@ main > * {
 	font-weight: 600;
 	text-transform: uppercase;
 	text-align: left;
-	color: rgba(44, 18, 4, 0.72);
+	color: var(--amber);
 }
 
 .contact__aside {
@@ -938,8 +944,8 @@ main > * {
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 0.9rem 0;
-	border-bottom: 2px solid var(--amber-deep);
-	color: var(--amber-deep);
+	border-bottom: 2px solid var(--amber);
+	color: var(--amber);
 	font-family: var(--font-sans);
 	font-size: 0.95rem;
 	font-weight: 600;
@@ -950,8 +956,8 @@ main > * {
 }
 
 .contact .text-link:hover {
-	color: var(--orange-deep);
-	border-color: var(--orange-deep);
+	color: var(--paper);
+	border-color: var(--paper);
 }
 
 .contact .text-link span:last-child {
@@ -963,21 +969,23 @@ main > * {
 }
 
 .contact .site-footer {
+	position: relative;
+	z-index: 1;
 	display: grid;
 	flex: 0 0 auto;
 	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
-	border-top: 2px solid rgba(44, 18, 4, 0.22);
+	border-top: 2px solid color-mix(in srgb, var(--paper) 18%, transparent);
 	font-family: var(--font-sans);
 	font-size: 0.875rem;
 	font-weight: 600;
 	text-transform: uppercase;
-	color: rgba(44, 18, 4, 0.72);
+	color: color-mix(in srgb, var(--paper) 55%, transparent);
 }
 
 .contact .site-footer a:hover {
-	color: var(--amber-deep);
+	color: var(--amber);
 }
 
 .contact .site-footer p {
