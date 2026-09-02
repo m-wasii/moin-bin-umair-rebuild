@@ -12,24 +12,28 @@ import { useTranslations, type Lang } from "../i18n/ui";
 interface Props {
 	project: Project;
 	lang: Lang;
+	index?: number;
 }
 
-const { project, lang } = Astro.props;
+const { project, lang, index = 0 } = Astro.props;
 const t = useTranslations(lang);
 const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
 const isVertical = project.category === "shorts";
 const description = localizedProjectDescription(project, lang);
+const tone = (index % 6) + 1;
 ---
 
 <article
 	class:list={[
 		"project-card",
+		`project-card--tone-${tone}`,
 		{
 			"project-card--featured": project.featured && !isVertical,
 			"project-card--vertical": isVertical,
 		},
 	]}
+	style={`--card-index: ${index}`}
 	data-reveal
 >
 	<a

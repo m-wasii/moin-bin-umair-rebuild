@@ -18,6 +18,8 @@ const grouped = photoCategories
 		items: photos.filter((photo) => photo.category === category),
 	}))
 	.filter((group) => group.items.length > 0);
+
+const albumSpans = [8, 4, 5, 7, 7, 5, 12];
 ---
 
 <section
@@ -27,16 +29,17 @@ const grouped = photoCategories
 	data-nav-section
 >
 	<header class="section-heading" data-reveal>
+		<p class="section-heading__ghost" aria-hidden="true">03</p>
 		<div class="section-heading__meta">
 			<p>03</p>
 			<p>
 				{
 					photos.length === 0
 						? t("section.meta.stills")
-						: `${photos.length} ${
-								photos.length === 1
-									? t("section.meta.still")
-									: t("section.meta.stills")
+						: `${grouped.length} ${
+								grouped.length === 1
+									? t("section.meta.album")
+									: t("section.meta.albums")
 							}`
 				}
 			</p>
@@ -53,39 +56,123 @@ const grouped = photoCategories
 				{t("section.photography.empty")}
 			</p>
 		) : (
-			grouped.map((group) => (
-				<div class="photo-group">
-					<h3 class="photo-group__title">{group.title}</h3>
-					<ul class="photo-grid">
-						{group.items.map((photo, index) => (
-							<li>
-								<button
-									class="photo-card"
-									type="button"
-									data-photo
-									data-photo-src={photo.src}
-									data-photo-alt={photo.alt}
-									data-photo-title={photo.title}
-									data-photo-group={group.items
-										.map((item) => item.src)
-										.join("|")}
-									data-photo-index={String(index)}
-								>
+			<ul class="photo-albums">
+				{grouped.map((group, albumIndex) => {
+					const cover = group.items[0];
+					const countLabel = t("photo.album.count", {
+						count: group.items.length,
+					});
+					return (
+						<li
+							class="photo-album"
+							style={`--album-span: ${albumSpans[albumIndex] ?? 6}`}
+							data-reveal
+						>
+							<button
+								class="photo-album__hit"
+								type="button"
+								data-album-open={group.category}
+								aria-haspopup="dialog"
+								aria-controls={`album-${group.category}`}
+							>
+								<figure class="photo-album__frame">
 									<img
-										src={photo.src}
-										alt={photo.alt}
-										width="800"
-										height="1000"
-										loading="lazy"
+										src={cover.src}
+										alt=""
+										width="1600"
+										height="1200"
+										loading={albumIndex < 2 ? "eager" : "lazy"}
 										decoding="async"
 									/>
-									<span>{photo.title}</span>
-								</button>
-							</li>
-						))}
-					</ul>
-				</div>
-			))
+									<span class="photo-album__mask" aria-hidden="true" />
+									<figcaption class="photo-album__content">
+										<p class="photo-album__kicker">{t("photo.album.kicker")}</p>
+										<h3>{group.title}</h3>
+										<p>{countLabel}</p>
+									</figcaption>
+									<span class="photo-album__arrow" aria-hidden="true">
+										<svg viewBox="0 0 24 24">
+											<path d="M7 17 17 7M9 7h8v8" />
+										</svg>
+									</span>
+								</figure>
+								<span class="sr-only">
+									{t("photo.album.open", { title: group.title })}
+								</span>
+							</button>
+						</li>
+					);
+				})}
+			</ul>
 		)
 	}
 </section>
+
+{
+	grouped.map((group) => (
+		<div
+			class="album-overlay"
+			id={`album-${group.category}`}
+			data-album-panel={group.category}
+			hidden
+		>
+			<div
+				class="album-overlay__backdrop"
+				data-album-backdrop
+				aria-hidden="true"
+			/>
+			<div
+				class="album-overlay__dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby={`album-title-${group.category}`}
+			>
+				<header class="album-overlay__header">
+					<button type="button" data-album-close>
+						{t("photo.album.back")}
+					</button>
+					<div>
+						<p class="photo-album__kicker">{t("photo.album.kicker")}</p>
+						<h2 id={`album-title-${group.category}`}>{group.title}</h2>
+					</div>
+					<p>
+						{t("photo.album.count", {
+							count: group.items.length,
+						})}
+					</p>
+				</header>
+				<ul class="album-masonry">
+					{group.items.map((photo, index) => (
+						<li
+							class:list={[
+								`album-masonry__item`,
+								`album-masonry__item--${(index % 4) + 1}`,
+							]}
+						>
+							<button
+								class="photo-card"
+								type="button"
+								data-photo
+								data-photo-src={photo.src}
+								data-photo-alt={photo.alt}
+								data-photo-title={photo.title}
+								data-photo-group={group.items.map((item) => item.src).join("|")}
+								data-photo-index={String(index)}
+							>
+								<img
+									src={photo.src}
+									alt={photo.alt}
+									width="1200"
+									height="1500"
+									loading="lazy"
+									decoding="async"
+								/>
+								<span>{photo.title}</span>
+							</button>
+						</li>
+					))}
+				</ul>
+			</div>
+		</div>
+	))
+}

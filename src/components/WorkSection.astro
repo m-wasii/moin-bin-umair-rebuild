@@ -26,12 +26,17 @@ const metaLabel =
 ---
 
 <section
-	class:list={["work-section", { "work-section--shorts": id === "shorts" }]}
+	class:list={[
+		"work-section",
+		`work-section--${id}`,
+		{ "work-section--shorts": id === "shorts" },
+	]}
 	id={id}
 	aria-labelledby={`${id}-title`}
 	data-nav-section
 >
 	<header class="section-heading" data-reveal>
+		<p class="section-heading__ghost" aria-hidden="true">{number}</p>
 		<div class="section-heading__meta">
 			<p>{number}</p>
 			<p>{metaLabel}</p>
@@ -42,9 +47,11 @@ const metaLabel =
 
 	{
 		projects.length > 0 ? (
-			<div class="project-grid">
-				{projects.map((project) => (
-					<ProjectCard project={project} lang={lang} />
+			<div
+				class:list={["project-grid", { "project-grid--reel": id === "shorts" }]}
+			>
+				{projects.map((project, index) => (
+					<ProjectCard project={project} lang={lang} index={index} />
 				))}
 			</div>
 		) : (

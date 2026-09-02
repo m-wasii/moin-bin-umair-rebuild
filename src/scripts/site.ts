@@ -311,6 +311,8 @@ navToggle?.addEventListener("click", () => {
 
 navLinks.forEach((link, index) => {
 	link.addEventListener("click", () => {
+		if (isPhotoOpen()) closePhotoDialog();
+		if (isAlbumOpen()) closeAlbum();
 		closeNavigation();
 
 		const finalizeSnap = () => snapIndicatorToIndex(index);
@@ -356,6 +358,12 @@ document.addEventListener("keydown", (event) => {
 	if (isPhotoOpen()) {
 		event.preventDefault();
 		closePhotoDialog();
+		return;
+	}
+
+	if (isAlbumOpen()) {
+		event.preventDefault();
+		closeAlbum();
 		return;
 	}
 
@@ -495,8 +503,11 @@ syncHeroPlayback();
 
 const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
 const videoPanel = document.querySelector<HTMLElement>(".video-dialog__panel");
-const videoBackdrop = document.querySelector<HTMLElement>("[data-video-backdrop]");
-const videoClose = document.querySelector<HTMLButtonElement>("[data-video-close]");
+const videoBackdrop = document.querySelector<HTMLElement>(
+	"[data-video-backdrop]",
+);
+const videoClose =
+	document.querySelector<HTMLButtonElement>("[data-video-close]");
 const videoPlayer = document.querySelector<HTMLElement>("[data-video-player]");
 const videoBody = document.querySelector<HTMLElement>("[data-video-body]");
 const videoTitle = document.querySelector<HTMLElement>(
@@ -519,7 +530,9 @@ const externalLinkLabel = document.querySelector<HTMLElement>(
 );
 let previousFocus: HTMLElement | null = null;
 let lockedScrollY = 0;
+let scrollLockCount = 0;
 let aboutPanelOpen = true;
+let albumFocus: HTMLElement | null = null;
 
 function setAboutPanelOpen(open: boolean) {
 	aboutPanelOpen = open;
@@ -529,16 +542,22 @@ function setAboutPanelOpen(open: boolean) {
 }
 
 function lockDocumentScroll() {
-	lockedScrollY = window.scrollY;
-	document.documentElement.classList.add("video-open");
-	document.body.style.position = "fixed";
-	document.body.style.top = `-${lockedScrollY}px`;
-	document.body.style.left = "0";
-	document.body.style.right = "0";
-	document.body.style.width = "100%";
+	if (scrollLockCount === 0) {
+		lockedScrollY = window.scrollY;
+		document.documentElement.classList.add("video-open");
+		document.body.style.position = "fixed";
+		document.body.style.top = `-${lockedScrollY}px`;
+		document.body.style.left = "0";
+		document.body.style.right = "0";
+		document.body.style.width = "100%";
+	}
+	scrollLockCount += 1;
 }
 
 function unlockDocumentScroll() {
+	scrollLockCount = Math.max(0, scrollLockCount - 1);
+	if (scrollLockCount > 0) return;
+
 	const scrollY = lockedScrollY;
 	document.documentElement.classList.remove("video-open");
 	document.body.style.position = "";
@@ -597,11 +616,11 @@ document.addEventListener("click", (event) => {
 	}
 
 	const videoId = link.dataset.videoId;
-	const fallbackTitle =
-		videoDialog?.dataset.labelProjectFilm ?? "Project film";
+	const fallbackTitle = videoDialog?.dataset.labelProjectFilm ?? "Project film";
 	const title = link.dataset.videoTitle ?? fallbackTitle;
 	const description = link.dataset.videoDescription?.trim() ?? "";
-	const provider = link.dataset.videoProvider === "youtube" ? "youtube" : "vimeo";
+	const provider =
+		link.dataset.videoProvider === "youtube" ? "youtube" : "vimeo";
 	if (!videoId) return;
 
 	event.preventDefault();
@@ -659,12 +678,21 @@ videoClose?.addEventListener("click", closeVideoDialog);
 videoBackdrop?.addEventListener("click", closeVideoDialog);
 
 const photoDialog = document.querySelector<HTMLElement>("[data-photo-dialog]");
-const photoBackdrop = document.querySelector<HTMLElement>("[data-photo-backdrop]");
-const photoClose = document.querySelector<HTMLButtonElement>("[data-photo-close]");
-const photoImage = document.querySelector<HTMLImageElement>("[data-photo-dialog-image]");
-const photoTitle = document.querySelector<HTMLElement>("[data-photo-dialog-title]");
-const photoPrev = document.querySelector<HTMLButtonElement>("[data-photo-prev]");
-const photoNext = document.querySelector<HTMLButtonElement>("[data-photo-next]");
+const photoBackdrop = document.querySelector<HTMLElement>(
+	"[data-photo-backdrop]",
+);
+const photoClose =
+	document.querySelector<HTMLButtonElement>("[data-photo-close]");
+const photoImage = document.querySelector<HTMLImageElement>(
+	"[data-photo-dialog-image]",
+);
+const photoTitle = document.querySelector<HTMLElement>(
+	"[data-photo-dialog-title]",
+);
+const photoPrev =
+	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
+const photoNext =
+	document.querySelector<HTMLButtonElement>("[data-photo-next]");
 let photoGroup: Array<{ src: string; alt: string; title: string }> = [];
 let photoIndex = 0;
 let photoFocus: HTMLElement | null = null;
@@ -736,4 +764,59 @@ photoNext?.addEventListener("click", () => {
 	if (photoGroup.length === 0) return;
 	photoIndex = (photoIndex + 1) % photoGroup.length;
 	renderPhoto();
+});
+
+function isAlbumOpen() {
+	return Boolean(document.querySelector("[data-album-panel]:not([hidden])"));
+}
+
+function closeAlbum() {
+	const panel = document.querySelector<HTMLElement>(
+		"[data-album-panel]:not([hidden])",
+	);
+	if (!panel) return;
+	panel.hidden = true;
+	unlockDocumentScroll();
+	albumFocus?.focus({ preventScroll: true });
+	albumFocus = null;
+}
+
+function openAlbum(category: string, trigger?: HTMLElement | null) {
+	const panel = document.querySelector<HTMLElement>(
+		`[data-album-panel="${CSS.escape(category)}"]`,
+	);
+	if (!panel) return;
+
+	if (isAlbumOpen() && panel.hidden) {
+		closeAlbum();
+	}
+
+	albumFocus = trigger ?? albumFocus;
+	if (panel.hidden) {
+		lockDocumentScroll();
+		panel.hidden = false;
+	}
+	panel
+		.querySelectorAll<HTMLElement>("[data-reveal]")
+		.forEach((item) => item.classList.add("is-visible"));
+	panel
+		.querySelector<HTMLButtonElement>("[data-album-close]")
+		?.focus({ preventScroll: true });
+}
+
+document.addEventListener("click", (event) => {
+	const target = event.target;
+	if (!(target instanceof Element)) return;
+
+	const opener = target.closest<HTMLElement>("[data-album-open]");
+	if (opener) {
+		event.preventDefault();
+		openAlbum(opener.dataset.albumOpen ?? "", opener);
+		return;
+	}
+
+	if (target.closest("[data-album-close], [data-album-backdrop]")) {
+		event.preventDefault();
+		closeAlbum();
+	}
 });
