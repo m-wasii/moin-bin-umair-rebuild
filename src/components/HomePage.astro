@@ -1,14 +1,12 @@
 ---
 import Contact from "./Contact.astro";
 import Hero from "./Hero.astro";
+import PhotoDialog from "./PhotoDialog.astro";
+import PhotoSection from "./PhotoSection.astro";
 import SiteHeader from "./SiteHeader.astro";
 import VideoDialog from "./VideoDialog.astro";
 import WorkSection from "./WorkSection.astro";
-import {
-	artProjects,
-	commercialProjects,
-	shortsProjects,
-} from "../data/projects";
+import { loadPhotos, loadProjects } from "../lib/content";
 import { useTranslations, type Lang } from "../i18n/ui";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
@@ -18,6 +16,8 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
+const { commercial, art, shorts } = await loadProjects();
+const photos = await loadPhotos();
 ---
 
 <BaseLayout lang={lang}>
@@ -31,7 +31,7 @@ const t = useTranslations(lang);
 			number="01"
 			title={t("section.commercial.title")}
 			description={t("section.commercial.description")}
-			projects={commercialProjects}
+			projects={commercial}
 			lang={lang}
 		/>
 
@@ -40,16 +40,18 @@ const t = useTranslations(lang);
 			number="02"
 			title={t("section.art.title")}
 			description={t("section.art.description")}
-			projects={artProjects}
+			projects={art}
 			lang={lang}
 		/>
 
+		<PhotoSection photos={photos} lang={lang} />
+
 		<WorkSection
 			id="shorts"
-			number="03"
+			number="04"
 			title={t("section.shorts.title")}
 			description={t("section.shorts.description")}
-			projects={shortsProjects}
+			projects={shorts}
 			lang={lang}
 		/>
 
@@ -57,4 +59,5 @@ const t = useTranslations(lang);
 	</main>
 
 	<VideoDialog lang={lang} />
+	<PhotoDialog lang={lang} />
 </BaseLayout>

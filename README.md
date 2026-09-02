@@ -1,7 +1,7 @@
 # Moin Bin Umair — Portfolio
 
-A single-page Astro portfolio for filmmaker Moin Bin Umair. The site replaces the
-Focus template with a minimal, cinematic presentation centered on the work.
+A single-page Astro portfolio for filmmaker Moin Bin Umair. The public site and
+the editor dashboard are the same Cloudflare Worker with different hostnames.
 
 ## Local development
 
@@ -12,9 +12,9 @@ npm install
 npm run dev
 ```
 
-The development server opens at `http://localhost:4321`.
-
-Useful checks:
+The site opens at `http://localhost:4321`. The dashboard is
+[http://127.0.0.1:4321/dashboard](http://127.0.0.1:4321/dashboard) (no login locally).
+Photo uploads in `astro dev` write to `.data/media/` (gitignored).
 
 ```sh
 npm run check
@@ -22,54 +22,112 @@ npm run build
 npm run preview
 ```
 
-## Content
+## Dashboard (Google only)
 
-- Edit project titles, categories, durations, descriptions, and Vimeo IDs in
-  `src/data/projects.ts`.
-- Edit portfolio metadata and the Vimeo profile in `src/data/site.ts`.
-- Replace `public/media/hero-loop.mp4` and
-  `public/media/hero-poster.webp` when the final showreel is available.
+There is **no GitHub login**. Cloudflare Access (Google allowlist) is the only
+production sign-in. Videos and photos are saved to **R2**, not git.
 
-Projects are grouped into Commercial, Art & Films, and Shorts (vertical
-9:16 videos) in `src/data/projects.ts`. Add vertical shorts with
-`category: "shorts"`. That split is easy to revise as the gallery grows.
+```text
+Public site                 dashboard.<same account>
+(www / apex / mbu.*)        ├─ Cloudflare Access (Google) on custom domains
+                            ├─ /dashboard          videos
+                            ├─ /dashboard/photos   stills (auto WebP)
+                            └─ writes R2 (MEDIA bucket)
+```
+
+Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
+
+- Site: https://mbu.wasi-workdesk.workers.dev
+- Dashboard: https://dashboard.wasi-workdesk.workers.dev
+
+`/dashboard` on the public host redirects to the dashboard subdomain.
+
+### Videos
+
+1. Open `/dashboard`
+2. Paste a Vimeo or YouTube URL, pick Commercial / Art / Shorts
+3. Save — title, thumbnail, and (for Vimeo) year/duration are fetched automatically
+4. YouTube needs **year** and **duration** (seconds) unless `YOUTUBE_API_KEY` is set
+
+### Photos
+
+1. Open `/dashboard/photos`
+2. Pick a category, drop JPEG / PNG / GIF / BMP / WebP
+3. The browser resizes to 1600px and encodes **WebP** before upload
+4. RAW, HEIC, and PDF are rejected
+
+Seed stills (Drive Top) live in `public/photography/` plus `src/data/photos.seed.json`.
+The Worker serves `/media/photos/...` from the `MEDIA` R2 bucket (`moin-media`)
+when the object exists, otherwise it falls back to those public files.
+
+Site chrome: `src/data/site.ts`.  
+Hero reel: `public/media/hero-loop.mp4` + `public/media/hero-poster.webp`.  
+German about-copy: `src/i18n/project-descriptions.ts`.
+
+## Deploy to Cloudflare Workers
+
+1. Connect this GitHub repo to a **Worker** (not Pages), or:
+
+```sh
+npm run deploy
+```
+
+That builds once and publishes two Workers that share the `MEDIA` bucket:
+
+- `mbu` → https://mbu.wasi-workdesk.workers.dev
+- `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
+
+2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
+   the first deploy (or whenever seed stills change), upload catalogs and
+   WebP objects:
+
+```sh
+npm run seed:r2
+```
+
+Dashboard saves write to the same bucket. The API token needs
+**Workers R2 Storage: Edit**.
+
+3. Custom domains on the same Worker:
+
+   - `yourdomain.com` / `www` → public site
+   - `dashboard.yourdomain.com` → dashboard
+
+4. Worker secrets / vars (see `.env.example`):
+
+   - `SITE` = `https://yourdomain.com`
+   - `PUBLIC_DASHBOARD_URL` = `https://dashboard.yourdomain.com`
+   - Optional: `YOUTUBE_API_KEY`
+   - Optional while testing Access: `DASHBOARD_ENFORCE_CF_ACCESS=false`
+
+5. **Google login (Cloudflare Access)** on `dashboard.yourdomain.com` only:
+
+   1. Zero Trust → Access → Applications → Add → Self-hosted
+   2. Identity provider: **Google**
+   3. Allowlist editor emails
+   4. Do not put the public site hostname in this Access app
+
+On `*.workers.dev`, Access is not enforced. The public Worker redirects
+`/dashboard` to `dashboard.<account>.workers.dev`.
+
+Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
+Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not
+copy your R2; run `npm run seed:photos` there if they need the Drive Top stills
+re-encoded into `public/photography/`, then `npm run seed:r2` to fill the bucket.
 
 ## Structure
 
 ```text
 src/
   components/   Page sections and project UI
-  data/         Portfolio content
-  layouts/      Document metadata and global shell
-  pages/        Astro routes
-  scripts/      Navigation, reveal, and video-dialog behavior
+  data/         Seed catalogs + site settings
+  layouts/      Document metadata and dashboard shell
+  lib/          R2/media store and video metadata
+  pages/        Public site, dashboard, APIs
+  scripts/      Navigation, reveal, dialogs
   styles/       Global visual system
+  middleware.ts Dashboard host + Access gate
 public/
-  media/        Optimized hero media
-```
-
-The Vimeo player is only loaded after a visitor selects a project. This keeps the
-initial page lightweight while retaining a no-JavaScript fallback to Vimeo.
-
-## Deploy to Cloudflare Pages
-
-This is a static Astro site. No Cloudflare adapter is required.
-
-1. Push this repository to GitHub (already at
-   `https://github.com/m-wasii/moin-bin-umair-rebuild`).
-2. In the [Cloudflare dashboard](https://dash.cloudflare.com/), go to **Workers & Pages** → **Create** → **Pages** → **Import an existing Git repository**.
-3. Select `m-wasii/moin-bin-umair-rebuild` and use these build settings:
-
-   - Framework preset: `Astro`
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Node version: from `.nvmrc` (`22.12.0`). If the build still uses Node 18, set the environment variable `NODE_VERSION` to `22.12.0` and use build system v3.
-
-The live URL will be `https://moin-bin-umair.pages.dev` (or the project name you choose). Add a custom domain under **Custom domains** when you have one, then set a `SITE` environment variable to that URL (for example `https://moinbinumair.com`) so canonical and Open Graph tags stay correct.
-
-To publish a one-off build from this machine instead of Git:
-
-```sh
-npm run build
-npx wrangler pages deploy ./dist
+  media/        Hero reel
+  photography/  Seed stills (WebP)
 ```

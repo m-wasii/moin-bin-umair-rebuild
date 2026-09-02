@@ -1,0 +1,91 @@
+---
+import type { StoredPhoto } from "../data/photos";
+import { photoCategories } from "../data/photos";
+import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
+
+interface Props {
+	photos: StoredPhoto[];
+	lang: Lang;
+}
+
+const { photos, lang } = Astro.props;
+const t = useTranslations(lang);
+
+const grouped = photoCategories
+	.map((category) => ({
+		category,
+		title: t(`photo.category.${category}` as UiKey),
+		items: photos.filter((photo) => photo.category === category),
+	}))
+	.filter((group) => group.items.length > 0);
+---
+
+<section
+	class="work-section photo-section"
+	id="photography"
+	aria-labelledby="photography-title"
+	data-nav-section
+>
+	<header class="section-heading" data-reveal>
+		<div class="section-heading__meta">
+			<p>03</p>
+			<p>
+				{
+					photos.length === 0
+						? t("section.meta.stills")
+						: `${photos.length} ${
+								photos.length === 1
+									? t("section.meta.still")
+									: t("section.meta.stills")
+							}`
+				}
+			</p>
+		</div>
+		<h2 id="photography-title">{t("section.photography.title")}</h2>
+		<p class="section-heading__description">
+			{t("section.photography.description")}
+		</p>
+	</header>
+
+	{
+		grouped.length === 0 ? (
+			<p class="work-section__empty" data-reveal>
+				{t("section.photography.empty")}
+			</p>
+		) : (
+			grouped.map((group) => (
+				<div class="photo-group">
+					<h3 class="photo-group__title">{group.title}</h3>
+					<ul class="photo-grid">
+						{group.items.map((photo, index) => (
+							<li>
+								<button
+									class="photo-card"
+									type="button"
+									data-photo
+									data-photo-src={photo.src}
+									data-photo-alt={photo.alt}
+									data-photo-title={photo.title}
+									data-photo-group={group.items
+										.map((item) => item.src)
+										.join("|")}
+									data-photo-index={String(index)}
+								>
+									<img
+										src={photo.src}
+										alt={photo.alt}
+										width="800"
+										height="1000"
+										loading="lazy"
+										decoding="async"
+									/>
+									<span>{photo.title}</span>
+								</button>
+							</li>
+						))}
+					</ul>
+				</div>
+			))
+		)
+	}
+</section>

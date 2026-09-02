@@ -1,0 +1,43 @@
+---
+import { siteOrigin } from "../lib/hosts";
+
+interface Props {
+	title: string;
+	section: "videos" | "photos";
+}
+
+const { title, section } = Astro.props;
+const siteHref = siteOrigin(Astro.url);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="theme-color" content="#050505" />
+		<title>{title} — MBU Dashboard</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="stylesheet" href="/dashboard.css" />
+	</head>
+	<body class="dash">
+		<header class="dash-bar">
+			<p class="dash-bar__brand">MBU</p>
+			<nav class="dash-bar__nav" aria-label="Dashboard">
+				<a
+					href="/dashboard"
+					aria-current={section === "videos" ? "page" : undefined}>Videos</a
+				>
+				<a
+					href="/dashboard/photos"
+					aria-current={section === "photos" ? "page" : undefined}>Photos</a
+				>
+			</nav>
+			<a class="dash-bar__site" href={siteHref}>View site</a>
+		</header>
+		<main class="dash-main">
+			<slot />
+		</main>
+	</body>
+</html>

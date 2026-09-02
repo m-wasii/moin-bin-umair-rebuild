@@ -14,9 +14,13 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"preview": "astro preview",
-		"astro": "astro"
+		"astro": "astro",
+		"seed:photos": "node scripts/seed-photos.mjs",
+		"seed:r2": "node scripts/seed-r2.mjs",
+		"deploy": "astro build && wrangler deploy && wrangler deploy --name dashboard"
 	},
 	"dependencies": {
+		"@astrojs/cloudflare": "^14.2.5",
 		"astro": "^7.2.4"
 	},
 	"devDependencies": {
@@ -24,6 +28,8 @@
 		"@types/node": "^26.3.0",
 		"prettier": "3.9.6",
 		"prettier-plugin-astro": "0.14.1",
-		"typescript": "^6.0.3"
+		"sharp": "^0.34.2",
+		"typescript": "^6.0.3",
+		"wrangler": "^4.126.0"
 	}
 }

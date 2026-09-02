@@ -1,0 +1,34 @@
+---
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div class="photo-overlay" data-photo-dialog hidden>
+	<div class="photo-overlay__backdrop" data-photo-backdrop aria-hidden="true"></div>
+	<div
+		class="photo-dialog"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="photo-dialog-title"
+	>
+		<header>
+			<p id="photo-dialog-title" data-photo-dialog-title></p>
+			<button class="photo-dialog__close" type="button" data-photo-close>
+				{t("dialog.close")}
+			</button>
+		</header>
+		<figure>
+			<img data-photo-dialog-image alt="" />
+		</figure>
+		<div class="photo-dialog__nav">
+			<button type="button" data-photo-prev>{t("photo.prev")}</button>
+			<button type="button" data-photo-next>{t("photo.next")}</button>
+		</div>
+	</div>
+</div>

@@ -1,11 +1,15 @@
 // @ts-check
 import { defineConfig } from "astro/config";
+import cloudflare from "@astrojs/cloudflare";
 
 const site = process.env.SITE || process.env.CF_PAGES_URL;
 
-// https://astro.build/config
 export default defineConfig({
 	site,
+	adapter: cloudflare({
+		imageService: "compile",
+	}),
+	session: false,
 	i18n: {
 		defaultLocale: "en",
 		locales: ["en", "de"],

@@ -709,6 +709,130 @@ main {
 	font-size: clamp(1rem, 1.2vw, 1.2rem);
 }
 
+.photo-group {
+	margin-top: clamp(2.5rem, 4vw, 4rem);
+}
+
+.photo-group__title {
+	margin: 0 0 1.25rem;
+	color: var(--muted);
+	font-size: 0.9rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.photo-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+	gap: clamp(0.75rem, 1.5vw, 1.25rem);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.photo-card {
+	display: grid;
+	gap: 0.55rem;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.photo-card img {
+	width: 100%;
+	aspect-ratio: 4 / 5;
+	object-fit: cover;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	filter: saturate(0.9) contrast(1.03);
+	transition:
+		filter 400ms ease,
+		transform 700ms cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+
+.photo-card span {
+	font-family: var(--font-display);
+	font-size: 0.95rem;
+}
+
+.photo-card:hover img {
+	filter: saturate(1) contrast(1.02);
+	transform: scale(1.03);
+}
+
+.photo-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 220;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+}
+
+.photo-overlay[hidden] {
+	display: none;
+}
+
+.photo-overlay__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(5, 4, 3, 0.82);
+}
+
+.photo-dialog {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	gap: 0.85rem;
+	width: min(72rem, 100%);
+	max-height: 92svh;
+}
+
+.photo-dialog header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+}
+
+.photo-dialog header p {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: clamp(1.1rem, 2vw, 1.6rem);
+}
+
+.photo-dialog figure {
+	margin: 0;
+	min-height: 0;
+}
+
+.photo-dialog img {
+	display: block;
+	width: 100%;
+	max-height: 78svh;
+	object-fit: contain;
+	border-radius: var(--radius);
+}
+
+.photo-dialog__close,
+.photo-dialog__nav button {
+	padding: 0.45rem 0.85rem;
+	border: 1px solid var(--line-strong);
+	border-radius: 999px;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+
+.photo-dialog__nav {
+	display: flex;
+	justify-content: space-between;
+}
+
 .contact {
 	display: flex;
 	flex-direction: column;
