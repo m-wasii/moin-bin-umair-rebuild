@@ -50,8 +50,8 @@ Public site                 dashboard.yourdomain.com
 4. RAW, HEIC, and PDF are rejected
 
 Seed stills (Drive Top) live in `public/photography/` plus `src/data/photos.seed.json`.
-The Worker serves `/media/photos/...` from R2 when the object exists, otherwise
-falls back to those public files.
+The Worker serves `/media/photos/...` from the `MEDIA` R2 bucket (`moin-media`)
+when the object exists, otherwise it falls back to those public files.
 
 Site chrome: `src/data/site.ts`.  
 Hero reel: `public/media/hero-loop.mp4` + `public/media/hero-poster.webp`.  
@@ -66,10 +66,16 @@ npm run build
 npx wrangler deploy
 ```
 
-2. Optional for the first deploy: the public gallery ships from
-   `public/photography/` + seed JSON. Dashboard **saves** need R2.
-   Create bucket `moin-media`, add the `MEDIA` binding in `wrangler.jsonc`,
-   and use an API token with **Workers R2 Storage: Edit**.
+2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
+   the first deploy (or whenever seed stills change), upload catalogs and
+   WebP objects:
+
+```sh
+npm run seed:r2
+```
+
+Dashboard saves write to the same bucket. The API token needs
+**Workers R2 Storage: Edit**.
 
 3. Custom domains on the same Worker:
 
@@ -95,7 +101,7 @@ On `*.workers.dev` previews, `/dashboard` stays on-host and Access is not enforc
 Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
 Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not
 copy your R2; run `npm run seed:photos` there if they need the Drive Top stills
-re-encoded into `public/photography/`.
+re-encoded into `public/photography/`, then `npm run seed:r2` to fill the bucket.
 
 ## Structure
 

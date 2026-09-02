@@ -18,6 +18,10 @@ export interface StoredPhoto {
 	src: string;
 }
 
+export function photoMediaSrc(category: PhotoCategory, slug: string) {
+	return `/media/photos/${category}/${slug}.webp`;
+}
+
 export function isPhotoCategory(value: string): value is PhotoCategory {
 	return (photoCategories as readonly string[]).includes(value);
 }

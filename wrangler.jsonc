@@ -1,5 +1,12 @@
 {
 	"name": "moin-bin-umair",
 	"compatibility_date": "2025-08-01",
-	"compatibility_flags": ["nodejs_compat"]
+	"compatibility_flags": ["nodejs_compat"],
+	// Binding name is MEDIA (matches src/lib/store.ts), not the default moin_media.
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "moin-media",
+		},
+	],
 }

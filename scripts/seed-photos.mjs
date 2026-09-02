@@ -69,7 +69,12 @@ for (const entry of manifest) {
 	const dest = join(destDir, `${entry.slug}.webp`);
 	await sharp(input)
 		.rotate()
-		.resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
+		.resize({
+			width: 1600,
+			height: 1600,
+			fit: "inside",
+			withoutEnlargement: true,
+		})
 		.webp({ quality: 80 })
 		.toFile(dest);
 
@@ -78,7 +83,7 @@ for (const entry of manifest) {
 		category: entry.category,
 		title: entry.title,
 		alt: entry.title,
-		src: `/photography/${entry.category}/${entry.slug}.webp`,
+		src: `/media/photos/${entry.category}/${entry.slug}.webp`,
 	});
 	console.log(`  ✓ ${entry.category}/${entry.slug}`);
 }

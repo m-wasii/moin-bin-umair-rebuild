@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import {
 	isPhotoCategory,
+	photoMediaSrc,
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
@@ -68,11 +69,15 @@ export const POST: APIRoute = async ({ request }) => {
 		return json({ error: "File is not a valid WebP image." }, 415);
 	}
 
-	let slug = slugifyPhotoName(String(form.get("slug") ?? "") || title || file.name);
+	let slug = slugifyPhotoName(
+		String(form.get("slug") ?? "") || title || file.name,
+	);
 	if (!slug) slug = `photo-${Date.now()}`;
 
 	const photos = await listPhotos();
-	if (photos.some((photo) => photo.slug === slug && photo.category === category)) {
+	if (
+		photos.some((photo) => photo.slug === slug && photo.category === category)
+	) {
 		slug = `${slug}-${Date.now().toString(36)}`;
 	}
 
@@ -83,7 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
 		category,
 		title: title || titleFromSlug(slug),
 		alt: alt || title || titleFromSlug(slug),
-		src: `/media/photos/${category}/${slug}.webp`,
+		src: photoMediaSrc(category, slug),
 	};
 	photos.push(photo);
 	await savePhotos(photos);
@@ -106,7 +111,8 @@ export const DELETE: APIRoute = async ({ request }) => {
 	const next = photos.filter(
 		(photo) => !(photo.slug === slug && photo.category === category),
 	);
-	if (next.length === photos.length) return json({ error: "Photo not found." }, 404);
+	if (next.length === photos.length)
+		return json({ error: "Photo not found." }, 404);
 
 	await deletePhotoBytes(category, slug);
 	await savePhotos(next);
