@@ -51,7 +51,7 @@ const structuredData = {
 		/>
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
-		<meta name="theme-color" content="#050403" />
+		<meta name="theme-color" content="#d97706" />
 		<meta name="color-scheme" content="dark" />
 
 		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
@@ -83,7 +83,8 @@ const structuredData = {
 		/>
 
 		<title>{title}</title>
-		<script is:inline define:vars={{ PREFERRED_LANG_KEY, enPath, dePath, lang }}>
+		<script is:inline define:vars={{ PREFERRED_LANG_KEY, enPath, dePath, lang }}
+		>
 			document.documentElement.classList.add("js");
 			(function () {
 				try {
@@ -93,9 +94,10 @@ const structuredData = {
 					if (stored === "en" || stored === "de") {
 						target = stored === "de" ? dePath : enPath;
 					} else {
-						var languages = navigator.languages && navigator.languages.length
-							? Array.from(navigator.languages)
-							: [navigator.language || ""];
+						var languages =
+							navigator.languages && navigator.languages.length
+								? Array.from(navigator.languages)
+								: [navigator.language || ""];
 						var prefersDe = false;
 						for (var i = 0; i < languages.length; i++) {
 							var code = String(languages[i] || "").toLowerCase();
