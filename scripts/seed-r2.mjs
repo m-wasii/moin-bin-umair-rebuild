@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const bucket = "moin-media";
 const photographyRoot = join(root, "public/photography");
-const wranglerBin = join(root, "node_modules/.bin/wrangler");
+const wranglerCli = join(root, "node_modules/wrangler/bin/wrangler.js");
 const tmpDir = join(root, ".data", "r2-seed");
 
 function listWebp(dir) {
@@ -30,8 +30,9 @@ function listWebp(dir) {
 function putObject(key, file, contentType) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(
-			wranglerBin,
+			process.execPath,
 			[
+				wranglerCli,
 				"r2",
 				"object",
 				"put",
