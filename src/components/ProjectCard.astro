@@ -1,4 +1,5 @@
 ---
+import type { MosaicSpan } from "../lib/mosaic";
 import type { Project } from "../data/projects";
 import {
 	formatDuration,
@@ -13,27 +14,26 @@ interface Props {
 	project: Project;
 	lang: Lang;
 	index?: number;
+	span?: MosaicSpan;
 }
 
-const { project, lang, index = 0 } = Astro.props;
+const { project, lang, index = 0, span } = Astro.props;
 const t = useTranslations(lang);
 const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
 const isVertical = project.category === "shorts";
 const description = localizedProjectDescription(project, lang);
-const tone = (index % 6) + 1;
 ---
 
 <article
 	class:list={[
 		"project-card",
-		`project-card--tone-${tone}`,
 		{
 			"project-card--featured": project.featured && !isVertical,
 			"project-card--vertical": isVertical,
 		},
 	]}
-	style={`--card-index: ${index}`}
+	style={`--card-index: ${index}; --card-span: ${span ?? 6}`}
 	data-reveal
 >
 	<a
@@ -49,9 +49,6 @@ const tone = (index % 6) + 1;
 		aria-label={t("card.playAria", { title: project.title, host: hostLabel })}
 	>
 		<figure class="project-card__frame">
-			<span class="project-card__index" aria-hidden="true">
-				{String(index + 1).padStart(2, "0")}
-			</span>
 			<img
 				src={project.thumbnail}
 				alt={t("card.stillAlt", { title: project.title })}
