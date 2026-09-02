@@ -1,6 +1,41 @@
 {
 	"photos": [
 		{
+			"slug": "halls",
+			"category": "architecture",
+			"title": "Halls",
+			"alt": "Halls",
+			"src": "/media/photos/architecture/halls.webp"
+		},
+		{
+			"slug": "dome",
+			"category": "architecture",
+			"title": "Dome",
+			"alt": "Dome",
+			"src": "/media/photos/architecture/dome.webp"
+		},
+		{
+			"slug": "hall",
+			"category": "architecture",
+			"title": "Hall",
+			"alt": "Hall",
+			"src": "/media/photos/architecture/hall.webp"
+		},
+		{
+			"slug": "patterns",
+			"category": "architecture",
+			"title": "Patterns",
+			"alt": "Patterns",
+			"src": "/media/photos/architecture/patterns.webp"
+		},
+		{
+			"slug": "history",
+			"category": "architecture",
+			"title": "History",
+			"alt": "History",
+			"src": "/media/photos/architecture/history.webp"
+		},
+		{
 			"slug": "behind-the-scenes-43",
 			"category": "behind-the-scenes",
 			"title": "On set 43",
@@ -57,6 +92,62 @@
 			"src": "/media/photos/portraits-fashion/img-0398.webp"
 		},
 		{
+			"slug": "img-0279-edit",
+			"category": "portraits-fashion",
+			"title": "Portrait 0279",
+			"alt": "Portrait 0279",
+			"src": "/media/photos/portraits-fashion/img-0279-edit.webp"
+		},
+		{
+			"slug": "img-1033-edit",
+			"category": "portraits-fashion",
+			"title": "Portrait 1033",
+			"alt": "Portrait 1033",
+			"src": "/media/photos/portraits-fashion/img-1033-edit.webp"
+		},
+		{
+			"slug": "img-0318",
+			"category": "portraits-fashion",
+			"title": "Portrait 0318",
+			"alt": "Portrait 0318",
+			"src": "/media/photos/portraits-fashion/img-0318.webp"
+		},
+		{
+			"slug": "img-1202-edit",
+			"category": "portraits-fashion",
+			"title": "Portrait 1202",
+			"alt": "Portrait 1202",
+			"src": "/media/photos/portraits-fashion/img-1202-edit.webp"
+		},
+		{
+			"slug": "hybrid-jacket-2",
+			"category": "fashion-lookbook",
+			"title": "Hybrid jacket",
+			"alt": "Hybrid jacket",
+			"src": "/media/photos/fashion-lookbook/hybrid-jacket-2.webp"
+		},
+		{
+			"slug": "bomber-emerald",
+			"category": "fashion-lookbook",
+			"title": "Emerald bomber",
+			"alt": "Emerald bomber",
+			"src": "/media/photos/fashion-lookbook/bomber-emerald.webp"
+		},
+		{
+			"slug": "bomber-brown",
+			"category": "fashion-lookbook",
+			"title": "Brown bomber",
+			"alt": "Brown bomber",
+			"src": "/media/photos/fashion-lookbook/bomber-brown.webp"
+		},
+		{
+			"slug": "cargo-vest",
+			"category": "fashion-lookbook",
+			"title": "Cargo vest",
+			"alt": "Cargo vest",
+			"src": "/media/photos/fashion-lookbook/cargo-vest.webp"
+		},
+		{
 			"slug": "makli-1",
 			"category": "fashion-lookbook",
 			"title": "Makli",
@@ -78,11 +169,39 @@
 			"src": "/media/photos/events-wedding/img-9337.webp"
 		},
 		{
+			"slug": "img-9714",
+			"category": "events-wedding",
+			"title": "Wedding 9714",
+			"alt": "Wedding 9714",
+			"src": "/media/photos/events-wedding/img-9714.webp"
+		},
+		{
+			"slug": "img-9656",
+			"category": "events-wedding",
+			"title": "Wedding 9656",
+			"alt": "Wedding 9656",
+			"src": "/media/photos/events-wedding/img-9656.webp"
+		},
+		{
+			"slug": "img-9546",
+			"category": "events-wedding",
+			"title": "Wedding 9546",
+			"alt": "Wedding 9546",
+			"src": "/media/photos/events-wedding/img-9546.webp"
+		},
+		{
 			"slug": "img-9328",
 			"category": "events-wedding",
 			"title": "Wedding 9328",
 			"alt": "Wedding 9328",
 			"src": "/media/photos/events-wedding/img-9328.webp"
+		},
+		{
+			"slug": "img-9519",
+			"category": "events-wedding",
+			"title": "Wedding 9519",
+			"alt": "Wedding 9519",
+			"src": "/media/photos/events-wedding/img-9519.webp"
 		},
 		{
 			"slug": "mg-0587",
@@ -127,6 +246,13 @@
 			"src": "/media/photos/film-portraits-trieste/snow-of-anna.webp"
 		},
 		{
+			"slug": "grandmother",
+			"category": "film-portraits-trieste",
+			"title": "Grandmother",
+			"alt": "Grandmother",
+			"src": "/media/photos/film-portraits-trieste/grandmother.webp"
+		},
+		{
 			"slug": "julia",
 			"category": "film-portraits-trieste",
 			"title": "Julia",
@@ -134,11 +260,25 @@
 			"src": "/media/photos/film-portraits-trieste/julia.webp"
 		},
 		{
+			"slug": "don-vienier",
+			"category": "film-portraits-trieste",
+			"title": "Don Vienier",
+			"alt": "Don Vienier",
+			"src": "/media/photos/film-portraits-trieste/don-vienier.webp"
+		},
+		{
 			"slug": "candid-thought-of-julia",
 			"category": "film-portraits-trieste",
 			"title": "Candid thought of Julia",
 			"alt": "Candid thought of Julia",
 			"src": "/media/photos/film-portraits-trieste/candid-thought-of-julia.webp"
+		},
+		{
+			"slug": "sanjeet-walk",
+			"category": "film-portraits-trieste",
+			"title": "Sanjeet walk",
+			"alt": "Sanjeet walk",
+			"src": "/media/photos/film-portraits-trieste/sanjeet-walk.webp"
 		}
 	]
 }

@@ -30,6 +30,20 @@ const t = useTranslations(lang);
 
 	<h1 class="sr-only" id="hero-title">{site.name}</h1>
 
+	<div class="hero__orbit" aria-hidden="true">
+		<svg viewBox="0 0 200 200">
+			<defs>
+				<path
+					id="hero-orbit-path"
+					d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"
+				></path>
+			</defs>
+			<text>
+				<textPath href="#hero-orbit-path">{t("hero.orbit")}</textPath>
+			</text>
+		</svg>
+	</div>
+
 	<div class="hero__footer">
 		<p class="hero__tagline">{t("hero.tagline")}</p>
 		<a class="hero__scroll" href="#commercial">

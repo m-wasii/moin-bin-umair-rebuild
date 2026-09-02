@@ -49,6 +49,9 @@ const tone = (index % 6) + 1;
 		aria-label={t("card.playAria", { title: project.title, host: hostLabel })}
 	>
 		<figure class="project-card__frame">
+			<span class="project-card__index" aria-hidden="true">
+				{String(index + 1).padStart(2, "0")}
+			</span>
 			<img
 				src={project.thumbnail}
 				alt={t("card.stillAlt", { title: project.title })}

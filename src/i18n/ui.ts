@@ -24,6 +24,7 @@ const ui = {
 		"nav.shorts": "Shorts",
 		"nav.contact": "Contact",
 		"hero.tagline": "Filmmaker · Visual storyteller",
+		"hero.orbit": "Still · Motion · Story · Still · Motion · Story ·",
 		"hero.explore": "Explore the work",
 		"section.commercial.title": "Commercial",
 		"section.commercial.description":
@@ -94,6 +95,7 @@ const ui = {
 		"nav.shorts": "Shorts",
 		"nav.contact": "Kontakt",
 		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
+		"hero.orbit": "Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
 		"hero.explore": "Arbeit entdecken",
 		"section.commercial.title": "Werbung",
 		"section.commercial.description":

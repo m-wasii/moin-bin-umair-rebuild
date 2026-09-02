@@ -58,6 +58,7 @@ const photos = await loadPhotos();
 		<Contact lang={lang} />
 	</main>
 
+	<PhotoSection photos={photos} lang={lang} surface="overlays" />
 	<VideoDialog lang={lang} />
 	<PhotoDialog lang={lang} />
 </BaseLayout>
