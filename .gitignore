@@ -21,6 +21,9 @@ pnpm-debug.log*
 # Cloudflare Wrangler
 .wrangler/
 
+# local R2/media fallback for astro dev
+.data/
+
 # macOS-specific files
 .DS_Store
 

@@ -1,0 +1,166 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import { hasWritableMedia, listVideos } from "../../lib/store";
+
+export const prerender = false;
+
+const videos = await listVideos();
+const writable = hasWritableMedia();
+---
+
+<DashboardLayout title="Videos" section="videos">
+	<header class="dash-heading">
+		<div>
+			<p>Catalog</p>
+			<h1>Videos</h1>
+		</div>
+		<p>
+			Paste a Vimeo or YouTube link. Google Access is the only login — nothing
+			is saved to GitHub.
+		</p>
+	</header>
+
+	{
+		!writable && (
+			<p class="dash-banner" role="status">
+				R2 is not bound on this Worker yet. You can look at the catalog, but
+				saves need a MEDIA bucket.
+			</p>
+		)
+	}
+
+	<form class="dash-form" data-video-form>
+		<label>
+			<span>Video URL</span>
+			<input
+				name="url"
+				type="url"
+				required
+				placeholder="https://vimeo.com/… or YouTube"
+			/>
+		</label>
+		<label>
+			<span>Category</span>
+			<select name="category" required>
+				<option value="commercial">Commercial</option>
+				<option value="art">Art & Films</option>
+				<option value="shorts">Shorts</option>
+			</select>
+		</label>
+		<label>
+			<span>Title override</span>
+			<input name="title" type="text" placeholder="Optional" />
+		</label>
+		<label>
+			<span>Year (YouTube)</span>
+			<input name="year" type="number" min="1900" max="2100" />
+		</label>
+		<label>
+			<span>Duration seconds (YouTube)</span>
+			<input name="duration" type="number" min="1" />
+		</label>
+		<label class="dash-form__check">
+			<input name="featured" type="checkbox" />
+			<span>Featured</span>
+		</label>
+		<label class="dash-form__wide">
+			<span>Description</span>
+			<textarea name="description" rows="3"></textarea>
+		</label>
+		<button type="submit">Add video</button>
+		<p class="dash-form__status" data-form-status hidden></p>
+	</form>
+
+	<div class="dash-table-wrap">
+		<table class="dash-table">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>Category</th>
+					<th>Year</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody data-video-rows>
+				{
+					videos.map((video) => (
+						<tr data-slug={video.slug}>
+							<td>
+								<strong>{video.title}</strong>
+								<div class="dash-muted">{video.provider}</div>
+							</td>
+							<td>{video.category}</td>
+							<td>{video.year}</td>
+							<td>
+								<button
+									type="button"
+									class="dash-delete"
+									data-delete-video={video.slug}
+								>
+									Delete
+								</button>
+							</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+</DashboardLayout>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>("[data-video-form]");
+	const status = document.querySelector<HTMLElement>("[data-form-status]");
+	const rows = document.querySelector<HTMLElement>("[data-video-rows]");
+
+	function setStatus(message: string, isError = false) {
+		if (!status) return;
+		status.hidden = !message;
+		status.textContent = message;
+		status.dataset.error = isError ? "true" : "false";
+	}
+
+	form?.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		const data = new FormData(form);
+		setStatus("Saving…");
+		const payload = {
+			url: String(data.get("url") ?? ""),
+			category: String(data.get("category") ?? ""),
+			title: String(data.get("title") ?? ""),
+			description: String(data.get("description") ?? ""),
+			year: data.get("year") ? Number(data.get("year")) : undefined,
+			duration: data.get("duration") ? Number(data.get("duration")) : undefined,
+			featured: data.get("featured") === "on",
+		};
+		const response = await fetch("/api/videos", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(payload),
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			setStatus(result.error ?? "Could not save.", true);
+			return;
+		}
+		location.reload();
+	});
+
+	rows?.addEventListener("click", async (event) => {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+			"[data-delete-video]",
+		);
+		if (!button) return;
+		const slug = button.dataset.deleteVideo;
+		if (!slug || !confirm("Remove this video from the site?")) return;
+		const response = await fetch(`/api/videos?slug=${encodeURIComponent(slug)}`, {
+			method: "DELETE",
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			alert(result.error ?? "Could not delete.");
+			return;
+		}
+		button.closest("tr")?.remove();
+	});
+</script>

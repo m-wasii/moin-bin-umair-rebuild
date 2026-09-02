@@ -353,6 +353,12 @@ document.addEventListener("keydown", (event) => {
 		return;
 	}
 
+	if (isPhotoOpen()) {
+		event.preventDefault();
+		closePhotoDialog();
+		return;
+	}
+
 	if (navToggle?.getAttribute("aria-expanded") === "true") {
 		closeNavigation();
 		navToggle.focus();
@@ -651,3 +657,83 @@ aboutToggle?.addEventListener("click", (event) => {
 
 videoClose?.addEventListener("click", closeVideoDialog);
 videoBackdrop?.addEventListener("click", closeVideoDialog);
+
+const photoDialog = document.querySelector<HTMLElement>("[data-photo-dialog]");
+const photoBackdrop = document.querySelector<HTMLElement>("[data-photo-backdrop]");
+const photoClose = document.querySelector<HTMLButtonElement>("[data-photo-close]");
+const photoImage = document.querySelector<HTMLImageElement>("[data-photo-dialog-image]");
+const photoTitle = document.querySelector<HTMLElement>("[data-photo-dialog-title]");
+const photoPrev = document.querySelector<HTMLButtonElement>("[data-photo-prev]");
+const photoNext = document.querySelector<HTMLButtonElement>("[data-photo-next]");
+let photoGroup: Array<{ src: string; alt: string; title: string }> = [];
+let photoIndex = 0;
+let photoFocus: HTMLElement | null = null;
+
+function isPhotoOpen() {
+	return Boolean(photoDialog && !photoDialog.hidden);
+}
+
+function renderPhoto() {
+	const item = photoGroup[photoIndex];
+	if (!item || !photoImage) return;
+	photoImage.src = item.src;
+	photoImage.alt = item.alt;
+	photoTitle?.replaceChildren(document.createTextNode(item.title));
+}
+
+function closePhotoDialog() {
+	if (!isPhotoOpen()) return;
+	if (photoDialog) photoDialog.hidden = true;
+	if (photoImage) photoImage.src = "";
+	unlockDocumentScroll();
+	photoFocus?.focus({ preventScroll: true });
+	photoFocus = null;
+}
+
+function openPhotoDialog(button: HTMLElement) {
+	const src = button.dataset.photoSrc;
+	const group = (button.dataset.photoGroup ?? "")
+		.split("|")
+		.filter(Boolean)
+		.map((itemSrc) => {
+			const match = document.querySelector<HTMLElement>(
+				`[data-photo][data-photo-src="${CSS.escape(itemSrc)}"]`,
+			);
+			return {
+				src: itemSrc,
+				alt: match?.dataset.photoAlt ?? "",
+				title: match?.dataset.photoTitle ?? "",
+			};
+		});
+	if (!src || !photoDialog || group.length === 0) return;
+
+	photoGroup = group;
+	photoIndex = Number(button.dataset.photoIndex ?? 0) || 0;
+	photoFocus = button;
+	lockDocumentScroll();
+	renderPhoto();
+	photoDialog.hidden = false;
+	photoClose?.focus({ preventScroll: true });
+}
+
+document.addEventListener("click", (event) => {
+	const target = event.target;
+	if (!(target instanceof Element)) return;
+	const button = target.closest<HTMLElement>("[data-photo]");
+	if (!button) return;
+	event.preventDefault();
+	openPhotoDialog(button);
+});
+
+photoClose?.addEventListener("click", closePhotoDialog);
+photoBackdrop?.addEventListener("click", closePhotoDialog);
+photoPrev?.addEventListener("click", () => {
+	if (photoGroup.length === 0) return;
+	photoIndex = (photoIndex - 1 + photoGroup.length) % photoGroup.length;
+	renderPhoto();
+});
+photoNext?.addEventListener("click", () => {
+	if (photoGroup.length === 0) return;
+	photoIndex = (photoIndex + 1) % photoGroup.length;
+	renderPhoto();
+});
