@@ -1,6 +1,7 @@
 ---
 import type { StoredPhoto } from "../data/photos";
 import { photoCategories } from "../data/photos";
+import { mosaicSpans } from "../lib/mosaic";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 
 interface Props {
@@ -19,7 +20,7 @@ const grouped = photoCategories
 	}))
 	.filter((group) => group.items.length > 0);
 
-const albumSpans = [8, 4, 5, 7, 7, 5, 12];
+const albumSpans = mosaicSpans(grouped.length);
 ---
 
 <section

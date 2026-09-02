@@ -1,5 +1,6 @@
 ---
 import type { Project } from "../data/projects";
+import { mosaicSpans } from "../lib/mosaic";
 import { useTranslations, type Lang } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
@@ -23,6 +24,8 @@ const metaLabel =
 					? t("section.meta.project")
 					: t("section.meta.projects")
 			}`;
+const isReel = id === "shorts";
+const spans = isReel ? [] : mosaicSpans(projects.length);
 ---
 
 <section
@@ -51,7 +54,12 @@ const metaLabel =
 				class:list={["project-grid", { "project-grid--reel": id === "shorts" }]}
 			>
 				{projects.map((project, index) => (
-					<ProjectCard project={project} lang={lang} index={index} />
+					<ProjectCard
+						project={project}
+						lang={lang}
+						index={index}
+						span={spans[index]}
+					/>
 				))}
 			</div>
 		) : (
