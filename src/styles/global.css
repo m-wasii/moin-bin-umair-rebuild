@@ -511,10 +511,10 @@ main {
 .section-heading__ghost {
 	position: absolute;
 	z-index: 0;
-	top: 0;
-	right: 0;
+	top: 0.08em;
+	right: 0.12em;
 	margin: 0;
-	max-width: 100%;
+	max-width: calc(100% - 0.12em);
 	overflow: hidden;
 	color: var(--paper);
 	font-family: var(--font-display);
