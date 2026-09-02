@@ -42,6 +42,10 @@ Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
 
 `/dashboard` on the public host redirects to the dashboard subdomain.
 
+GitHub’s Cloudflare Pages bot may still comment `*.pages.dev` URLs. Those
+404 — this app is a Worker. Preview and production are the workers.dev hosts
+above (or `npx wrangler deploy --name <preview-worker>`).
+
 ### Videos
 
 1. Open `/dashboard`
