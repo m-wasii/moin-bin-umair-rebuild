@@ -1,14 +1,13 @@
 ---
+import { siteOrigin } from "../lib/hosts";
+
 interface Props {
 	title: string;
 	section: "videos" | "photos";
 }
 
 const { title, section } = Astro.props;
-const host = Astro.url.hostname;
-const siteHref = host.startsWith("dashboard.")
-	? `${Astro.url.protocol}//${host.replace(/^dashboard\./, "")}`
-	: "/";
+const siteHref = siteOrigin(Astro.url);
 ---
 
 <!doctype html>
@@ -28,13 +27,11 @@ const siteHref = host.startsWith("dashboard.")
 			<nav class="dash-bar__nav" aria-label="Dashboard">
 				<a
 					href="/dashboard"
-					aria-current={section === "videos" ? "page" : undefined}
-					>Videos</a
+					aria-current={section === "videos" ? "page" : undefined}>Videos</a
 				>
 				<a
 					href="/dashboard/photos"
-					aria-current={section === "photos" ? "page" : undefined}
-					>Photos</a
+					aria-current={section === "photos" ? "page" : undefined}>Photos</a
 				>
 			</nav>
 			<a class="dash-bar__site" href={siteHref}>View site</a>

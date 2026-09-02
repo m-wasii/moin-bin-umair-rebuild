@@ -28,12 +28,19 @@ There is **no GitHub login**. Cloudflare Access (Google allowlist) is the only
 production sign-in. Videos and photos are saved to **R2**, not git.
 
 ```text
-Public site                 dashboard.yourdomain.com
-(www / apex)                ├─ Cloudflare Access (Google)
+Public site                 dashboard.<same account>
+(www / apex / mbu.*)        ├─ Cloudflare Access (Google) on custom domains
                             ├─ /dashboard          videos
                             ├─ /dashboard/photos   stills (auto WebP)
                             └─ writes R2 (MEDIA bucket)
 ```
+
+Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
+
+- Site: https://mbu.wasi-workdesk.workers.dev
+- Dashboard: https://dashboard.wasi-workdesk.workers.dev
+
+`/dashboard` on the public host redirects to the dashboard subdomain.
 
 ### Videos
 
@@ -62,9 +69,13 @@ German about-copy: `src/i18n/project-descriptions.ts`.
 1. Connect this GitHub repo to a **Worker** (not Pages), or:
 
 ```sh
-npm run build
-npx wrangler deploy
+npm run deploy
 ```
+
+That builds once and publishes two Workers that share the `MEDIA` bucket:
+
+- `mbu` → https://mbu.wasi-workdesk.workers.dev
+- `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
 
 2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
    the first deploy (or whenever seed stills change), upload catalogs and
@@ -96,7 +107,8 @@ Dashboard saves write to the same bucket. The API token needs
    3. Allowlist editor emails
    4. Do not put the public site hostname in this Access app
 
-On `*.workers.dev` previews, `/dashboard` stays on-host and Access is not enforced.
+On `*.workers.dev`, Access is not enforced. The public Worker redirects
+`/dashboard` to `dashboard.<account>.workers.dev`.
 
 Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
 Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not

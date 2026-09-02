@@ -1,8 +1,13 @@
 {
-	"name": "moin-bin-umair",
+	"name": "mbu",
 	"compatibility_date": "2025-08-01",
 	"compatibility_flags": ["nodejs_compat"],
+	"workers_dev": true,
+	"preview_urls": false,
 	// Binding name is MEDIA (matches src/lib/store.ts), not the default moin_media.
+	// Public site: https://mbu.wasi-workdesk.workers.dev
+	// Dashboard:   npx wrangler deploy --name dashboard
+	//              → https://dashboard.wasi-workdesk.workers.dev
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",

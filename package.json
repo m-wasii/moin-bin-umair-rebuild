@@ -16,7 +16,8 @@
 		"preview": "astro preview",
 		"astro": "astro",
 		"seed:photos": "node scripts/seed-photos.mjs",
-		"seed:r2": "node scripts/seed-r2.mjs"
+		"seed:r2": "node scripts/seed-r2.mjs",
+		"deploy": "astro build && wrangler deploy && wrangler deploy --name dashboard"
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "^14.2.5",

@@ -23,17 +23,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return context.redirect("/dashboard");
 	}
 
-	if (
-		!import.meta.env.DEV &&
-		!onDashboard &&
-		!preview &&
-		dashboardPath
-	) {
+	if (!import.meta.env.DEV && !onDashboard && dashboardPath) {
 		const target = new URL(
 			`${url.pathname}${url.search}`,
 			`${dashboardOrigin(url)}/`,
 		);
-		return context.redirect(target.toString(), 302);
+		if (target.host !== host) {
+			return context.redirect(target.toString(), 302);
+		}
 	}
 
 	const protectDashboard =
