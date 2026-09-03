@@ -70,9 +70,11 @@ function renderFileClip() {
 	video.playsInline = true;
 	video.preload = "metadata";
 	if (clip.poster) video.poster = clip.poster;
-	video.src = clip.src;
+	video.src = clip.src.startsWith("/shorts/") ? `/media${clip.src}` : clip.src;
 	videoPlayer.replaceChildren(video);
-	void video.play();
+	void video.play().catch(() => {
+		// Autoplay can be blocked; controls stay so the clip is still playable.
+	});
 	setPanelShape(clipOrientation(clip), fileClips.length > 1);
 
 	if (videoPlaylistCount) {
