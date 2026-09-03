@@ -1,6 +1,6 @@
 :root {
-	--ink: #150a04;
-	--ink-soft: #241409;
+	--ink: #050a12;
+	--ink-soft: #091120;
 	--paper: #ffedd5;
 	--peach: #ffedd5;
 	--white: #ffffff;
@@ -10,14 +10,14 @@
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
-	--panel: rgba(48, 22, 8, 0.72);
+	--panel: rgba(5, 10, 18, 0.72);
 	--amber: #f59e0b;
 	--amber-deep: #d97706;
 	--orange: #ff6b00;
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
-	--tungsten-deep: #211307;
-	--stage-base: #1c1008;
+	--tungsten-deep: #070d18;
+	--stage-base: #050a12;
 	--stage-glow-top: radial-gradient(
 		ellipse 98% 38% at 85% 7%,
 		rgba(245, 158, 11, 0.26),
@@ -68,11 +68,11 @@
 	);
 	--stage-wash: linear-gradient(
 		180deg,
-		#3b1e0a 0%,
-		#060403 26%,
-		#2a1608 44%,
-		#050403 62%,
-		#3a1d0a 100%
+		#0b1526 0%,
+		#030509 26%,
+		#091120 44%,
+		#020407 62%,
+		#0b1424 100%
 	);
 	--stage:
 		var(--stage-glow-top), var(--stage-glow-top-left),
@@ -226,7 +226,7 @@ main {
 .site-header--scrolled {
 	border-color: var(--line);
 	background: var(--panel);
-	box-shadow: 0 1rem 2.5rem rgba(36, 12, 0, 0.32);
+	box-shadow: 0 1rem 2.5rem rgba(5, 10, 18, 0.32);
 	-webkit-backdrop-filter: blur(18px);
 	backdrop-filter: blur(18px);
 }
@@ -411,7 +411,7 @@ main {
 
 .hero__media {
 	z-index: -2;
-	background: #0a0806;
+	background: #050a12;
 }
 
 .hero__media video {
@@ -641,7 +641,7 @@ main {
 	margin: 0;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
-	background: #16110c;
+	background: #080f1a;
 }
 
 .project-card__frame img {
@@ -660,8 +660,8 @@ main {
 	inset: 0;
 	background: linear-gradient(
 		180deg,
-		rgba(10, 8, 6, 0.04) 30%,
-		rgba(10, 8, 6, 0.82) 100%
+		rgba(5, 10, 18, 0.04) 30%,
+		rgba(5, 10, 18, 0.82) 100%
 	);
 	pointer-events: none;
 }
@@ -676,7 +676,7 @@ main {
 	padding: 0.42rem 0.7rem 0.42rem 0.55rem;
 	border: 2px solid rgba(245, 158, 11, 0.42);
 	border-radius: 999px;
-	background: rgba(10, 8, 6, 0.66);
+	background: rgba(5, 10, 18, 0.66);
 	color: var(--paper);
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -805,7 +805,7 @@ main {
 	overflow: hidden;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
-	background: #16110c;
+	background: #080f1a;
 	pointer-events: none;
 	transition: transform 700ms cubic-bezier(0.2, 0.65, 0.2, 1);
 }
@@ -833,7 +833,7 @@ main {
 	margin: 0;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
-	background: #16110c;
+	background: #080f1a;
 }
 
 .photo-album:nth-child(1) .photo-album__frame,
@@ -859,10 +859,10 @@ main {
 	background:
 		linear-gradient(
 			180deg,
-			rgba(10, 8, 6, 0.08) 20%,
-			rgba(10, 8, 6, 0.78) 100%
+			rgba(5, 10, 18, 0.08) 20%,
+			rgba(5, 10, 18, 0.78) 100%
 		),
-		linear-gradient(90deg, rgba(10, 8, 6, 0.18), transparent 40%);
+		linear-gradient(90deg, rgba(5, 10, 18, 0.18), transparent 40%);
 	pointer-events: none;
 }
 
@@ -909,7 +909,7 @@ main {
 	height: 2.6rem;
 	border: 2px solid rgba(245, 158, 11, 0.42);
 	border-radius: 999px;
-	background: rgba(10, 8, 6, 0.66);
+	background: rgba(5, 10, 18, 0.66);
 	color: var(--paper);
 	transition:
 		background-color 220ms ease,
@@ -964,7 +964,7 @@ main {
 .album-overlay__backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgba(5, 4, 3, 0.96);
+	background: rgba(5, 10, 18, 0.96);
 }
 
 .album-overlay__dialog {
@@ -1117,7 +1117,7 @@ main {
 .photo-overlay__backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgba(5, 4, 3, 0.82);
+	background: rgba(5, 10, 18, 0.82);
 }
 
 .photo-dialog {
@@ -1180,7 +1180,7 @@ main {
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background: var(--peach);
 	color: var(--ink);
-	border-top: 2px solid rgba(5, 4, 3, 0.14);
+	border-top: 2px solid rgba(5, 10, 18, 0.14);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 	overflow: hidden;
 }
@@ -1203,12 +1203,12 @@ main {
 .section-heading--contact .section-heading__meta {
 	flex: 0 0 auto;
 	width: 100%;
-	border-color: rgba(5, 4, 3, 0.18);
+	border-color: rgba(5, 10, 18, 0.18);
 }
 
 .section-heading--contact .section-heading__meta p,
 .section-heading--contact .section-heading__description {
-	color: rgba(5, 4, 3, 0.58);
+	color: rgba(5, 10, 18, 0.58);
 }
 
 .contact__body {
@@ -1251,7 +1251,7 @@ main {
 	font-weight: 600;
 	text-transform: uppercase;
 	text-align: left;
-	color: rgba(5, 4, 3, 0.58);
+	color: rgba(5, 10, 18, 0.58);
 }
 
 .contact__aside {
@@ -1315,12 +1315,12 @@ main {
 	grid-template-columns: 1fr auto;
 	gap: 2rem;
 	padding-top: 1.25rem;
-	border-top: 2px solid rgba(5, 4, 3, 0.18);
+	border-top: 2px solid rgba(5, 10, 18, 0.18);
 	font-family: var(--font-sans);
 	font-size: 0.875rem;
 	font-weight: 600;
 	text-transform: uppercase;
-	color: rgba(5, 4, 3, 0.58);
+	color: rgba(5, 10, 18, 0.58);
 }
 
 .contact .site-footer a:hover {
@@ -1355,7 +1355,7 @@ html.video-open {
 .video-overlay__backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgba(5, 4, 3, 0.88);
+	background: rgba(5, 10, 18, 0.88);
 	-webkit-backdrop-filter: blur(14px);
 	backdrop-filter: blur(14px);
 }
@@ -1630,7 +1630,7 @@ html.video-open {
 		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
 		border: 0;
 		border-radius: 0;
-		background: rgba(21, 10, 4, 0.96);
+		background: rgba(5, 10, 18, 0.96);
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(-1rem);
