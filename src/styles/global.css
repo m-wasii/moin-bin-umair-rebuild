@@ -751,7 +751,7 @@ main {
 .photo-albums {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
-	gap: clamp(1rem, 2vw, 1.6rem);
+	gap: clamp(1.1rem, 2.2vw, 2rem) clamp(0.85rem, 1.6vw, 1.6rem);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -759,13 +759,12 @@ main {
 }
 
 .photo-album {
-	grid-column: span var(--album-span, 6);
+	grid-column: span var(--album-span, 4);
 	min-width: 0;
 }
 
-.photo-album:nth-child(2),
-.photo-album:nth-child(5) {
-	margin-top: clamp(1.5rem, 4vw, 4rem);
+.photo-album:nth-child(3n + 2) {
+	margin-top: clamp(0.6rem, 1.4vw, 1.25rem);
 }
 
 .photo-album__hit {
@@ -781,12 +780,12 @@ main {
 
 .photo-album__stack {
 	position: relative;
-	padding: 1.15rem 1.35rem 0.45rem;
+	padding: 0.7rem 0.8rem 0.28rem;
 }
 
 .photo-album__peek {
 	position: absolute;
-	inset: 1.15rem 1.35rem 0.45rem;
+	inset: 0.7rem 0.8rem 0.28rem;
 	overflow: hidden;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
@@ -796,11 +795,11 @@ main {
 }
 
 .photo-album__peek--1 {
-	transform: rotate(-7deg) translate(-5%, 4%);
+	transform: rotate(-6deg) translate(-4%, 3%);
 }
 
 .photo-album__peek--2 {
-	transform: rotate(6deg) translate(6%, -5%);
+	transform: rotate(5deg) translate(5%, -4%);
 }
 
 .photo-album__peek img {
@@ -813,18 +812,12 @@ main {
 .photo-album__frame {
 	position: relative;
 	z-index: 1;
-	aspect-ratio: 4 / 5;
+	aspect-ratio: 3 / 2;
 	overflow: hidden;
 	margin: 0;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: #16110c;
-}
-
-.photo-album:nth-child(1) .photo-album__frame,
-.photo-album:nth-child(4) .photo-album__frame,
-.photo-album:nth-child(7) .photo-album__frame {
-	aspect-ratio: 16 / 10;
 }
 
 .photo-album__frame img {
@@ -853,11 +846,11 @@ main {
 
 .photo-album__content {
 	position: absolute;
-	right: 1.1rem;
-	bottom: 1.05rem;
-	left: 1.1rem;
+	right: 0.9rem;
+	bottom: 0.85rem;
+	left: 0.9rem;
 	display: grid;
-	gap: 0.2rem;
+	gap: 0.12rem;
 }
 
 .photo-album__kicker {
@@ -872,26 +865,26 @@ main {
 .photo-album__content h3 {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(1.4rem, 2.4vw, 2.2rem);
-	font-weight: 600;
-	line-height: 1.05;
-	letter-spacing: -0.03em;
+	font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+	font-weight: 500;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
 }
 
 .photo-album__content p:last-child {
-	margin: 0.15rem 0 0;
+	margin: 0.1rem 0 0;
 	color: var(--peach);
-	font-size: 0.85rem;
+	font-size: 0.8rem;
 }
 
 .photo-album__arrow {
 	position: absolute;
-	top: 0.9rem;
-	right: 0.9rem;
+	top: 0.75rem;
+	right: 0.75rem;
 	display: grid;
 	place-items: center;
-	width: 2.6rem;
-	height: 2.6rem;
+	width: 2.15rem;
+	height: 2.15rem;
 	border: 2px solid rgba(245, 158, 11, 0.42);
 	border-radius: 999px;
 	background: rgba(10, 8, 6, 0.66);
@@ -904,8 +897,8 @@ main {
 }
 
 .photo-album__arrow svg {
-	width: 1.05rem;
-	height: 1.05rem;
+	width: 0.9rem;
+	height: 0.9rem;
 }
 
 .photo-album__arrow path {
@@ -921,11 +914,11 @@ main {
 }
 
 .photo-album__hit:hover .photo-album__peek--1 {
-	transform: rotate(-11deg) translate(-8%, 6%);
+	transform: rotate(-9deg) translate(-6%, 5%);
 }
 
 .photo-album__hit:hover .photo-album__peek--2 {
-	transform: rotate(10deg) translate(9%, -7%);
+	transform: rotate(8deg) translate(7%, -6%);
 }
 
 .photo-album__hit:hover .photo-album__arrow {
@@ -1573,12 +1566,10 @@ html.video-open {
 		--mosaic-row-height: clamp(16rem, 38vw, 24rem);
 	}
 
-	.photo-album {
+	.photo-album,
+	.photo-album:nth-child(n) {
 		grid-column: span 6;
-	}
-
-	.photo-album:nth-child(7) {
-		grid-column: 1 / -1;
+		margin-top: 0;
 	}
 }
 
@@ -1734,15 +1725,15 @@ html.video-open {
 	}
 
 	.photo-album:nth-child(n) .photo-album__frame {
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 3 / 2;
 	}
 
 	.photo-album__stack {
-		padding: 0.85rem 0.9rem 0.35rem;
+		padding: 0.6rem 0.65rem 0.24rem;
 	}
 
 	.photo-album__peek {
-		inset: 0.85rem 0.9rem 0.35rem;
+		inset: 0.6rem 0.65rem 0.24rem;
 	}
 
 	.hero__orbit {
