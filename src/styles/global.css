@@ -615,7 +615,7 @@ main {
 }
 
 .project-grid {
-	--mosaic-row-height: clamp(13rem, 22vw, 18.5rem);
+	--mosaic-row-height: clamp(17rem, 28vw, 26rem);
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
 	grid-auto-rows: var(--mosaic-row-height);
@@ -1585,7 +1585,7 @@ html.video-open {
 	}
 
 	.project-grid {
-		--mosaic-row-height: clamp(11.5rem, 26vw, 16rem);
+		--mosaic-row-height: clamp(15rem, 34vw, 22.5rem);
 	}
 
 	.work-section--shorts .project-grid {
