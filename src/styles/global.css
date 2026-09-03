@@ -1,70 +1,70 @@
 :root {
-	--ink: #2c1406;
-	--ink-soft: #3f1c08;
+	--ink: #150a04;
+	--ink-soft: #241409;
 	--paper: #ffedd5;
 	--peach: #ffedd5;
 	--white: #ffffff;
 	--muted: #e8b45a;
-	--line: rgba(245, 158, 11, 0.32);
-	--line-strong: rgba(245, 158, 11, 0.58);
+	--line: rgba(245, 158, 11, 0.26);
+	--line-strong: rgba(245, 158, 11, 0.52);
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
-	--panel: rgba(112, 50, 16, 0.42);
+	--panel: rgba(48, 22, 8, 0.72);
 	--amber: #f59e0b;
 	--amber-deep: #d97706;
 	--orange: #ff6b00;
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
-	--tungsten-deep: #2c1406;
-	--stage-base: #703214;
+	--tungsten-deep: #211307;
+	--stage-base: #1c1008;
 	--stage-glow-top: radial-gradient(
-		ellipse 110% 48% at 85% 8%,
-		rgba(245, 158, 11, 0.42),
-		transparent 60%
+		ellipse 98% 38% at 85% 7%,
+		rgba(245, 158, 11, 0.26),
+		transparent 57%
 	);
 	--stage-glow-top-left: radial-gradient(
-		ellipse 100% 44% at 10% 12%,
-		rgba(255, 107, 0, 0.34),
-		transparent 58%
+		ellipse 91% 36% at 11% 11%,
+		rgba(255, 107, 0, 0.21),
+		transparent 54%
 	);
 	--stage-glow-top-center: radial-gradient(
-		ellipse 95% 40% at 50% 6%,
-		rgba(245, 158, 11, 0.32),
-		transparent 60%
+		ellipse 80% 32% at 50% 5%,
+		rgba(245, 158, 11, 0.19),
+		transparent 57%
 	);
 	--stage-glow-heart: radial-gradient(
-		ellipse 140% 90% at 50% 50%,
-		rgba(245, 158, 11, 0.28),
-		transparent 72%
+		ellipse 100% 55% at 50% 48%,
+		rgba(245, 158, 11, 0.11),
+		transparent 65%
 	);
 	--stage-glow-mid: radial-gradient(
-		ellipse 95% 42% at 12% 38%,
-		rgba(255, 107, 0, 0.3),
-		transparent 58%
+		ellipse 83% 34% at 12% 38%,
+		rgba(255, 107, 0, 0.17),
+		transparent 54%
 	);
 	--stage-glow-mid-right: radial-gradient(
-		ellipse 92% 40% at 88% 44%,
-		rgba(245, 158, 11, 0.34),
-		transparent 56%
+		ellipse 79% 32% at 88% 43%,
+		rgba(245, 158, 11, 0.2),
+		transparent 52%
 	);
 	--stage-glow-low: radial-gradient(
-		ellipse 110% 50% at 82% 70%,
-		rgba(255, 140, 20, 0.36),
-		transparent 60%
+		ellipse 97% 40% at 82% 69%,
+		rgba(255, 140, 20, 0.23),
+		transparent 57%
 	);
 	--stage-glow-end: radial-gradient(
-		ellipse 100% 44% at 28% 94%,
-		rgba(217, 119, 6, 0.32),
-		transparent 58%
+		ellipse 88% 36% at 29% 93%,
+		rgba(217, 119, 6, 0.2),
+		transparent 53%
 	);
 	--stage-tint: linear-gradient(
 		180deg,
-		rgba(245, 158, 11, 0.4),
-		rgba(234, 88, 12, 0.3) 50%,
-		rgba(245, 158, 11, 0.38)
+		rgba(245, 158, 11, 0.16),
+		rgba(234, 88, 12, 0.12) 50%,
+		rgba(245, 158, 11, 0.15)
 	);
-	--stage-wash: linear-gradient(180deg, #8b4414 0%, #703214 48%, #8a4214 100%);
+	--stage-wash: linear-gradient(180deg, #3b1e0a 0%, #1c1008 48%, #3a1d0a 100%);
 	--stage:
 		var(--stage-glow-top), var(--stage-glow-top-left),
 		var(--stage-glow-top-center), var(--stage-glow-heart),
@@ -81,7 +81,7 @@
 }
 
 html {
-	background: var(--stage-base);
+	background: var(--ink);
 	color: var(--paper);
 	scroll-behavior: smooth;
 	scroll-padding-top: calc(var(--header-height) + 1rem);
@@ -91,7 +91,7 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--stage-base);
+	background: var(--ink);
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -217,7 +217,7 @@ main {
 .site-header--scrolled {
 	border-color: var(--line);
 	background: var(--panel);
-	box-shadow: 0 1rem 2.5rem rgba(90, 30, 0, 0.38);
+	box-shadow: 0 1rem 2.5rem rgba(36, 12, 0, 0.32);
 	-webkit-backdrop-filter: blur(18px);
 	backdrop-filter: blur(18px);
 }
@@ -280,7 +280,7 @@ main {
 	padding: 0.2rem;
 	border: 2px solid var(--line);
 	border-radius: 999px;
-	background: rgba(245, 158, 11, 0.12);
+	background: rgba(245, 158, 11, 0.05);
 	transition: border-color 250ms ease;
 }
 
@@ -402,7 +402,7 @@ main {
 
 .hero__media {
 	z-index: -2;
-	background: var(--stage-base);
+	background: #0a0806;
 }
 
 .hero__media video {
@@ -410,25 +410,18 @@ main {
 	height: 100%;
 	object-fit: cover;
 	object-position: center;
-	filter: saturate(0.92) contrast(1.04) brightness(0.8);
+	filter: saturate(0.78) contrast(1.08) brightness(0.68);
 	transform: scale(1.01);
 }
 
 .hero__veil {
-	background:
-		linear-gradient(
-			180deg,
-			rgba(180, 80, 12, 0.58) 0%,
-			rgba(245, 158, 11, 0.14) 36%,
-			rgba(140, 58, 12, 0.28) 62%,
-			rgba(112, 50, 16, 0.78) 100%
-		),
-		linear-gradient(
-			90deg,
-			rgba(180, 70, 10, 0.26),
-			transparent 44%,
-			rgba(245, 158, 11, 0.24)
-		);
+	background: linear-gradient(
+		180deg,
+		rgba(0, 0, 0, 0.45) 0%,
+		transparent 36%,
+		transparent 52%,
+		rgba(0, 0, 0, 0.7) 100%
+	);
 }
 
 .hero__grain {
@@ -1628,7 +1621,7 @@ html.video-open {
 		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
 		border: 0;
 		border-radius: 0;
-		background: rgba(44, 20, 6, 0.96);
+		background: rgba(21, 10, 4, 0.96);
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(-1rem);
