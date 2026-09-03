@@ -15,10 +15,9 @@ const t = useTranslations(lang);
 		class="photo-dialog"
 		role="dialog"
 		aria-modal="true"
-		aria-labelledby="photo-dialog-title"
+		aria-label={t("section.photography.title")}
 	>
 		<header>
-			<p id="photo-dialog-title" data-photo-dialog-title></p>
 			<button class="photo-dialog__close" type="button" data-photo-close>
 				{t("dialog.close")}
 			</button>

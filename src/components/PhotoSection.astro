@@ -180,8 +180,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6];
 									type="button"
 									data-photo
 									data-photo-src={photo.src}
-									data-photo-alt={photo.alt}
-									data-photo-title={photo.title}
+									data-photo-alt={photo.alt || group.title}
 									data-photo-group={group.items
 										.map((item) => item.src)
 										.join("|")}
@@ -189,13 +188,12 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6];
 								>
 									<img
 										src={photo.src}
-										alt={photo.alt}
+										alt={photo.alt || group.title}
 										width="1200"
 										height="1500"
 										loading="lazy"
 										decoding="async"
 									/>
-									<span>{photo.title}</span>
 								</button>
 							</li>
 						))}
