@@ -770,7 +770,9 @@ main {
 .photo-albums {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
-	gap: clamp(0.75rem, 1.5vw, 1.2rem);
+	column-gap: clamp(1.5rem, 3vw, 2.75rem);
+	row-gap: clamp(2rem, 4vw, 3.5rem);
+	width: 100%;
 	margin: 0;
 	padding: 0;
 	list-style: none;
