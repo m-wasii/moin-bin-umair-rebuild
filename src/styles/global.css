@@ -1,62 +1,84 @@
 :root {
-	--ink: #050403;
-	--ink-soft: #120e0a;
+	--ink: #150a04;
+	--ink-soft: #241409;
 	--paper: #ffedd5;
 	--peach: #ffedd5;
 	--white: #ffffff;
 	--muted: #e8b45a;
-	--line: rgba(245, 158, 11, 0.22);
-	--line-strong: rgba(245, 158, 11, 0.48);
+	--line: rgba(245, 158, 11, 0.26);
+	--line-strong: rgba(245, 158, 11, 0.52);
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
-	--panel: rgba(5, 4, 3, 0.82);
+	--panel: rgba(48, 22, 8, 0.72);
 	--amber: #f59e0b;
 	--amber-deep: #d97706;
 	--orange: #ff6b00;
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
-	--tungsten-deep: #1a1208;
+	--tungsten-deep: #211307;
+	--stage-base: #1c1008;
 	--stage-glow-top: radial-gradient(
-		ellipse 90% 32% at 85% 6%,
-		rgba(245, 158, 11, 0.16),
-		transparent 55%
+		ellipse 98% 38% at 85% 7%,
+		rgba(245, 158, 11, 0.26),
+		transparent 57%
 	);
 	--stage-glow-top-left: radial-gradient(
-		ellipse 85% 30% at 12% 10%,
-		rgba(255, 107, 0, 0.12),
-		transparent 52%
+		ellipse 91% 36% at 11% 11%,
+		rgba(255, 107, 0, 0.21),
+		transparent 54%
 	);
 	--stage-glow-top-center: radial-gradient(
-		ellipse 70% 26% at 50% 4%,
-		rgba(245, 158, 11, 0.1),
-		transparent 55%
+		ellipse 80% 32% at 50% 5%,
+		rgba(245, 158, 11, 0.19),
+		transparent 57%
+	);
+	--stage-glow-heart: radial-gradient(
+		ellipse 100% 55% at 50% 48%,
+		rgba(245, 158, 11, 0.05),
+		transparent 65%
 	);
 	--stage-glow-mid: radial-gradient(
-		ellipse 75% 28% at 12% 38%,
-		rgba(255, 107, 0, 0.09),
-		transparent 52%
+		ellipse 83% 34% at 12% 38%,
+		rgba(255, 107, 0, 0.17),
+		transparent 54%
 	);
 	--stage-glow-mid-right: radial-gradient(
-		ellipse 70% 26% at 88% 42%,
-		rgba(245, 158, 11, 0.1),
-		transparent 50%
+		ellipse 79% 32% at 88% 43%,
+		rgba(245, 158, 11, 0.2),
+		transparent 52%
 	);
 	--stage-glow-low: radial-gradient(
-		ellipse 88% 34% at 82% 68%,
-		rgba(245, 158, 11, 0.15),
-		transparent 55%
+		ellipse 97% 40% at 82% 69%,
+		rgba(255, 140, 20, 0.23),
+		transparent 57%
 	);
 	--stage-glow-end: radial-gradient(
-		ellipse 80% 30% at 30% 92%,
-		rgba(217, 119, 6, 0.12),
-		transparent 50%
+		ellipse 88% 36% at 29% 93%,
+		rgba(217, 119, 6, 0.2),
+		transparent 53%
+	);
+	--stage-tint: linear-gradient(
+		180deg,
+		rgba(245, 158, 11, 0.16) 0%,
+		transparent 26%,
+		rgba(245, 158, 11, 0.12) 44%,
+		transparent 62%,
+		rgba(245, 158, 11, 0.15) 100%
+	);
+	--stage-wash: linear-gradient(
+		180deg,
+		#3b1e0a 0%,
+		#060403 26%,
+		#2a1608 44%,
+		#050403 62%,
+		#3a1d0a 100%
 	);
 	--stage:
 		var(--stage-glow-top), var(--stage-glow-top-left),
-		var(--stage-glow-top-center), var(--stage-glow-mid),
-		var(--stage-glow-mid-right), var(--stage-glow-low), var(--stage-glow-end),
-		var(--ink);
+		var(--stage-glow-top-center), var(--stage-glow-heart),
+		var(--stage-glow-mid), var(--stage-glow-mid-right), var(--stage-glow-low),
+		var(--stage-glow-end), var(--stage-tint), var(--stage-wash);
 	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -204,7 +226,7 @@ main {
 .site-header--scrolled {
 	border-color: var(--line);
 	background: var(--panel);
-	box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.28);
+	box-shadow: 0 1rem 2.5rem rgba(36, 12, 0, 0.32);
 	-webkit-backdrop-filter: blur(18px);
 	backdrop-filter: blur(18px);
 }
@@ -267,7 +289,7 @@ main {
 	padding: 0.2rem;
 	border: 2px solid var(--line);
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(245, 158, 11, 0.05);
 	transition: border-color 250ms ease;
 }
 
@@ -402,20 +424,13 @@ main {
 }
 
 .hero__veil {
-	background:
-		linear-gradient(
-			180deg,
-			rgba(5, 4, 3, 0.55) 0%,
-			transparent 34%,
-			transparent 48%,
-			rgba(5, 4, 3, 0.88) 100%
-		),
-		linear-gradient(
-			90deg,
-			rgba(5, 4, 3, 0.42),
-			transparent 44%,
-			rgba(217, 119, 6, 0.12)
-		);
+	background: linear-gradient(
+		180deg,
+		rgba(0, 0, 0, 0.45) 0%,
+		transparent 36%,
+		transparent 52%,
+		rgba(0, 0, 0, 0.7) 100%
+	);
 }
 
 .hero__grain {
@@ -1615,7 +1630,7 @@ html.video-open {
 		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
 		border: 0;
 		border-radius: 0;
-		background: rgba(5, 4, 3, 0.96);
+		background: rgba(21, 10, 4, 0.96);
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(-1rem);
