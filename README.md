@@ -66,7 +66,7 @@ German about-copy: `src/i18n/project-descriptions.ts`.
 
 ## Deploy to Cloudflare Workers
 
-1. Connect this GitHub repo to a **Worker** (not Pages), or:
+1. Connect this GitHub repo to a **Worker** (not Pages), or deploy from CI / the CLI:
 
 ```sh
 npm run deploy
@@ -76,6 +76,41 @@ That builds once and publishes two Workers that share the `MEDIA` bucket:
 
 - `mbu` → https://mbu.wasi-workdesk.workers.dev
 - `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
+
+Merges to `main` run **Deploy Worker** and publish those production hosts.
+Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
+
+- `https://mbu-pr-<number>.wasi-workdesk.workers.dev`
+
+GitHub Actions publishes those hosts when two **repository** secrets exist
+([Settings → Secrets and variables → Actions](https://github.com/m-wasii/moin-bin-umair-rebuild/settings/secrets/actions)):
+
+| Secret | Value |
+| --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Account ID from `npx wrangler whoami`, or Workers & Pages → Overview in the [Cloudflare dashboard](https://dash.cloudflare.com/) |
+| `CLOUDFLARE_API_TOKEN` | API token created below (shown only once) |
+
+Create the token at [Account API tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Edit Cloudflare Workers**. Confirm it has:
+
+- Account · Cloudflare Workers · Edit
+- Account · Workers R2 Storage · Edit (needed for the `MEDIA` / `moin-media` binding)
+- Account resources: only this Cloudflare account
+
+Then re-run **Deploy Worker** (for `main`) or **Worker preview** (for a pull request).
+
+From a machine that can already deploy (`wrangler whoami` works):
+
+```sh
+gh secret set CLOUDFLARE_API_TOKEN -R m-wasii/moin-bin-umair-rebuild
+gh secret set CLOUDFLARE_ACCOUNT_ID -R m-wasii/moin-bin-umair-rebuild
+```
+
+Do not commit the token. Manual preview from a branch:
+
+```sh
+npm run build
+npx wrangler deploy --name mbu-pr-26
+```
 
 2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
    the first deploy (or whenever seed stills change), upload catalogs and
