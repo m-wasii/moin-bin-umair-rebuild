@@ -346,30 +346,48 @@ navLinks.forEach((link, index) => {
 	});
 });
 
+function isEditableKeyboardTarget(target: EventTarget | null) {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable) return true;
+	const tag = target.tagName;
+	return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 document.addEventListener("keydown", (event) => {
-	if (event.key !== "Escape") return;
+	if (event.key === "Escape") {
+		if (isVideoOpen()) {
+			event.preventDefault();
+			closeVideoDialog();
+			return;
+		}
 
-	if (isVideoOpen()) {
-		event.preventDefault();
-		closeVideoDialog();
+		if (isPhotoOpen()) {
+			event.preventDefault();
+			closePhotoDialog();
+			return;
+		}
+
+		if (isAlbumOpen()) {
+			event.preventDefault();
+			closeAlbum();
+			return;
+		}
+
+		if (navToggle?.getAttribute("aria-expanded") === "true") {
+			closeNavigation();
+			navToggle.focus();
+		}
 		return;
 	}
 
-	if (isPhotoOpen()) {
-		event.preventDefault();
-		closePhotoDialog();
-		return;
-	}
+	if (isEditableKeyboardTarget(event.target)) return;
 
-	if (isAlbumOpen()) {
+	if (
+		isPhotoOpen() &&
+		(event.key === "ArrowLeft" || event.key === "ArrowRight")
+	) {
 		event.preventDefault();
-		closeAlbum();
-		return;
-	}
-
-	if (navToggle?.getAttribute("aria-expanded") === "true") {
-		closeNavigation();
-		navToggle.focus();
+		stepPhoto(event.key === "ArrowLeft" ? -1 : 1);
 	}
 });
 
@@ -726,6 +744,12 @@ function renderPhoto() {
 	photoImage.alt = item.alt;
 }
 
+function stepPhoto(delta: number) {
+	if (!isPhotoOpen() || photoGroup.length === 0) return;
+	photoIndex = (photoIndex + delta + photoGroup.length) % photoGroup.length;
+	renderPhoto();
+}
+
 function closePhotoDialog() {
 	if (!isPhotoOpen()) return;
 	if (photoDialog) photoDialog.hidden = true;
@@ -772,14 +796,10 @@ document.addEventListener("click", (event) => {
 photoClose?.addEventListener("click", closePhotoDialog);
 photoBackdrop?.addEventListener("click", closePhotoDialog);
 photoPrev?.addEventListener("click", () => {
-	if (photoGroup.length === 0) return;
-	photoIndex = (photoIndex - 1 + photoGroup.length) % photoGroup.length;
-	renderPhoto();
+	stepPhoto(-1);
 });
 photoNext?.addEventListener("click", () => {
-	if (photoGroup.length === 0) return;
-	photoIndex = (photoIndex + 1) % photoGroup.length;
-	renderPhoto();
+	stepPhoto(1);
 });
 
 function isAlbumOpen() {

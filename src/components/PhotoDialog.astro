@@ -10,7 +10,8 @@ const t = useTranslations(lang);
 ---
 
 <div class="photo-overlay" data-photo-dialog hidden>
-	<div class="photo-overlay__backdrop" data-photo-backdrop aria-hidden="true"></div>
+	<div class="photo-overlay__backdrop" data-photo-backdrop aria-hidden="true">
+	</div>
 	<div
 		class="photo-dialog"
 		role="dialog"
@@ -22,12 +23,20 @@ const t = useTranslations(lang);
 				{t("dialog.close")}
 			</button>
 		</header>
-		<figure>
+		<figure class="photo-dialog__stage">
 			<img data-photo-dialog-image alt="" />
 		</figure>
-		<div class="photo-dialog__nav">
-			<button type="button" data-photo-prev>{t("photo.prev")}</button>
-			<button type="button" data-photo-next>{t("photo.next")}</button>
-		</div>
+		<nav class="photo-dialog__nav" aria-label={t("section.photography.title")}>
+			<button type="button" data-photo-prev aria-label={t("photo.prev")}>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M15 5 8 12l7 7"></path>
+				</svg>
+			</button>
+			<button type="button" data-photo-next aria-label={t("photo.next")}>
+				<svg viewBox="0 0 24 24" aria-hidden="true">
+					<path d="m9 5 7 7-7 7"></path>
+				</svg>
+			</button>
+		</nav>
 	</div>
 </div>
