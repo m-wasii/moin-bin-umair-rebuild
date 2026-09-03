@@ -707,14 +707,11 @@ const photoClose =
 const photoImage = document.querySelector<HTMLImageElement>(
 	"[data-photo-dialog-image]",
 );
-const photoTitle = document.querySelector<HTMLElement>(
-	"[data-photo-dialog-title]",
-);
 const photoPrev =
 	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
 const photoNext =
 	document.querySelector<HTMLButtonElement>("[data-photo-next]");
-let photoGroup: Array<{ src: string; alt: string; title: string }> = [];
+let photoGroup: Array<{ src: string; alt: string }> = [];
 let photoIndex = 0;
 let photoFocus: HTMLElement | null = null;
 
@@ -727,7 +724,6 @@ function renderPhoto() {
 	if (!item || !photoImage) return;
 	photoImage.src = item.src;
 	photoImage.alt = item.alt;
-	photoTitle?.replaceChildren(document.createTextNode(item.title));
 }
 
 function closePhotoDialog() {
@@ -751,7 +747,6 @@ function openPhotoDialog(button: HTMLElement) {
 			return {
 				src: itemSrc,
 				alt: match?.dataset.photoAlt ?? "",
-				title: match?.dataset.photoTitle ?? "",
 			};
 		});
 	if (!src || !photoDialog || group.length === 0) return;
