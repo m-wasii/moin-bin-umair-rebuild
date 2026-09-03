@@ -1,6 +1,6 @@
 ---
 import { site } from "../data/site";
-import { useTranslations, type Lang } from "../i18n/ui";
+import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 
 interface Props {
 	lang: Lang;
@@ -9,6 +9,43 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 const year = new Date().getFullYear();
+
+const touchLinks = [
+	{
+		label: "contact.email" as UiKey,
+		href: `mailto:${site.email}`,
+		icon: "/icons/contact/email.png",
+	},
+	{
+		label: "contact.phone" as UiKey,
+		href: `tel:${site.phone.replace(/\s/g, "")}`,
+		icon: "/icons/contact/phone.png",
+	},
+	{
+		label: "contact.whatsapp" as UiKey,
+		href: `https://wa.me/${site.whatsapp.replace(/\D/g, "")}`,
+		icon: "/icons/contact/whatsapp.png",
+		external: true,
+	},
+] as const;
+
+const socialLinks = [
+	{
+		label: "contact.instagram" as UiKey,
+		href: site.instagramUrl,
+		icon: "/icons/contact/instagram.png",
+	},
+	{
+		label: "contact.linkedin" as UiKey,
+		href: site.linkedinUrl,
+		icon: "/icons/contact/linkedin.png",
+	},
+	{
+		label: "contact.vimeo" as UiKey,
+		href: site.vimeoUrl,
+		icon: "/icons/contact/vimeo.png",
+	},
+] as const;
 ---
 
 <section
@@ -23,35 +60,64 @@ const year = new Date().getFullYear();
 			<p>05</p>
 			<p>{t("contact.meta")}</p>
 		</div>
+		<h2 id="contact-title" set:html={t("contact.titleHtml")} />
+		<p class="section-heading__description">{t("contact.description")}</p>
+	</header>
 
-		<div class="contact__body">
-			<div class="contact__lead">
-				<h2 id="contact-title" set:html={t("contact.titleHtml")} />
-				<p class="contact__location">{site.location}</p>
-			</div>
-
-			<div class="contact__aside">
-				<p class="section-heading__description">
-					{t("contact.description")}
-				</p>
-				<div class="contact__actions">
-					<a class="text-link" href={`mailto:${site.email}`}>
-						<span>{t("contact.email")}</span>
-						<span aria-hidden="true">↗</span>
-					</a>
-					<a
-						class="text-link"
-						href={site.instagramUrl}
-						target="_blank"
-						rel="noreferrer"
-					>
-						<span>{t("contact.instagram")}</span>
-						<span aria-hidden="true">↗</span>
-					</a>
+	<div class="contact__body">
+		<div class="contact__lead">
+			<p class="contact__location">{site.location}</p>
+			<div class="contact__group">
+				<div class="contact__links">
+					{
+						touchLinks.map((link) => (
+							<a
+								class="text-link text-link--row"
+								href={link.href}
+								{...(link.external
+									? { target: "_blank", rel: "noreferrer" }
+									: {})}
+							>
+								<span
+									class="text-link__icon"
+									aria-hidden="true"
+									style={`--icon: url(${link.icon})`}
+								/>
+								<span class="text-link__label">{t(link.label)}</span>
+								<span class="text-link__arrow" aria-hidden="true">↗</span>
+							</a>
+						))
+					}
 				</div>
 			</div>
 		</div>
-	</header>
+
+		<div class="contact__aside">
+			<div class="contact__group">
+				<p class="contact__group-label">{t("contact.followAlong")}</p>
+				<div class="contact__links contact__links--social">
+					{
+						socialLinks.map((link) => (
+							<a
+								class="text-link text-link--pill"
+								href={link.href}
+								target="_blank"
+								rel="noreferrer"
+							>
+								<span
+									class="text-link__icon"
+									aria-hidden="true"
+									style={`--icon: url(${link.icon})`}
+								/>
+								<span class="text-link__label">{t(link.label)}</span>
+								<span class="text-link__arrow" aria-hidden="true">↗</span>
+							</a>
+						))
+					}
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<footer class="site-footer">
 		<p>{site.name} © {year}</p>
