@@ -10,68 +10,61 @@
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
-	--panel: rgba(66, 28, 8, 0.72);
+	--panel: rgba(112, 50, 16, 0.42);
 	--amber: #f59e0b;
 	--amber-deep: #d97706;
 	--orange: #ff6b00;
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
 	--tungsten-deep: #2c1406;
-	--stage-base: #43200a;
+	--stage-base: #703214;
 	--stage-glow-top: radial-gradient(
 		ellipse 110% 48% at 85% 8%,
-		rgba(245, 158, 11, 0.5),
+		rgba(245, 158, 11, 0.42),
 		transparent 60%
 	);
 	--stage-glow-top-left: radial-gradient(
 		ellipse 100% 44% at 10% 12%,
-		rgba(255, 107, 0, 0.42),
+		rgba(255, 107, 0, 0.34),
 		transparent 58%
 	);
 	--stage-glow-top-center: radial-gradient(
 		ellipse 95% 40% at 50% 6%,
-		rgba(245, 158, 11, 0.4),
+		rgba(245, 158, 11, 0.32),
 		transparent 60%
 	);
 	--stage-glow-heart: radial-gradient(
-		ellipse 120% 72% at 50% 48%,
+		ellipse 140% 90% at 50% 50%,
 		rgba(245, 158, 11, 0.28),
-		transparent 70%
+		transparent 72%
 	);
 	--stage-glow-mid: radial-gradient(
 		ellipse 95% 42% at 12% 38%,
-		rgba(255, 107, 0, 0.38),
+		rgba(255, 107, 0, 0.3),
 		transparent 58%
 	);
 	--stage-glow-mid-right: radial-gradient(
 		ellipse 92% 40% at 88% 44%,
-		rgba(245, 158, 11, 0.44),
+		rgba(245, 158, 11, 0.34),
 		transparent 56%
 	);
 	--stage-glow-low: radial-gradient(
 		ellipse 110% 50% at 82% 70%,
-		rgba(255, 140, 20, 0.48),
+		rgba(255, 140, 20, 0.36),
 		transparent 60%
 	);
 	--stage-glow-end: radial-gradient(
 		ellipse 100% 44% at 28% 94%,
-		rgba(217, 119, 6, 0.42),
+		rgba(217, 119, 6, 0.32),
 		transparent 58%
 	);
 	--stage-tint: linear-gradient(
-		165deg,
-		rgba(245, 158, 11, 0.26) 0%,
-		rgba(255, 107, 0, 0.12) 46%,
-		rgba(245, 158, 11, 0.22) 100%
-	);
-	--stage-wash: linear-gradient(
 		180deg,
-		#6e3010 0%,
-		#4a1e0a 22%,
-		#3a1808 48%,
-		#52240c 74%,
-		#7a3812 100%
+		rgba(245, 158, 11, 0.4),
+		rgba(234, 88, 12, 0.3) 50%,
+		rgba(245, 158, 11, 0.38)
 	);
+	--stage-wash: linear-gradient(180deg, #8b4414 0%, #703214 48%, #8a4214 100%);
 	--stage:
 		var(--stage-glow-top), var(--stage-glow-top-left),
 		var(--stage-glow-top-center), var(--stage-glow-heart),
@@ -417,7 +410,7 @@ main {
 	height: 100%;
 	object-fit: cover;
 	object-position: center;
-	filter: saturate(0.78) contrast(1.08) brightness(0.68);
+	filter: saturate(0.92) contrast(1.04) brightness(0.8);
 	transform: scale(1.01);
 }
 
@@ -425,16 +418,16 @@ main {
 	background:
 		linear-gradient(
 			180deg,
-			rgba(66, 28, 8, 0.42) 0%,
-			transparent 34%,
-			rgba(245, 158, 11, 0.12) 58%,
-			rgba(58, 24, 8, 0.72) 100%
+			rgba(180, 80, 12, 0.58) 0%,
+			rgba(245, 158, 11, 0.14) 36%,
+			rgba(140, 58, 12, 0.28) 62%,
+			rgba(112, 50, 16, 0.78) 100%
 		),
 		linear-gradient(
 			90deg,
-			rgba(58, 24, 8, 0.28),
+			rgba(180, 70, 10, 0.26),
 			transparent 44%,
-			rgba(245, 158, 11, 0.22)
+			rgba(245, 158, 11, 0.24)
 		);
 }
 
