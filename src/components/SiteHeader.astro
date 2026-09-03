@@ -28,6 +28,28 @@ const deHref = localizedHomePath("de");
 		<span class="site-brand__name">{site.name}</span>
 	</a>
 
+	<nav
+		class="site-nav"
+		id="primary-navigation"
+		aria-label={t("a11y.primaryNav")}
+		data-nav
+	>
+		<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
+		></span>
+		{
+			navigation.map((item, index) => (
+				<a
+					class="site-nav__link"
+					href={item.href}
+					data-nav-link
+					aria-current={index === 0 ? "page" : undefined}
+				>
+					{item.label}
+				</a>
+			))
+		}
+	</nav>
+
 	<div class="site-header__end">
 		<nav
 			class="lang-switch"
@@ -70,28 +92,6 @@ const deHref = localizedHomePath("de");
 			<span aria-hidden="true"></span>
 			<span aria-hidden="true"></span>
 		</button>
-
-		<nav
-			class="site-nav"
-			id="primary-navigation"
-			aria-label={t("a11y.primaryNav")}
-			data-nav
-		>
-			<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
-			></span>
-			{
-				navigation.map((item, index) => (
-					<a
-						class="site-nav__link"
-						href={item.href}
-						data-nav-link
-						aria-current={index === 0 ? "page" : undefined}
-					>
-						{item.label}
-					</a>
-				))
-			}
-		</nav>
 	</div>
 </header>
 
