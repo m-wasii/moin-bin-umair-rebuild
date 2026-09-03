@@ -31,24 +31,106 @@ function asBody(body: ReadableStream<Uint8Array> | Uint8Array) {
 	return body as BodyInit;
 }
 
-async function fromAssets(request: Request, location: string) {
+async function fromAssets(
+	request: Request,
+	location: string,
+	options: { forwardRange?: boolean } = {},
+) {
 	const assets = env.ASSETS;
-	if (!assets) return null;
-	const url = new URL(location, request.url);
-	const response = await assets.fetch(new Request(url.toString()));
-	if (!response.ok) return null;
-	return response;
+	if (assets) {
+		const url = new URL(location, request.url).toString();
+		const range = options.forwardRange ? request.headers.get("range") : null;
+		if (range) {
+			const ranged = await assets.fetch(
+				new Request(url, { headers: { range } }),
+			);
+			if (ranged.status === 206 || ranged.ok) return ranged;
+		}
+		const response = await assets.fetch(new Request(url));
+		if (!response.ok) return null;
+		return response;
+	}
+
+	if (!import.meta.env.DEV) return null;
+
+	try {
+		const { readFile } = await import("node:fs/promises");
+		const { join } = await import("node:path");
+		const bytes = await readFile(
+			join(process.cwd(), "public", location.replace(/^\//, "")),
+		);
+		return new Response(bytes, {
+			headers: {
+				"content-type": location.toLowerCase().endsWith(".webp")
+					? "image/webp"
+					: "video/mp4",
+				"content-length": String(bytes.byteLength),
+				"accept-ranges": "bytes",
+			},
+		});
+	} catch {
+		return null;
+	}
 }
 
-function assetHeaders(
-	contentType: string,
-	extra: Record<string, string> = {},
-) {
+function assetHeaders(contentType: string, extra: Record<string, string> = {}) {
 	return {
 		"content-type": contentType,
 		"cache-control": "public, max-age=86400",
 		...extra,
 	};
+}
+
+async function serveVideoAsset(request: Request, asset: Response) {
+	const contentType = asset.headers.get("content-type") || "video/mp4";
+
+	if (asset.status === 206) {
+		const extra: Record<string, string> = { "accept-ranges": "bytes" };
+		const length = asset.headers.get("content-length");
+		const contentRange = asset.headers.get("content-range");
+		if (length) extra["content-length"] = length;
+		if (contentRange) extra["content-range"] = contentRange;
+		return new Response(asset.body, {
+			status: 206,
+			headers: assetHeaders(contentType, extra),
+		});
+	}
+
+	const rangeHeader = request.headers.get("range");
+	const declaredSize = Number(asset.headers.get("content-length") || 0);
+	const declaredRange = declaredSize
+		? parseRange(rangeHeader, declaredSize)
+		: null;
+
+	// Unknown size, no Range, or unusable Range: serve a playable 200.
+	if (!rangeHeader || !declaredRange) {
+		const extra: Record<string, string> = { "accept-ranges": "bytes" };
+		if (declaredSize) extra["content-length"] = String(declaredSize);
+		return new Response(asset.body, {
+			headers: assetHeaders(contentType, extra),
+		});
+	}
+
+	const bytes = new Uint8Array(await asset.arrayBuffer());
+	const size = bytes.byteLength;
+	const range = parseRange(rangeHeader, size);
+	if (!range) {
+		return new Response(bytes, {
+			headers: assetHeaders(contentType, {
+				"content-length": String(size),
+				"accept-ranges": "bytes",
+			}),
+		});
+	}
+
+	return new Response(bytes.subarray(range.start, range.end + 1), {
+		status: 206,
+		headers: assetHeaders(contentType, {
+			"content-length": String(range.length),
+			"content-range": `bytes ${range.start}-${range.end}/${size}`,
+			"accept-ranges": "bytes",
+		}),
+	});
 }
 
 export const GET: APIRoute = async ({ params, request }) => {
@@ -84,25 +166,11 @@ export const GET: APIRoute = async ({ params, request }) => {
 
 	const head = await getShortHead(campaign, file);
 	if (!head) {
-		const asset = await fromAssets(request, publicLocation);
+		const asset = await fromAssets(request, publicLocation, {
+			forwardRange: true,
+		});
 		if (asset) {
-			const size = Number(asset.headers.get("content-length") || 0);
-			const range = parseRange(request.headers.get("range"), size);
-			if (!range || !size) {
-				return new Response(asset.body, {
-					headers: assetHeaders(
-						asset.headers.get("content-type") || "video/mp4",
-						size
-							? {
-									"content-length": String(size),
-									"accept-ranges": "bytes",
-								}
-							: { "accept-ranges": "bytes" },
-					),
-				});
-			}
-			// Static assets do not support byte ranges; fall through to 404
-			// rather than a broken redirect when R2 is empty.
+			return serveVideoAsset(request, asset);
 		}
 		return new Response("Not found", { status: 404 });
 	}
@@ -121,12 +189,7 @@ export const GET: APIRoute = async ({ params, request }) => {
 		});
 	}
 
-	const object = await getShortRange(
-		campaign,
-		file,
-		range.start,
-		range.length,
-	);
+	const object = await getShortRange(campaign, file, range.start, range.length);
 	if (!object) {
 		return new Response("Not found", { status: 404 });
 	}

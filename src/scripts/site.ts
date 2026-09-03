@@ -619,11 +619,12 @@ document.addEventListener("click", (event) => {
 	const target = event.target;
 	if (!(target instanceof Element)) return;
 
-	const link = target.closest<HTMLAnchorElement>("[data-video]");
+	const link = target.closest<HTMLElement>("[data-video]");
 	if (!link || !videoDialog || !videoPlayer) {
 		return;
 	}
 
+	// File shorts are handled by shorts-player.ts (capture + <video src>).
 	if (link.dataset.videoProvider === "file") return;
 
 	const videoId = link.dataset.videoId;
@@ -693,6 +694,7 @@ videoDialog?.addEventListener("video-dialog:open", (event) => {
 	previousFocus = source;
 	lockDocumentScroll();
 	videoClose?.focus({ preventScroll: true });
+	// Do not replace videoPlayer here: shorts-player already mounted <video>.
 });
 
 videoClose?.addEventListener("click", closeVideoDialog);

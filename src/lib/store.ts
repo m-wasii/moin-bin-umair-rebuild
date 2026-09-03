@@ -93,7 +93,9 @@ async function readLocalJson<T>(key: string): Promise<T | null> {
 
 async function writeLocalJson(key: string, value: unknown) {
 	if (!import.meta.env.DEV) {
-		throw new Error("Media storage is not configured (missing R2 binding MEDIA).");
+		throw new Error(
+			"Media storage is not configured (missing R2 binding MEDIA).",
+		);
 	}
 	const { mkdir, writeFile } = await import("node:fs/promises");
 	const { dirname } = await import("node:path");
@@ -113,7 +115,9 @@ async function readLocalBytes(key: string) {
 
 async function writeLocalBytes(key: string, bytes: Uint8Array) {
 	if (!import.meta.env.DEV) {
-		throw new Error("Media storage is not configured (missing R2 binding MEDIA).");
+		throw new Error(
+			"Media storage is not configured (missing R2 binding MEDIA).",
+		);
 	}
 	const { mkdir, writeFile } = await import("node:fs/promises");
 	const { dirname } = await import("node:path");
@@ -238,24 +242,27 @@ export async function listShorts(): Promise<StoredShort[]> {
 		if (object) {
 			const payload = (await object.json()) as { shorts?: StoredShort[] };
 			if (Array.isArray(payload.shorts) && payload.shorts.length) {
-				return normalizeShortPosters(payload.shorts);
+				return normalizeShortMedia(payload.shorts);
 			}
 		}
 	}
 
 	const local = await readLocalJson<{ shorts: StoredShort[] }>(SHORTS_KEY);
-	return normalizeShortPosters(local?.shorts ?? seedShortList());
+	return normalizeShortMedia(local?.shorts ?? seedShortList());
 }
 
-/** Ensure poster URLs go through /media/shorts (R2 + static fallback), not bare /shorts. */
-function normalizeShortPosters(shorts: StoredShort[]): StoredShort[] {
+function rewriteShortMediaPath(path: string) {
+	return path.startsWith("/shorts/") ? `/media${path}` : path;
+}
+
+/** Ensure clip src/poster URLs go through /media/shorts (R2 + static fallback), not bare /shorts. */
+function normalizeShortMedia(shorts: StoredShort[]): StoredShort[] {
 	return shorts.map((entry) => ({
 		...entry,
 		clips: entry.clips.map((clip) => ({
 			...clip,
-			poster: clip.poster.startsWith("/shorts/")
-				? `/media${clip.poster}`
-				: clip.poster,
+			src: rewriteShortMediaPath(clip.src),
+			poster: rewriteShortMediaPath(clip.poster),
 		})),
 	}));
 }
