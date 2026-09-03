@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 import { isShortMediaFile, isShortSlug } from "../../../../data/shorts";
 import {
 	getShortBytes,
@@ -27,7 +28,27 @@ function parseRange(header: string | null, size: number) {
 }
 
 function asBody(body: ReadableStream<Uint8Array> | Uint8Array) {
-	return body instanceof Uint8Array ? body : body;
+	return body as BodyInit;
+}
+
+async function fromAssets(request: Request, location: string) {
+	const assets = env.ASSETS;
+	if (!assets) return null;
+	const url = new URL(location, request.url);
+	const response = await assets.fetch(new Request(url.toString()));
+	if (!response.ok) return null;
+	return response;
+}
+
+function assetHeaders(
+	contentType: string,
+	extra: Record<string, string> = {},
+) {
+	return {
+		"content-type": contentType,
+		"cache-control": "public, max-age=86400",
+		...extra,
+	};
 }
 
 export const GET: APIRoute = async ({ params, request }) => {
@@ -44,42 +65,59 @@ export const GET: APIRoute = async ({ params, request }) => {
 		const object = await getShortBytes(campaign, file);
 		if (object) {
 			return new Response(object.body, {
-				headers: {
-					"content-type": object.contentType,
-					"cache-control": "public, max-age=86400",
-				},
+				headers: assetHeaders(object.contentType),
 			});
 		}
-		return new Response(null, {
-			status: 302,
-			headers: { location: publicLocation },
-		});
+
+		// Prefer ASSETS over a 302: empty redirects to missing /shorts/*
+		// were cached intermittently and broke <img> loads.
+		const asset = await fromAssets(request, publicLocation);
+		if (asset) {
+			return new Response(asset.body, {
+				headers: assetHeaders(
+					asset.headers.get("content-type") || "image/webp",
+				),
+			});
+		}
+		return new Response("Not found", { status: 404 });
 	}
 
 	const head = await getShortHead(campaign, file);
 	if (!head) {
-		return new Response(null, {
-			status: 302,
-			headers: { location: publicLocation },
-		});
+		const asset = await fromAssets(request, publicLocation);
+		if (asset) {
+			const size = Number(asset.headers.get("content-length") || 0);
+			const range = parseRange(request.headers.get("range"), size);
+			if (!range || !size) {
+				return new Response(asset.body, {
+					headers: assetHeaders(
+						asset.headers.get("content-type") || "video/mp4",
+						size
+							? {
+									"content-length": String(size),
+									"accept-ranges": "bytes",
+								}
+							: { "accept-ranges": "bytes" },
+					),
+				});
+			}
+			// Static assets do not support byte ranges; fall through to 404
+			// rather than a broken redirect when R2 is empty.
+		}
+		return new Response("Not found", { status: 404 });
 	}
 
 	const range = parseRange(request.headers.get("range"), head.size);
 	if (!range) {
 		const object = await getShortRange(campaign, file, 0, head.size);
 		if (!object) {
-			return new Response(null, {
-				status: 302,
-				headers: { location: publicLocation },
-			});
+			return new Response("Not found", { status: 404 });
 		}
 		return new Response(asBody(object.body), {
-			headers: {
-				"content-type": head.contentType,
+			headers: assetHeaders(head.contentType, {
 				"content-length": String(object.size),
 				"accept-ranges": "bytes",
-				"cache-control": "public, max-age=86400",
-			},
+			}),
 		});
 	}
 
@@ -90,20 +128,15 @@ export const GET: APIRoute = async ({ params, request }) => {
 		range.length,
 	);
 	if (!object) {
-		return new Response(null, {
-			status: 302,
-			headers: { location: publicLocation },
-		});
+		return new Response("Not found", { status: 404 });
 	}
 
 	return new Response(asBody(object.body), {
 		status: 206,
-		headers: {
-			"content-type": head.contentType,
+		headers: assetHeaders(head.contentType, {
 			"content-length": String(object.size),
 			"content-range": `bytes ${range.start}-${range.end}/${head.size}`,
 			"accept-ranges": "bytes",
-			"cache-control": "public, max-age=86400",
-		},
+		}),
 	});
 };

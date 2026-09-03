@@ -1,6 +1,9 @@
 /// <reference types="astro/client" />
 
 interface CloudflareEnv {
+	ASSETS?: {
+		fetch(input: Request | string): Promise<Response>;
+	};
 	MEDIA?: {
 		get(
 			key: string,
