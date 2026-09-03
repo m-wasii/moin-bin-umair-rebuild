@@ -749,27 +749,28 @@ main {
 }
 
 .photo-albums {
+	--mosaic-row-height: clamp(13rem, 22vw, 18.5rem);
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
-	gap: clamp(1.1rem, 2.2vw, 2rem) clamp(0.85rem, 1.6vw, 1.6rem);
+	grid-auto-rows: var(--mosaic-row-height);
+	gap: clamp(0.9rem, 1.6vw, 1.4rem);
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	align-items: start;
+	align-items: stretch;
 }
 
 .photo-album {
-	grid-column: span var(--album-span, 4);
+	grid-column: span var(--album-span, 6);
 	min-width: 0;
-}
-
-.photo-album:nth-child(3n + 2) {
-	margin-top: clamp(0.6rem, 1.4vw, 1.25rem);
+	height: 100%;
+	overflow: visible;
 }
 
 .photo-album__hit {
 	display: block;
 	width: 100%;
+	height: 100%;
 	padding: 0;
 	border: 0;
 	background: transparent;
@@ -780,12 +781,12 @@ main {
 
 .photo-album__stack {
 	position: relative;
-	padding: 0.7rem 0.8rem 0.28rem;
+	height: 100%;
 }
 
 .photo-album__peek {
 	position: absolute;
-	inset: 0.7rem 0.8rem 0.28rem;
+	inset: 0;
 	overflow: hidden;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
@@ -812,7 +813,7 @@ main {
 .photo-album__frame {
 	position: relative;
 	z-index: 1;
-	aspect-ratio: 3 / 2;
+	height: 100%;
 	overflow: hidden;
 	margin: 0;
 	border: 2px solid var(--line);
@@ -865,7 +866,7 @@ main {
 .photo-album__content h3 {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+	font-size: clamp(1.2rem, 1.7vw, 1.7rem);
 	font-weight: 500;
 	line-height: 1.15;
 	letter-spacing: -0.02em;
@@ -1558,18 +1559,13 @@ html.video-open {
 		gap: 2rem;
 	}
 
-	.project-grid {
+	.project-grid,
+	.photo-albums {
 		--mosaic-row-height: clamp(11.5rem, 26vw, 16rem);
 	}
 
 	.work-section--shorts .project-grid {
 		--mosaic-row-height: clamp(16rem, 38vw, 24rem);
-	}
-
-	.photo-album,
-	.photo-album:nth-child(n) {
-		grid-column: span 6;
-		margin-top: 0;
 	}
 }
 
@@ -1676,7 +1672,8 @@ html.video-open {
 		font-size: clamp(2.4rem, 12.4vw, 5.5rem);
 	}
 
-	.project-grid {
+	.project-grid,
+	.photo-albums {
 		grid-template-columns: minmax(0, 1fr);
 		grid-auto-rows: auto;
 		gap: 1.25rem;
@@ -1721,19 +1718,17 @@ html.video-open {
 	.photo-album,
 	.photo-album:nth-child(n) {
 		grid-column: 1 / -1;
-		margin-top: 0;
+		height: auto;
+	}
+
+	.photo-album__hit,
+	.photo-album__stack {
+		height: auto;
 	}
 
 	.photo-album:nth-child(n) .photo-album__frame {
-		aspect-ratio: 3 / 2;
-	}
-
-	.photo-album__stack {
-		padding: 0.6rem 0.65rem 0.24rem;
-	}
-
-	.photo-album__peek {
-		inset: 0.6rem 0.65rem 0.24rem;
+		height: auto;
+		aspect-ratio: 16 / 9;
 	}
 
 	.hero__orbit {
