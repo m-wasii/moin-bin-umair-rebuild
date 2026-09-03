@@ -24,8 +24,8 @@ pnpm-debug.log*
 # local R2/media fallback for astro dev
 .data/
 
-# local shorts binaries (seeded from zip; served from R2 in production)
-public/shorts/
+# Shorts MP4s stay local/R2-only (large); WebP posters are committed like photography
+public/shorts/**/*.mp4
 
 # macOS-specific files
 .DS_Store

@@ -238,13 +238,26 @@ export async function listShorts(): Promise<StoredShort[]> {
 		if (object) {
 			const payload = (await object.json()) as { shorts?: StoredShort[] };
 			if (Array.isArray(payload.shorts) && payload.shorts.length) {
-				return payload.shorts;
+				return normalizeShortPosters(payload.shorts);
 			}
 		}
 	}
 
 	const local = await readLocalJson<{ shorts: StoredShort[] }>(SHORTS_KEY);
-	return local?.shorts ?? seedShortList();
+	return normalizeShortPosters(local?.shorts ?? seedShortList());
+}
+
+/** Ensure poster URLs go through /media/shorts (R2 + static fallback), not bare /shorts. */
+function normalizeShortPosters(shorts: StoredShort[]): StoredShort[] {
+	return shorts.map((entry) => ({
+		...entry,
+		clips: entry.clips.map((clip) => ({
+			...clip,
+			poster: clip.poster.startsWith("/shorts/")
+				? `/media${clip.poster}`
+				: clip.poster,
+		})),
+	}));
 }
 
 export function shortObjectKey(campaign: string, file: string) {
