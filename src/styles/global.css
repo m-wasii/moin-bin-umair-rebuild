@@ -21,57 +21,61 @@
 	--stage-glow-top: radial-gradient(
 		ellipse 98% 38% at 85% 7%,
 		rgba(245, 158, 11, 0.26),
-		transparent 57%
+		rgba(245, 158, 11, 0) 57%
 	);
 	--stage-glow-top-left: radial-gradient(
 		ellipse 91% 36% at 11% 11%,
 		rgba(255, 107, 0, 0.21),
-		transparent 54%
+		rgba(255, 107, 0, 0) 54%
 	);
 	--stage-glow-top-center: radial-gradient(
 		ellipse 80% 32% at 50% 5%,
 		rgba(245, 158, 11, 0.19),
-		transparent 57%
+		rgba(245, 158, 11, 0) 57%
 	);
 	--stage-glow-heart: radial-gradient(
 		ellipse 100% 55% at 50% 48%,
 		rgba(245, 158, 11, 0.05),
-		transparent 65%
+		rgba(245, 158, 11, 0) 65%
 	);
 	--stage-glow-mid: radial-gradient(
 		ellipse 83% 34% at 12% 38%,
 		rgba(255, 107, 0, 0.17),
-		transparent 54%
+		rgba(255, 107, 0, 0) 54%
 	);
 	--stage-glow-mid-right: radial-gradient(
 		ellipse 79% 32% at 88% 43%,
 		rgba(245, 158, 11, 0.2),
-		transparent 52%
+		rgba(245, 158, 11, 0) 52%
 	);
 	--stage-glow-low: radial-gradient(
 		ellipse 97% 40% at 82% 69%,
 		rgba(255, 140, 20, 0.23),
-		transparent 57%
+		rgba(255, 140, 20, 0) 57%
 	);
 	--stage-glow-end: radial-gradient(
 		ellipse 88% 36% at 29% 93%,
 		rgba(217, 119, 6, 0.2),
-		transparent 53%
+		rgba(217, 119, 6, 0) 53%
 	);
 	--stage-tint: linear-gradient(
-		180deg,
+		180deg in oklab,
 		rgba(245, 158, 11, 0.16) 0%,
-		transparent 26%,
+		rgba(245, 158, 11, 0.08) 13%,
+		rgba(245, 158, 11, 0) 26%,
 		rgba(245, 158, 11, 0.12) 44%,
-		transparent 62%,
+		rgba(245, 158, 11, 0) 62%,
+		rgba(245, 158, 11, 0.075) 81%,
 		rgba(245, 158, 11, 0.15) 100%
 	);
 	--stage-wash: linear-gradient(
-		180deg,
+		180deg in oklab,
 		#0b1526 0%,
+		#070d18 13%,
 		#030509 26%,
 		#091120 44%,
 		#020407 62%,
+		#070c16 81%,
 		#0b1424 100%
 	);
 	--stage:
@@ -100,7 +104,7 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--ink);
+	background: var(--stage-base);
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -190,9 +194,30 @@ main {
 }
 
 main {
+	background: none;
+}
+
+body:not(.dash)::before,
+body:not(.dash)::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+}
+
+body:not(.dash)::before {
 	background: var(--stage);
 	background-repeat: no-repeat;
 	background-size: 100% 100%;
+	transform: translate3d(0, 0, 0);
+}
+
+body:not(.dash)::after {
+	background-image: url("/media/stage-dither.png");
+	background-repeat: repeat;
+	background-size: 128px 128px;
+	opacity: 0.045;
 }
 
 .site-header {
