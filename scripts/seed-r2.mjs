@@ -1,28 +1,38 @@
 #!/usr/bin/env node
 /**
- * Upload seed WebP stills and catalog JSON to the moin-media R2 bucket.
+ * Upload seed stills, shorts media, and catalog JSON to the moin-media R2 bucket.
  *
  * Requires CLOUDFLARE_API_TOKEN (and usually CLOUDFLARE_ACCOUNT_ID).
  *
  *   npm run seed:r2
  */
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const bucket = "moin-media";
 const photographyRoot = join(root, "public/photography");
+const shortsRoot = existsSync(join(root, ".data", "media", "shorts"))
+	? join(root, ".data", "media", "shorts")
+	: join(root, "public", "shorts");
 const wranglerCli = join(root, "node_modules/wrangler/bin/wrangler.js");
 const tmpDir = join(root, ".data", "r2-seed");
 
-function listWebp(dir) {
+function listFiles(dir, match) {
 	const out = [];
+	if (!existsSync(dir)) return out;
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
 		const path = join(dir, entry.name);
-		if (entry.isDirectory()) out.push(...listWebp(path));
-		else if (entry.name.endsWith(".webp")) out.push(path);
+		if (entry.isDirectory()) out.push(...listFiles(path, match));
+		else if (match(entry.name)) out.push(path);
 	}
 	return out;
 }
@@ -83,6 +93,9 @@ const seedPhotos = JSON.parse(
 const seedVideos = JSON.parse(
 	readFileSync(join(root, "src/data/videos.seed.json"), "utf8"),
 );
+const seedShorts = JSON.parse(
+	readFileSync(join(root, "src/data/shorts.seed.json"), "utf8"),
+);
 
 const photos = {
 	photos: seedPhotos.photos.map((photo) => ({
@@ -94,17 +107,32 @@ const photos = {
 mkdirSync(tmpDir, { recursive: true });
 const photosCatalog = join(tmpDir, "photos.json");
 const videosCatalog = join(tmpDir, "videos.json");
+const shortsCatalog = join(tmpDir, "shorts.json");
 writeFileSync(photosCatalog, `${JSON.stringify(photos, null, "\t")}\n`);
 writeFileSync(videosCatalog, `${JSON.stringify(seedVideos, null, "\t")}\n`);
+writeFileSync(shortsCatalog, `${JSON.stringify(seedShorts, null, "\t")}\n`);
 
-const stills = listWebp(photographyRoot).map((file) => ({
-	key: `photography/${relative(photographyRoot, file).replaceAll("\\", "/")}`,
+const stills = listFiles(photographyRoot, (name) => name.endsWith(".webp")).map(
+	(file) => ({
+		key: `photography/${relative(photographyRoot, file).replaceAll("\\", "/")}`,
+		file,
+		contentType: "image/webp",
+	}),
+);
+
+const shortMedia = listFiles(shortsRoot, (name) =>
+	/\.(mp4|webp)$/i.test(name),
+).map((file) => ({
+	key: `shorts/${relative(shortsRoot, file).replaceAll("\\", "/")}`,
 	file,
-	contentType: "image/webp",
+	contentType: file.toLowerCase().endsWith(".webp")
+		? "image/webp"
+		: "video/mp4",
 }));
 
 const objects = [
 	...stills,
+	...shortMedia,
 	{
 		key: "catalog/photos.json",
 		file: photosCatalog,
@@ -113,6 +141,11 @@ const objects = [
 	{
 		key: "catalog/videos.json",
 		file: videosCatalog,
+		contentType: "application/json",
+	},
+	{
+		key: "catalog/shorts.json",
+		file: shortsCatalog,
 		contentType: "application/json",
 	},
 ];

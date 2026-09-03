@@ -581,7 +581,16 @@ function closeVideoDialog() {
 
 	videoPlayer?.replaceChildren();
 	if (videoDescription) videoDescription.textContent = "";
-	videoPanel?.classList.remove("video-dialog__panel--portrait");
+	videoPanel?.classList.remove(
+		"video-dialog__panel--portrait",
+		"video-dialog__panel--square",
+		"video-dialog__panel--playlist",
+	);
+	const playlist = document.querySelector<HTMLElement>("[data-video-playlist]");
+	if (playlist) playlist.hidden = true;
+	if (aboutToggle) aboutToggle.hidden = false;
+	if (externalLink) externalLink.hidden = false;
+	setAboutPanelOpen(true);
 	if (videoDialog) videoDialog.hidden = true;
 	unlockDocumentScroll();
 	previousFocus?.focus({ preventScroll: true });
@@ -614,6 +623,8 @@ document.addEventListener("click", (event) => {
 	if (!link || !videoDialog || !videoPlayer) {
 		return;
 	}
+
+	if (link.dataset.videoProvider === "file") return;
 
 	const videoId = link.dataset.videoId;
 	const fallbackTitle = videoDialog?.dataset.labelProjectFilm ?? "Project film";
@@ -672,6 +683,16 @@ document.addEventListener("click", (event) => {
 aboutToggle?.addEventListener("click", (event) => {
 	event.stopPropagation();
 	setAboutPanelOpen(!aboutPanelOpen);
+});
+
+videoDialog?.addEventListener("video-dialog:open", (event) => {
+	const source =
+		event instanceof CustomEvent && event.detail instanceof HTMLElement
+			? event.detail
+			: null;
+	previousFocus = source;
+	lockDocumentScroll();
+	videoClose?.focus({ preventScroll: true });
 });
 
 videoClose?.addEventListener("click", closeVideoDialog);

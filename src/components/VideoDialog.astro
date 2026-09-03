@@ -16,6 +16,7 @@ const t = useTranslations(lang);
 	data-label-open-vimeo={t("dialog.openVimeo")}
 	data-label-open-youtube={t("dialog.openYoutube")}
 	data-label-no-description={t("dialog.noDescription")}
+	data-label-clip-of={t("shorts.clipOf")}
 	hidden
 >
 	<div class="video-overlay__backdrop" data-video-backdrop aria-hidden="true"></div>
@@ -59,6 +60,12 @@ const t = useTranslations(lang);
 				<p class="video-dialog__description" data-video-dialog-description></p>
 			</aside>
 		</div>
+
+		<nav class="video-dialog__playlist" data-video-playlist hidden>
+			<button type="button" data-video-prev>{t("photo.prev")}</button>
+			<p data-video-playlist-count></p>
+			<button type="button" data-video-next>{t("photo.next")}</button>
+		</nav>
 
 		<a
 			class="video-dialog__external"

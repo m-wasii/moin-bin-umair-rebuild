@@ -1,8 +1,10 @@
 import { env } from "cloudflare:workers";
 import seedVideos from "../data/videos.seed.json";
 import seedPhotos from "../data/photos.seed.json";
+import seedShorts from "../data/shorts.seed.json";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
 import type { PhotoCategory, StoredPhoto } from "../data/photos";
+import type { StoredShort } from "../data/shorts";
 
 export interface StoredVideo {
 	slug: string;
@@ -21,14 +23,27 @@ export interface StoredVideo {
 
 const VIDEOS_KEY = "catalog/videos.json";
 const PHOTOS_KEY = "catalog/photos.json";
+const SHORTS_KEY = "catalog/shorts.json";
 
 interface MediaObject {
 	json<T = unknown>(): Promise<T>;
 	arrayBuffer(): Promise<ArrayBuffer>;
+	body?: ReadableStream<Uint8Array>;
+	size?: number;
+	httpMetadata?: { contentType?: string };
+}
+
+interface MediaHead {
+	size: number;
+	httpMetadata?: { contentType?: string };
 }
 
 interface MediaBucket {
-	get(key: string): Promise<MediaObject | null>;
+	get(
+		key: string,
+		options?: { range?: { offset: number; length: number } },
+	): Promise<MediaObject | null>;
+	head?(key: string): Promise<MediaHead | null>;
 	put(
 		key: string,
 		value: string | Uint8Array,
@@ -57,13 +72,16 @@ function seedPhotoList(): StoredPhoto[] {
 	return (seedPhotos as { photos: StoredPhoto[] }).photos;
 }
 
+function seedShortList(): StoredShort[] {
+	return (seedShorts as { shorts: StoredShort[] }).shorts;
+}
+
 async function localPath(key: string) {
 	const { join } = await import("node:path");
 	return join(process.cwd(), ".data", "media", key);
 }
 
 async function readLocalJson<T>(key: string): Promise<T | null> {
-	if (!import.meta.env.DEV) return null;
 	try {
 		const { readFile } = await import("node:fs/promises");
 		const raw = await readFile(await localPath(key), "utf8");
@@ -85,7 +103,6 @@ async function writeLocalJson(key: string, value: unknown) {
 }
 
 async function readLocalBytes(key: string) {
-	if (!import.meta.env.DEV) return null;
 	try {
 		const { readFile } = await import("node:fs/promises");
 		return await readFile(await localPath(key));
@@ -198,8 +215,7 @@ export async function getPhotoBytes(category: PhotoCategory, slug: string) {
 	const bucket = getBucket();
 	if (bucket) {
 		const object = await bucket.get(key);
-		if (!object) return null;
-		return new Uint8Array(await object.arrayBuffer());
+		if (object) return new Uint8Array(await object.arrayBuffer());
 	}
 	const local = await readLocalBytes(key);
 	return local ? new Uint8Array(local) : null;
@@ -213,6 +229,135 @@ export async function deletePhotoBytes(category: PhotoCategory, slug: string) {
 		return;
 	}
 	await deleteLocal(key);
+}
+
+export async function listShorts(): Promise<StoredShort[]> {
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(SHORTS_KEY);
+		if (object) {
+			const payload = (await object.json()) as { shorts?: StoredShort[] };
+			if (Array.isArray(payload.shorts) && payload.shorts.length) {
+				return payload.shorts;
+			}
+		}
+	}
+
+	const local = await readLocalJson<{ shorts: StoredShort[] }>(SHORTS_KEY);
+	return local?.shorts ?? seedShortList();
+}
+
+export function shortObjectKey(campaign: string, file: string) {
+	return `shorts/${campaign}/${file}`;
+}
+
+function shortContentType(file: string) {
+	return file.toLowerCase().endsWith(".webp") ? "image/webp" : "video/mp4";
+}
+
+export async function getShortHead(campaign: string, file: string) {
+	const key = shortObjectKey(campaign, file);
+	const bucket = getBucket();
+	if (bucket) {
+		if (bucket.head) {
+			const head = await bucket.head(key);
+			if (head) {
+				return {
+					size: head.size,
+					contentType: head.httpMetadata?.contentType || shortContentType(file),
+				};
+			}
+		} else {
+			const object = await bucket.get(key);
+			if (object) {
+				const bytes = await object.arrayBuffer();
+				return {
+					size: object.size ?? bytes.byteLength,
+					contentType:
+						object.httpMetadata?.contentType || shortContentType(file),
+				};
+			}
+		}
+	}
+
+	try {
+		const { stat } = await import("node:fs/promises");
+		const info = await stat(await localPath(key));
+		return { size: info.size, contentType: shortContentType(file) };
+	} catch {
+		return null;
+	}
+}
+
+export async function getShortRange(
+	campaign: string,
+	file: string,
+	offset: number,
+	length: number,
+) {
+	const key = shortObjectKey(campaign, file);
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(key, { range: { offset, length } });
+		if (object) {
+			if (object.body) {
+				return {
+					body: object.body,
+					size: length,
+					contentType:
+						object.httpMetadata?.contentType || shortContentType(file),
+				};
+			}
+			const bytes = new Uint8Array(await object.arrayBuffer());
+			return {
+				body: bytes,
+				size: bytes.byteLength,
+				contentType: object.httpMetadata?.contentType || shortContentType(file),
+			};
+		}
+	}
+
+	try {
+		const { open } = await import("node:fs/promises");
+		const handle = await open(await localPath(key), "r");
+		try {
+			const bytes = new Uint8Array(length);
+			const { bytesRead } = await handle.read(bytes, 0, length, offset);
+			return {
+				body: bytes.subarray(0, bytesRead),
+				size: bytesRead,
+				contentType: shortContentType(file),
+			};
+		} finally {
+			await handle.close();
+		}
+	} catch {
+		return null;
+	}
+}
+
+export async function getShortBytes(campaign: string, file: string) {
+	const key = shortObjectKey(campaign, file);
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(key);
+		if (object) {
+			const bytes = new Uint8Array(await object.arrayBuffer());
+			return {
+				body: bytes,
+				size: bytes.byteLength,
+				contentType: object.httpMetadata?.contentType || shortContentType(file),
+			};
+		}
+	}
+
+	const local = await readLocalBytes(key);
+	if (!local) return null;
+	return {
+		body: new Uint8Array(local),
+		size: local.byteLength,
+		contentType: shortContentType(file),
+	};
 }
 
 export function youtubeApiKey() {

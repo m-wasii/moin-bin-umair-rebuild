@@ -3,10 +3,11 @@ import Contact from "./Contact.astro";
 import Hero from "./Hero.astro";
 import PhotoDialog from "./PhotoDialog.astro";
 import PhotoSection from "./PhotoSection.astro";
+import ShortsSection from "./ShortsSection.astro";
 import SiteHeader from "./SiteHeader.astro";
 import VideoDialog from "./VideoDialog.astro";
 import WorkSection from "./WorkSection.astro";
-import { loadPhotos, loadProjects } from "../lib/content";
+import { loadPhotos, loadProjects, loadShorts } from "../lib/content";
 import { useTranslations, type Lang } from "../i18n/ui";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
@@ -16,7 +17,8 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
-const { commercial, art, shorts } = await loadProjects();
+const { commercial, art } = await loadProjects();
+const { campaigns, singles } = await loadShorts();
 const photos = await loadPhotos();
 ---
 
@@ -46,14 +48,7 @@ const photos = await loadPhotos();
 
 		<PhotoSection photos={photos} lang={lang} />
 
-		<WorkSection
-			id="shorts"
-			number="04"
-			title={t("section.shorts.title")}
-			description={t("section.shorts.description")}
-			projects={shorts}
-			lang={lang}
-		/>
+		<ShortsSection campaigns={campaigns} singles={singles} lang={lang} />
 
 		<Contact lang={lang} />
 	</main>

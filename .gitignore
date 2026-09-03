@@ -24,6 +24,9 @@ pnpm-debug.log*
 # local R2/media fallback for astro dev
 .data/
 
+# local shorts binaries (seeded from zip; served from R2 in production)
+public/shorts/
+
 # macOS-specific files
 .DS_Store
 

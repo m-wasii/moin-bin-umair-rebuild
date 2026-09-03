@@ -1,0 +1,68 @@
+---
+import type { StoredShort } from "../data/shorts";
+import { formatDuration } from "../data/projects";
+import { shortCover, shortDuration } from "../data/shorts";
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	entry: StoredShort;
+	lang: Lang;
+	index?: number;
+}
+
+const { entry, lang, index = 0 } = Astro.props;
+const t = useTranslations(lang);
+const cover = shortCover(entry);
+const duration = shortDuration(entry);
+const clipsJson = JSON.stringify(
+	entry.clips.map((clip) => ({
+		src: clip.src,
+		poster: clip.poster,
+		width: clip.width,
+		height: clip.height,
+	})),
+);
+---
+
+<article class="short-card" style={`--card-index: ${index}`} data-reveal>
+	<button
+		class="shorts-tile shorts-tile--single"
+		type="button"
+		data-video
+		data-video-provider="file"
+		data-video-title={entry.title}
+		data-video-clips={clipsJson}
+		data-video-orientation={
+			cover && cover.height > cover.width ? "portrait" : "square"
+		}
+		aria-label={t("shorts.playAria", { title: entry.title })}
+	>
+		{
+			cover && (
+				<img
+					src={cover.poster}
+					alt={t("card.stillAlt", { title: entry.title })}
+					width={cover.width || 1080}
+					height={cover.height || 1080}
+					loading={index < 2 ? "eager" : "lazy"}
+					decoding="async"
+				/>
+			)
+		}
+		<span class="shorts-tile__wash" aria-hidden="true"></span>
+		<span class="shorts-tile__play" aria-hidden="true">
+			<svg viewBox="0 0 24 24">
+				<path d="m9 7 8 5-8 5V7Z"></path>
+			</svg>
+			<span>{t("card.play")}</span>
+		</span>
+		<span class="shorts-tile__meta">
+			<h3>{entry.title}</h3>
+			<p>
+				<span>{entry.year}</span>
+				<span aria-hidden="true">·</span>
+				<span>{formatDuration(duration)}</span>
+			</p>
+		</span>
+	</button>
+</article>

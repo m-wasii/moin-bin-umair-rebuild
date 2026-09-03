@@ -1,0 +1,172 @@
+{
+	"shorts": [
+		{
+			"slug": "asly-dost",
+			"title": "Asly Dost",
+			"year": 2026,
+			"sortOrder": 10,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/asly-dost/01.mp4",
+					"poster": "/media/shorts/asly-dost/01.webp",
+					"duration": 13,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "02",
+					"src": "/media/shorts/asly-dost/02.mp4",
+					"poster": "/media/shorts/asly-dost/02.webp",
+					"duration": 30,
+					"width": 848,
+					"height": 480
+				},
+				{
+					"slug": "03",
+					"src": "/media/shorts/asly-dost/03.mp4",
+					"poster": "/media/shorts/asly-dost/03.webp",
+					"duration": 22,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "04",
+					"src": "/media/shorts/asly-dost/04.mp4",
+					"poster": "/media/shorts/asly-dost/04.webp",
+					"duration": 27,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "05",
+					"src": "/media/shorts/asly-dost/05.mp4",
+					"poster": "/media/shorts/asly-dost/05.webp",
+					"duration": 29,
+					"width": 1080,
+					"height": 1080
+				}
+			]
+		},
+		{
+			"slug": "dress-code",
+			"title": "Dress Code",
+			"year": 2026,
+			"sortOrder": 30,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/dress-code/01.mp4",
+					"poster": "/media/shorts/dress-code/01.webp",
+					"duration": 16,
+					"width": 480,
+					"height": 480
+				},
+				{
+					"slug": "02",
+					"src": "/media/shorts/dress-code/02.mp4",
+					"poster": "/media/shorts/dress-code/02.webp",
+					"duration": 26,
+					"width": 1080,
+					"height": 1080
+				}
+			]
+		},
+		{
+			"slug": "jafferjees",
+			"title": "Jafferjees",
+			"year": 2026,
+			"sortOrder": 20,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/jafferjees/01.mp4",
+					"poster": "/media/shorts/jafferjees/01.webp",
+					"duration": 45,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "02",
+					"src": "/media/shorts/jafferjees/02.mp4",
+					"poster": "/media/shorts/jafferjees/02.webp",
+					"duration": 17,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "03",
+					"src": "/media/shorts/jafferjees/03.mp4",
+					"poster": "/media/shorts/jafferjees/03.webp",
+					"duration": 16,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "04",
+					"src": "/media/shorts/jafferjees/04.mp4",
+					"poster": "/media/shorts/jafferjees/04.webp",
+					"duration": 19,
+					"width": 1080,
+					"height": 1080
+				},
+				{
+					"slug": "05",
+					"src": "/media/shorts/jafferjees/05.mp4",
+					"poster": "/media/shorts/jafferjees/05.webp",
+					"duration": 23,
+					"width": 1080,
+					"height": 1080
+				}
+			]
+		},
+		{
+			"slug": "erum-surani",
+			"title": "Erum Surani",
+			"year": 2026,
+			"sortOrder": 40,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/erum-surani/01.mp4",
+					"poster": "/media/shorts/erum-surani/01.webp",
+					"duration": 51,
+					"width": 1280,
+					"height": 720
+				}
+			]
+		},
+		{
+			"slug": "fashion-experimentation",
+			"title": "Fashion Experimentation",
+			"year": 2026,
+			"sortOrder": 50,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/fashion-experimentation/01.mp4",
+					"poster": "/media/shorts/fashion-experimentation/01.webp",
+					"duration": 25,
+					"width": 720,
+					"height": 720
+				}
+			]
+		},
+		{
+			"slug": "helpers-dvc",
+			"title": "Helpers D.V.C",
+			"year": 2026,
+			"sortOrder": 60,
+			"clips": [
+				{
+					"slug": "01",
+					"src": "/media/shorts/helpers-dvc/01.mp4",
+					"poster": "/media/shorts/helpers-dvc/01.webp",
+					"duration": 55,
+					"width": 1920,
+					"height": 1080
+				}
+			]
+		}
+	]
+}

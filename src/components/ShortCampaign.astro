@@ -1,0 +1,74 @@
+---
+import type { StoredShort } from "../data/shorts";
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	entry: StoredShort;
+	lang: Lang;
+}
+
+const { entry, lang } = Astro.props;
+const t = useTranslations(lang);
+const clipsJson = JSON.stringify(
+	entry.clips.map((clip) => ({
+		src: clip.src,
+		poster: clip.poster,
+		width: clip.width,
+		height: clip.height,
+	})),
+);
+---
+
+<article
+	class="shorts-campaign"
+	style={`--clip-count: ${entry.clips.length}`}
+	data-reveal
+>
+	<header class="shorts-campaign__header">
+		<h3>{entry.title}</h3>
+		<p>
+			<span>{entry.year}</span>
+			<span aria-hidden="true">·</span>
+			<span>{t("shorts.clipCount", { count: entry.clips.length })}</span>
+		</p>
+	</header>
+
+	<div class="shorts-campaign__clips">
+		{
+			entry.clips.map((clip, clipIndex) => (
+				<button
+					class="shorts-tile"
+					type="button"
+					data-video
+					data-video-provider="file"
+					data-video-title={entry.title}
+					data-video-clips={clipsJson}
+					data-video-index={String(clipIndex)}
+					data-video-orientation={
+						clip.height > clip.width ? "portrait" : "square"
+					}
+					aria-label={`${t("shorts.playAria", { title: entry.title })}, ${t(
+						"shorts.clipOf",
+						{ current: clipIndex + 1, total: entry.clips.length },
+					)}`}
+				>
+					<img
+						src={clip.poster}
+						alt=""
+						width={clip.width || 1080}
+						height={clip.height || 1080}
+						loading={clipIndex < 2 ? "eager" : "lazy"}
+						decoding="async"
+					/>
+					<span class="shorts-tile__wash" aria-hidden="true"></span>
+					<span class="shorts-tile__play" aria-hidden="true">
+						<svg viewBox="0 0 24 24">
+							<path d="m9 7 8 5-8 5V7Z"></path>
+						</svg>
+						<span>{t("card.play")}</span>
+					</span>
+				</button>
+			))
+		}
+	</div>
+</article>

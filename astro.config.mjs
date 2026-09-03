@@ -17,4 +17,11 @@ export default defineConfig({
 			prefixDefaultLocale: false,
 		},
 	},
+	vite: {
+		server: {
+			watch: {
+				ignored: ["**/.data/**", "**/public/shorts/**"],
+			},
+		},
+	},
 });

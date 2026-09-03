@@ -1,0 +1,89 @@
+---
+import "../styles/shorts.css";
+import type { StoredShort } from "../data/shorts";
+import { useTranslations, type Lang } from "../i18n/ui";
+import ShortCampaign from "./ShortCampaign.astro";
+import ShortCard from "./ShortCard.astro";
+
+interface Props {
+	campaigns: StoredShort[];
+	singles: StoredShort[];
+	lang: Lang;
+}
+
+const { campaigns, singles, lang } = Astro.props;
+const t = useTranslations(lang);
+const total = campaigns.length + singles.length;
+
+const metaLabel =
+	total === 0
+		? t("section.meta.vertical")
+		: [
+				campaigns.length
+					? `${campaigns.length} ${
+							campaigns.length === 1
+								? t("section.meta.campaign")
+								: t("section.meta.campaigns")
+						}`
+					: "",
+				singles.length
+					? `${singles.length} ${
+							singles.length === 1
+								? t("section.meta.short")
+								: t("section.meta.shorts")
+						}`
+					: "",
+			]
+				.filter(Boolean)
+				.join(" · ");
+---
+
+<section
+	class="work-section work-section--shorts"
+	id="shorts"
+	aria-labelledby="shorts-title"
+	data-nav-section
+>
+	<header class="section-heading" data-reveal>
+		<p class="section-heading__ghost" aria-hidden="true">04</p>
+		<div class="section-heading__meta">
+			<p>04</p>
+			<p>{metaLabel}</p>
+		</div>
+		<h2 id="shorts-title">{t("section.shorts.title")}</h2>
+		<p class="section-heading__description">
+			{t("section.shorts.description")}
+		</p>
+	</header>
+
+	{
+		total === 0 ? (
+			<p class="work-section__empty" data-reveal>
+				{t("section.shorts.empty")}
+			</p>
+		) : (
+			<div class="shorts-groups">
+				{campaigns.length > 0 && (
+					<div class="shorts-group">
+						<h3 class="shorts-group__title">{t("section.shorts.campaigns")}</h3>
+						<div class="shorts-campaigns">
+							{campaigns.map((entry) => (
+								<ShortCampaign entry={entry} lang={lang} />
+							))}
+						</div>
+					</div>
+				)}
+				{singles.length > 0 && (
+					<div class="shorts-group">
+						<h3 class="shorts-group__title">{t("section.shorts.singles")}</h3>
+						<div class="shorts-reel shorts-reel--singles">
+							{singles.map((entry, index) => (
+								<ShortCard entry={entry} lang={lang} index={index} />
+							))}
+						</div>
+					</div>
+				)}
+			</div>
+		)
+	}
+</section>
