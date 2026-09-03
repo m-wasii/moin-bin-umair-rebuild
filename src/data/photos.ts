@@ -1,11 +1,11 @@
 export const photoCategories = [
+	"film-portraits-trieste",
 	"architecture",
 	"behind-the-scenes",
 	"portraits-fashion",
 	"fashion-lookbook",
 	"events-wedding",
 	"street-photography",
-	"film-portraits-trieste",
 ] as const;
 
 export type PhotoCategory = (typeof photoCategories)[number];

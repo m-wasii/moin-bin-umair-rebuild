@@ -784,9 +784,25 @@ main {
 	min-width: 0;
 }
 
-.photo-album:nth-child(2),
+.photo-album:nth-child(2) {
+	margin-top: clamp(2.5rem, 6vw, 5.5rem);
+}
+
+.photo-album:nth-child(4) {
+	margin-top: clamp(-2.5rem, -4vw, -1.25rem);
+}
+
 .photo-album:nth-child(5) {
-	margin-top: clamp(1rem, 2.5vw, 2.5rem);
+	margin-top: clamp(2.25rem, 5vw, 4.5rem);
+}
+
+.photo-album:nth-child(6) {
+	margin-top: clamp(1.5rem, 3.5vw, 3rem);
+}
+
+.photo-album:nth-child(6) .photo-album__stack,
+.photo-album:nth-child(7) .photo-album__stack {
+	width: 78%;
 }
 
 .photo-album__hit {
@@ -802,12 +818,14 @@ main {
 
 .photo-album__stack {
 	position: relative;
-	padding: 0.75rem 0.9rem 0.3rem;
+	width: 84%;
+	margin-inline: auto;
+	padding: 0.65rem 0.75rem 0.25rem;
 }
 
 .photo-album__peek {
 	position: absolute;
-	inset: 0.75rem 0.9rem 0.3rem;
+	inset: 0.65rem 0.75rem 0.25rem;
 	overflow: hidden;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
@@ -828,13 +846,13 @@ main {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	filter: saturate(0.72) brightness(0.7);
+	filter: saturate(0.55) brightness(0.28);
 }
 
 .photo-album__frame {
 	position: relative;
 	z-index: 1;
-	aspect-ratio: 4 / 5;
+	aspect-ratio: 3 / 4;
 	overflow: hidden;
 	margin: 0;
 	border: 2px solid var(--line);
@@ -843,9 +861,9 @@ main {
 }
 
 .photo-album:nth-child(1) .photo-album__frame,
-.photo-album:nth-child(4) .photo-album__frame,
-.photo-album:nth-child(7) .photo-album__frame {
-	aspect-ratio: 16 / 10;
+.photo-album:nth-child(2) .photo-album__frame,
+.photo-album:nth-child(5) .photo-album__frame {
+	aspect-ratio: 16 / 9;
 }
 
 .photo-album__frame img {
@@ -1817,15 +1835,16 @@ html.video-open {
 	}
 
 	.photo-album:nth-child(n) .photo-album__frame {
-		aspect-ratio: 16 / 10;
+		aspect-ratio: 16 / 9;
 	}
 
 	.photo-album__stack {
-		padding: 0.85rem 0.9rem 0.35rem;
+		width: 92%;
+		padding: 0.65rem 0.75rem 0.25rem;
 	}
 
 	.photo-album__peek {
-		inset: 0.85rem 0.9rem 0.35rem;
+		inset: 0.65rem 0.75rem 0.25rem;
 	}
 
 	.hero__orbit {
