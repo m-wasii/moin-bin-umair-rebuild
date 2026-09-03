@@ -749,28 +749,29 @@ main {
 }
 
 .photo-albums {
-	--mosaic-row-height: clamp(13rem, 22vw, 18.5rem);
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
-	grid-auto-rows: var(--mosaic-row-height);
-	gap: clamp(0.9rem, 1.6vw, 1.4rem);
+	gap: clamp(0.85rem, 1.6vw, 1.25rem);
+	width: min(100%, 58rem);
 	margin: 0;
 	padding: 0;
 	list-style: none;
-	align-items: stretch;
+	align-items: start;
 }
 
 .photo-album {
 	grid-column: span var(--album-span, 6);
 	min-width: 0;
-	height: 100%;
-	overflow: visible;
+}
+
+.photo-album:nth-child(2),
+.photo-album:nth-child(5) {
+	margin-top: clamp(1rem, 2.4vw, 2.25rem);
 }
 
 .photo-album__hit {
 	display: block;
 	width: 100%;
-	height: 100%;
 	padding: 0;
 	border: 0;
 	background: transparent;
@@ -781,12 +782,12 @@ main {
 
 .photo-album__stack {
 	position: relative;
-	height: 100%;
+	padding: 0.85rem 1rem 0.35rem;
 }
 
 .photo-album__peek {
 	position: absolute;
-	inset: 0;
+	inset: 0.85rem 1rem 0.35rem;
 	overflow: hidden;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
@@ -796,11 +797,11 @@ main {
 }
 
 .photo-album__peek--1 {
-	transform: rotate(-6deg) translate(-4%, 3%);
+	transform: rotate(-7deg) translate(-5%, 4%);
 }
 
 .photo-album__peek--2 {
-	transform: rotate(5deg) translate(5%, -4%);
+	transform: rotate(6deg) translate(6%, -5%);
 }
 
 .photo-album__peek img {
@@ -813,12 +814,18 @@ main {
 .photo-album__frame {
 	position: relative;
 	z-index: 1;
-	height: 100%;
+	aspect-ratio: 4 / 5;
 	overflow: hidden;
 	margin: 0;
 	border: 2px solid var(--line);
 	border-radius: var(--radius);
 	background: #16110c;
+}
+
+.photo-album:nth-child(1) .photo-album__frame,
+.photo-album:nth-child(4) .photo-album__frame,
+.photo-album:nth-child(7) .photo-album__frame {
+	aspect-ratio: 16 / 10;
 }
 
 .photo-album__frame img {
@@ -847,11 +854,11 @@ main {
 
 .photo-album__content {
 	position: absolute;
-	right: 0.9rem;
-	bottom: 0.85rem;
-	left: 0.9rem;
+	right: 0.95rem;
+	bottom: 0.9rem;
+	left: 0.95rem;
 	display: grid;
-	gap: 0.12rem;
+	gap: 0.15rem;
 }
 
 .photo-album__kicker {
@@ -866,14 +873,14 @@ main {
 .photo-album__content h3 {
 	margin: 0;
 	font-family: var(--font-display);
-	font-size: clamp(1.2rem, 1.7vw, 1.7rem);
-	font-weight: 500;
-	line-height: 1.15;
-	letter-spacing: -0.02em;
+	font-size: clamp(1.15rem, 1.8vw, 1.65rem);
+	font-weight: 600;
+	line-height: 1.05;
+	letter-spacing: -0.03em;
 }
 
 .photo-album__content p:last-child {
-	margin: 0.1rem 0 0;
+	margin: 0.12rem 0 0;
 	color: var(--peach);
 	font-size: 0.8rem;
 }
@@ -884,8 +891,8 @@ main {
 	right: 0.75rem;
 	display: grid;
 	place-items: center;
-	width: 2.15rem;
-	height: 2.15rem;
+	width: 2.2rem;
+	height: 2.2rem;
 	border: 2px solid rgba(245, 158, 11, 0.42);
 	border-radius: 999px;
 	background: rgba(10, 8, 6, 0.66);
@@ -898,8 +905,8 @@ main {
 }
 
 .photo-album__arrow svg {
-	width: 0.9rem;
-	height: 0.9rem;
+	width: 0.95rem;
+	height: 0.95rem;
 }
 
 .photo-album__arrow path {
@@ -915,11 +922,11 @@ main {
 }
 
 .photo-album__hit:hover .photo-album__peek--1 {
-	transform: rotate(-9deg) translate(-6%, 5%);
+	transform: rotate(-11deg) translate(-8%, 6%);
 }
 
 .photo-album__hit:hover .photo-album__peek--2 {
-	transform: rotate(8deg) translate(7%, -6%);
+	transform: rotate(10deg) translate(9%, -7%);
 }
 
 .photo-album__hit:hover .photo-album__arrow {
@@ -1559,13 +1566,24 @@ html.video-open {
 		gap: 2rem;
 	}
 
-	.project-grid,
-	.photo-albums {
+	.project-grid {
 		--mosaic-row-height: clamp(11.5rem, 26vw, 16rem);
 	}
 
 	.work-section--shorts .project-grid {
 		--mosaic-row-height: clamp(16rem, 38vw, 24rem);
+	}
+
+	.photo-albums {
+		width: 100%;
+	}
+
+	.photo-album {
+		grid-column: span 6;
+	}
+
+	.photo-album:nth-child(7) {
+		grid-column: 1 / -1;
 	}
 }
 
@@ -1672,8 +1690,7 @@ html.video-open {
 		font-size: clamp(2.4rem, 12.4vw, 5.5rem);
 	}
 
-	.project-grid,
-	.photo-albums {
+	.project-grid {
 		grid-template-columns: minmax(0, 1fr);
 		grid-auto-rows: auto;
 		gap: 1.25rem;
@@ -1718,17 +1735,19 @@ html.video-open {
 	.photo-album,
 	.photo-album:nth-child(n) {
 		grid-column: 1 / -1;
-		height: auto;
-	}
-
-	.photo-album__hit,
-	.photo-album__stack {
-		height: auto;
+		margin-top: 0;
 	}
 
 	.photo-album:nth-child(n) .photo-album__frame {
-		height: auto;
-		aspect-ratio: 16 / 9;
+		aspect-ratio: 16 / 10;
+	}
+
+	.photo-album__stack {
+		padding: 0.7rem 0.75rem 0.28rem;
+	}
+
+	.photo-album__peek {
+		inset: 0.7rem 0.75rem 0.28rem;
 	}
 
 	.hero__orbit {
