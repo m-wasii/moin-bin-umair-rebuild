@@ -1,62 +1,82 @@
 :root {
-	--ink: #050403;
-	--ink-soft: #120e0a;
+	--ink: #2c1406;
+	--ink-soft: #3f1c08;
 	--paper: #ffedd5;
 	--peach: #ffedd5;
 	--white: #ffffff;
 	--muted: #e8b45a;
-	--line: rgba(245, 158, 11, 0.22);
-	--line-strong: rgba(245, 158, 11, 0.48);
+	--line: rgba(245, 158, 11, 0.32);
+	--line-strong: rgba(245, 158, 11, 0.58);
 	--gutter: clamp(1rem, 3vw, 3rem);
 	--header-height: 5.25rem;
 	--radius: 1.35rem;
-	--panel: rgba(5, 4, 3, 0.82);
+	--panel: rgba(66, 28, 8, 0.72);
 	--amber: #f59e0b;
 	--amber-deep: #d97706;
 	--orange: #ff6b00;
 	--orange-deep: #ea580c;
 	--tungsten: var(--amber);
-	--tungsten-deep: #1a1208;
+	--tungsten-deep: #2c1406;
+	--stage-base: #43200a;
 	--stage-glow-top: radial-gradient(
-		ellipse 90% 32% at 85% 6%,
-		rgba(245, 158, 11, 0.16),
-		transparent 55%
+		ellipse 110% 48% at 85% 8%,
+		rgba(245, 158, 11, 0.5),
+		transparent 60%
 	);
 	--stage-glow-top-left: radial-gradient(
-		ellipse 85% 30% at 12% 10%,
-		rgba(255, 107, 0, 0.12),
-		transparent 52%
+		ellipse 100% 44% at 10% 12%,
+		rgba(255, 107, 0, 0.42),
+		transparent 58%
 	);
 	--stage-glow-top-center: radial-gradient(
-		ellipse 70% 26% at 50% 4%,
-		rgba(245, 158, 11, 0.1),
-		transparent 55%
+		ellipse 95% 40% at 50% 6%,
+		rgba(245, 158, 11, 0.4),
+		transparent 60%
+	);
+	--stage-glow-heart: radial-gradient(
+		ellipse 120% 72% at 50% 48%,
+		rgba(245, 158, 11, 0.28),
+		transparent 70%
 	);
 	--stage-glow-mid: radial-gradient(
-		ellipse 75% 28% at 12% 38%,
-		rgba(255, 107, 0, 0.09),
-		transparent 52%
+		ellipse 95% 42% at 12% 38%,
+		rgba(255, 107, 0, 0.38),
+		transparent 58%
 	);
 	--stage-glow-mid-right: radial-gradient(
-		ellipse 70% 26% at 88% 42%,
-		rgba(245, 158, 11, 0.1),
-		transparent 50%
+		ellipse 92% 40% at 88% 44%,
+		rgba(245, 158, 11, 0.44),
+		transparent 56%
 	);
 	--stage-glow-low: radial-gradient(
-		ellipse 88% 34% at 82% 68%,
-		rgba(245, 158, 11, 0.15),
-		transparent 55%
+		ellipse 110% 50% at 82% 70%,
+		rgba(255, 140, 20, 0.48),
+		transparent 60%
 	);
 	--stage-glow-end: radial-gradient(
-		ellipse 80% 30% at 30% 92%,
-		rgba(217, 119, 6, 0.12),
-		transparent 50%
+		ellipse 100% 44% at 28% 94%,
+		rgba(217, 119, 6, 0.42),
+		transparent 58%
+	);
+	--stage-tint: linear-gradient(
+		165deg,
+		rgba(245, 158, 11, 0.26) 0%,
+		rgba(255, 107, 0, 0.12) 46%,
+		rgba(245, 158, 11, 0.22) 100%
+	);
+	--stage-wash: linear-gradient(
+		180deg,
+		#6e3010 0%,
+		#4a1e0a 22%,
+		#3a1808 48%,
+		#52240c 74%,
+		#7a3812 100%
 	);
 	--stage:
 		var(--stage-glow-top), var(--stage-glow-top-left),
-		var(--stage-glow-top-center), var(--stage-glow-mid),
-		var(--stage-glow-mid-right), var(--stage-glow-low), var(--stage-glow-end),
-		var(--ink);
+		var(--stage-glow-top-center), var(--stage-glow-heart),
+		var(--stage-glow-mid), var(--stage-glow-mid-right), var(--stage-glow-low),
+		var(--stage-glow-end), var(--stage-tint), var(--stage-wash);
 	--font-sans: "DM Sans", "Avenir Next", "Segoe UI", sans-serif;
 	--font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
 }
@@ -68,7 +88,7 @@
 }
 
 html {
-	background: var(--ink);
+	background: var(--stage-base);
 	color: var(--paper);
 	scroll-behavior: smooth;
 	scroll-padding-top: calc(var(--header-height) + 1rem);
@@ -78,7 +98,7 @@ body {
 	margin: 0;
 	min-width: 0;
 	overflow-x: hidden;
-	background: var(--ink);
+	background: var(--stage-base);
 	color: var(--paper);
 	font-family: var(--font-sans);
 	font-size: 1.125rem;
@@ -204,7 +224,7 @@ main {
 .site-header--scrolled {
 	border-color: var(--line);
 	background: var(--panel);
-	box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.28);
+	box-shadow: 0 1rem 2.5rem rgba(90, 30, 0, 0.38);
 	-webkit-backdrop-filter: blur(18px);
 	backdrop-filter: blur(18px);
 }
@@ -267,7 +287,7 @@ main {
 	padding: 0.2rem;
 	border: 2px solid var(--line);
 	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.04);
+	background: rgba(245, 158, 11, 0.12);
 	transition: border-color 250ms ease;
 }
 
@@ -389,7 +409,7 @@ main {
 
 .hero__media {
 	z-index: -2;
-	background: #0a0806;
+	background: var(--stage-base);
 }
 
 .hero__media video {
@@ -405,16 +425,16 @@ main {
 	background:
 		linear-gradient(
 			180deg,
-			rgba(5, 4, 3, 0.55) 0%,
+			rgba(66, 28, 8, 0.42) 0%,
 			transparent 34%,
-			transparent 48%,
-			rgba(5, 4, 3, 0.88) 100%
+			rgba(245, 158, 11, 0.12) 58%,
+			rgba(58, 24, 8, 0.72) 100%
 		),
 		linear-gradient(
 			90deg,
-			rgba(5, 4, 3, 0.42),
+			rgba(58, 24, 8, 0.28),
 			transparent 44%,
-			rgba(217, 119, 6, 0.12)
+			rgba(245, 158, 11, 0.22)
 		);
 }
 
@@ -1615,7 +1635,7 @@ html.video-open {
 		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
 		border: 0;
 		border-radius: 0;
-		background: rgba(5, 4, 3, 0.96);
+		background: rgba(44, 20, 6, 0.96);
 		opacity: 0;
 		pointer-events: none;
 		transform: translateY(-1rem);
