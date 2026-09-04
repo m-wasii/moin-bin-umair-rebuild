@@ -846,6 +846,43 @@ document.addEventListener("click", (event) => {
 	const target = event.target;
 	if (!(target instanceof Element)) return;
 
+	const expandToggle = target.closest<HTMLButtonElement>("[data-work-expand]");
+	if (expandToggle) {
+		const section = expandToggle.closest<HTMLElement>("[data-work-expandable]");
+		if (!section) return;
+
+		const expanded = expandToggle.getAttribute("aria-expanded") !== "true";
+		const overflowCards = section.querySelectorAll<HTMLElement>(
+			"[data-work-overflow]",
+		);
+		const label = expandToggle.querySelector<HTMLElement>(
+			"[data-work-expand-label]",
+		);
+
+		overflowCards.forEach((card) => {
+			card.hidden = !expanded;
+			if (expanded) card.classList.add("is-visible");
+		});
+
+		expandToggle.setAttribute("aria-expanded", expanded.toString());
+		if (label) {
+			label.textContent = expanded
+				? (expandToggle.dataset.labelLess ?? label.textContent)
+				: (expandToggle.dataset.labelMore ?? label.textContent);
+		}
+
+		if (!expanded) {
+			const heading = section.querySelector<HTMLElement>(".section-heading");
+			const scrollTarget = heading ?? expandToggle;
+			scrollTarget.scrollIntoView({
+				block: "nearest",
+				behavior: reducedMotion.matches ? "auto" : "smooth",
+			});
+		}
+
+		return;
+	}
+
 	const opener = target.closest<HTMLElement>("[data-album-open]");
 	if (opener) {
 		event.preventDefault();

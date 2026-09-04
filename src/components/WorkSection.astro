@@ -1,6 +1,6 @@
 ---
 import type { Project } from "../data/projects";
-import { mosaicSpans } from "../lib/mosaic";
+import { mosaicRowSizes, mosaicSpans } from "../lib/mosaic";
 import { useTranslations, type Lang } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
@@ -25,6 +25,17 @@ const metaLabel =
 					: t("section.meta.projects")
 			}`;
 const spans = mosaicSpans(projects.length);
+
+const EXPANDABLE_IDS = new Set(["commercial", "art"]);
+const MAX_VISIBLE_ROWS = 3;
+const rowSizes = mosaicRowSizes(projects.length);
+const canCollapse =
+	EXPANDABLE_IDS.has(id) && rowSizes.length > MAX_VISIBLE_ROWS;
+const visibleCount = canCollapse
+	? rowSizes
+			.slice(0, MAX_VISIBLE_ROWS)
+			.reduce((sum, size) => sum + size, 0)
+	: projects.length;
 ---
 
 <section
@@ -36,6 +47,7 @@ const spans = mosaicSpans(projects.length);
 	id={id}
 	aria-labelledby={`${id}-title`}
 	data-nav-section
+	data-work-expandable={canCollapse ? true : undefined}
 >
 	<header class="section-heading" data-reveal>
 		<p class="section-heading__ghost" aria-hidden="true">{number}</p>
@@ -49,16 +61,34 @@ const spans = mosaicSpans(projects.length);
 
 	{
 		projects.length > 0 ? (
-			<div class="project-grid">
-				{projects.map((project, index) => (
-					<ProjectCard
-						project={project}
-						lang={lang}
-						index={index}
-						span={spans[index]}
-					/>
-				))}
-			</div>
+			<>
+				<div class="project-grid">
+					{projects.map((project, index) => (
+						<ProjectCard
+							project={project}
+							lang={lang}
+							index={index}
+							span={spans[index]}
+							overflow={canCollapse && index >= visibleCount}
+						/>
+					))}
+				</div>
+				{canCollapse && (
+					<button
+						class="work-section__more"
+						type="button"
+						data-work-expand
+						aria-expanded="false"
+						data-label-more={t("section.seeMore")}
+						data-label-less={t("section.showLess")}
+					>
+						<span data-work-expand-label>{t("section.seeMore")}</span>
+						<svg viewBox="0 0 18 18" aria-hidden="true">
+							<path d="M9 2v13M4 10l5 5 5-5"></path>
+						</svg>
+					</button>
+				)}
+			</>
 		) : (
 			<p class="work-section__empty" data-reveal>
 				{t("section.shorts.empty")}
