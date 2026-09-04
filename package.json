@@ -18,6 +18,7 @@
 		"seed:photos": "node scripts/seed-photos.mjs",
 		"seed:shorts": "node scripts/seed-shorts.mjs",
 		"seed:r2": "node scripts/seed-r2.mjs",
+		"verify:shorts-r2": "node scripts/verify-shorts-r2.mjs",
 		"deploy": "astro build && wrangler deploy && wrangler deploy --name dashboard"
 	},
 	"dependencies": {
