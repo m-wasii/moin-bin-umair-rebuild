@@ -1764,6 +1764,8 @@ html.video-open {
 		display: inline-flex;
 	}
 
+	/* Full-viewport overlay: stretch overrides desktop justify-self:center
+	   (which otherwise shrink-wraps fixed+inset:0 to content width). */
 	.site-nav {
 		position: fixed;
 		z-index: 101;
@@ -1771,8 +1773,13 @@ html.video-open {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
+		align-self: stretch;
 		justify-content: center;
-		gap: 0.35rem;
+		justify-self: stretch;
+		gap: 0.55rem;
+		width: auto;
+		height: auto;
+		max-width: none;
 		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
 		border: 0;
 		border-radius: 0;
@@ -1793,15 +1800,28 @@ html.video-open {
 		transform: translateY(0);
 	}
 
+	/* Header backdrop-filter/transform create a fixed containing block and
+	   trap the overlay inside the pill — clear them while the menu is open. */
+	body.nav-open .site-header {
+		transform: none !important;
+		filter: none;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		background: transparent;
+		border-color: transparent;
+		box-shadow: none;
+	}
+
 	.site-nav__link {
+		display: block;
 		justify-content: space-between;
-		padding: 0.85rem 0.2rem;
+		padding: 0.55rem 0.2rem;
 		border-radius: 0;
 		border-bottom: 0;
 		color: var(--amber);
 		font-size: clamp(2.1rem, 11vw, 3.6rem);
 		font-weight: 500;
-		line-height: 1.05;
+		line-height: 1.15;
 		letter-spacing: -0.03em;
 		text-transform: none;
 	}
