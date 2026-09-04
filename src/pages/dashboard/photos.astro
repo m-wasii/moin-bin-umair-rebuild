@@ -119,6 +119,16 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		status.dataset.error = isError ? "true" : "false";
 	}
 
+	async function readResponse(response: Response): Promise<{ error?: string }> {
+		const text = await response.text();
+		if (!text) return {};
+		try {
+			return JSON.parse(text) as { error?: string };
+		} catch {
+			return { error: text };
+		}
+	}
+
 	async function toWebp(file: File) {
 		const type = file.type || "";
 		if (
@@ -175,7 +185,7 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 				method: "POST",
 				body: payload,
 			});
-			const result = await response.json();
+			const result = await readResponse(response);
 			if (!response.ok) {
 				setStatus(result.error ?? "Upload failed.", true);
 				return;
@@ -201,7 +211,7 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 			`/api/photos?slug=${encodeURIComponent(slug)}&category=${encodeURIComponent(category)}`,
 			{ method: "DELETE" },
 		);
-		const result = await response.json();
+		const result = await readResponse(response);
 		if (!response.ok) {
 			alert(result.error ?? "Could not delete.");
 			return;

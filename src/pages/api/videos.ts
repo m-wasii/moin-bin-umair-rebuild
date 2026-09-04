@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
 	const category = String(body.category ?? "");
 	if (!url) return json({ error: "Video URL is required." }, 400);
 	if (!isProjectCategory(category)) {
-		return json({ error: "Category must be commercial, art, or shorts." }, 400);
+		return json({ error: "Category must be commercial or art." }, 400);
 	}
 
 	try {

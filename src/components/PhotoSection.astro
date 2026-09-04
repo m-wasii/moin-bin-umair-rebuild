@@ -77,6 +77,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6];
 									class="photo-album__hit"
 									type="button"
 									data-album-open={group.category}
+									aria-label={t("photo.album.open", { title: group.title })}
 									aria-haspopup="dialog"
 									aria-controls={`album-${group.category}`}
 								>
@@ -120,9 +121,6 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6];
 											</span>
 										</figure>
 									</div>
-									<span class="sr-only">
-										{t("photo.album.open", { title: group.title })}
-									</span>
 								</button>
 							</li>
 						);
@@ -185,6 +183,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6];
 										.map((item) => item.src)
 										.join("|")}
 									data-photo-index={String(index)}
+									aria-label={photo.alt || group.title}
 								>
 									<img
 										src={photo.src}

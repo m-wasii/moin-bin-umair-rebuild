@@ -258,7 +258,7 @@ main {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
-	color: var(--amber);
+	color: color-mix(in srgb, var(--amber) 55%, transparent);
 	font-family: var(--font-sans);
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -772,7 +772,8 @@ main {
 	align-items: center;
 	gap: 0.8rem;
 	margin-top: clamp(2rem, 3.5vw, 3rem);
-	padding: 0;
+	min-height: 2.75rem;
+	padding: 0.65rem 0;
 	border: 0;
 	background: transparent;
 	color: var(--amber);
@@ -1758,6 +1759,14 @@ html.video-open {
 
 	.lang-switch {
 		padding-right: 0.15rem;
+	}
+
+	.lang-switch__option {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
 	}
 
 	.nav-toggle {

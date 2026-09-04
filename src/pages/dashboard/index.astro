@@ -44,8 +44,10 @@ const writable = hasWritableMedia();
 			<select name="category" required>
 				<option value="commercial">Commercial</option>
 				<option value="art">Art & Films</option>
-				<option value="shorts">Shorts</option>
 			</select>
+			<span class="dash-muted"
+				>File Shorts are managed separately (not via this video catalog).</span
+			>
 		</label>
 		<label>
 			<span>Title override</span>
@@ -120,6 +122,16 @@ const writable = hasWritableMedia();
 		status.dataset.error = isError ? "true" : "false";
 	}
 
+	async function readResponse(response: Response): Promise<{ error?: string }> {
+		const text = await response.text();
+		if (!text) return {};
+		try {
+			return JSON.parse(text) as { error?: string };
+		} catch {
+			return { error: text };
+		}
+	}
+
 	form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		const data = new FormData(form);
@@ -138,7 +150,7 @@ const writable = hasWritableMedia();
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify(payload),
 		});
-		const result = await response.json();
+		const result = await readResponse(response);
 		if (!response.ok) {
 			setStatus(result.error ?? "Could not save.", true);
 			return;
@@ -156,7 +168,7 @@ const writable = hasWritableMedia();
 		const response = await fetch(`/api/videos?slug=${encodeURIComponent(slug)}`, {
 			method: "DELETE",
 		});
-		const result = await response.json();
+		const result = await readResponse(response);
 		if (!response.ok) {
 			alert(result.error ?? "Could not delete.");
 			return;
