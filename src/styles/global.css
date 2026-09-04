@@ -1740,7 +1740,12 @@ html.video-open {
 	}
 }
 
-@media (max-width: 760px) {
+/*
+ * Compact header/nav (hamburger) must kick in before the centered pill
+ * collides with the brand at mid-width windowed desktops.
+ * Keep in sync with NAV_COMPACT_MQ in src/scripts/site.ts.
+ */
+@media (max-width: 1150px) {
 	:root {
 		--header-height: 4.6rem;
 	}
@@ -1813,7 +1818,9 @@ html.video-open {
 	.site-nav__link[aria-current="page"] {
 		color: var(--peach);
 	}
+}
 
+@media (max-width: 760px) {
 	.hero {
 		padding-bottom: 1rem;
 	}

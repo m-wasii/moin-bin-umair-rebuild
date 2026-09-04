@@ -9,6 +9,9 @@ const navLinks = Array.from(
 	document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
 );
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+/* Keep in sync with @media (max-width: 1150px) header rules in global.css */
+const NAV_COMPACT_MQ = "(max-width: 1150px)";
+const navCompactMq = window.matchMedia(NAV_COMPACT_MQ);
 
 let scrollFrame = 0;
 let navIndicatorFrame = 0;
@@ -27,7 +30,7 @@ function measureLinkMetrics() {
 	const navStyles = getComputedStyle(nav);
 	const insetX = parseFloat(navStyles.borderLeftWidth) || 0;
 	const insetY = parseFloat(navStyles.borderTopWidth) || 0;
-	const isMobile = window.matchMedia("(max-width: 760px)").matches;
+	const isMobile = navCompactMq.matches;
 
 	cachedLinkMetrics = navLinks.map((link) => {
 		const rect = link.getBoundingClientRect();
@@ -406,6 +409,11 @@ navIndicator?.addEventListener("transitionend", (event) => {
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
 window.addEventListener("resize", () => {
 	queueScrollChromeUpdate();
+	queueNavIndicatorUpdate();
+});
+navCompactMq.addEventListener("change", () => {
+	if (!navCompactMq.matches) closeNavigation();
+	measureLinkMetrics();
 	queueNavIndicatorUpdate();
 });
 updateScrollChrome();
