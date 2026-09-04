@@ -130,6 +130,35 @@ const shortMedia = listFiles(shortsRoot, (name) =>
 		: "video/mp4",
 }));
 
+const expectedShortMp4Keys = seedShorts.shorts.flatMap((entry) =>
+	entry.clips.map((clip) => {
+		const match = /\/media\/shorts\/([^/]+)\/(\d{2}\.mp4)$/i.exec(clip.src);
+		if (!match) {
+			throw new Error(`seed-r2: unexpected short src ${clip.src}`);
+		}
+		return `shorts/${match[1]}/${match[2].toLowerCase()}`;
+	}),
+);
+const shortMp4Keys = new Set(
+	shortMedia
+		.filter((item) => item.contentType === "video/mp4")
+		.map((item) => item.key.toLowerCase()),
+);
+const missingShortMp4s = expectedShortMp4Keys.filter(
+	(key) => !shortMp4Keys.has(key.toLowerCase()),
+);
+if (missingShortMp4s.length) {
+	throw new Error(
+		[
+			"seed-r2: Shorts MP4s are missing from the media root.",
+			`Looked in ${shortsRoot}`,
+			"Run npm run seed:shorts first (MP4s are gitignored; WebP posters alone are not enough).",
+			`Missing (${missingShortMp4s.length}):`,
+			...missingShortMp4s.map((key) => `  - ${key}`),
+		].join("\n"),
+	);
+}
+
 const objects = [
 	...stills,
 	...shortMedia,

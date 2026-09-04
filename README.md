@@ -113,12 +113,18 @@ npx wrangler deploy --name mbu-pr-26
 ```
 
 2. R2: bucket `moin-media` is bound as `MEDIA` in `wrangler.jsonc`. After
-   the first deploy (or whenever seed stills change), upload catalogs and
-   WebP objects:
+   the first deploy (or whenever seed stills / Shorts change), upload catalogs
+   and media objects:
 
 ```sh
+# Shorts MP4s are gitignored. Encode them locally, then seed R2:
+#   SHORTS_INPUT_DIR=/path/to/Shorts npm run seed:shorts
 npm run seed:r2
 ```
+
+`seed:r2` fails if any catalog Shorts MP4 is missing from
+`.data/media/shorts/` (or `public/shorts/`). Posters alone are not enough —
+HTML5 `<video>` loads `/media/shorts/.../*.mp4` from R2.
 
 Dashboard saves write to the same bucket. The API token needs
 **Workers R2 Storage: Edit**.
