@@ -84,10 +84,9 @@ function seedPhotoList(): StoredPhoto[] {
 }
 
 function seedPhotoCategoryList(): StoredPhotoCategory[] {
-	return defaultPhotoCategories.map((entry, index) => ({
+	return defaultPhotoCategories.map((entry) => ({
 		slug: entry.slug,
 		label: entry.label,
-		sortOrder: (index + 1) * 10,
 	}));
 }
 

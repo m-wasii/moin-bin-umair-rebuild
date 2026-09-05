@@ -25,7 +25,8 @@ export function isDashboardPath(pathname: string) {
 	return (
 		pathname === "/dashboard" ||
 		pathname.startsWith("/dashboard/") ||
-		pathname.startsWith("/api/")
+		pathname.startsWith("/api/videos") ||
+		pathname.startsWith("/api/photos")
 	);
 }
 

@@ -18,7 +18,6 @@ export type PhotoCategory = string;
 export interface StoredPhotoCategory {
 	slug: string;
 	label: string;
-	sortOrder?: number;
 	/** ISO timestamp when moved to recycle bin; omitted when active. */
 	deletedAt?: string | null;
 }
@@ -29,7 +28,6 @@ export interface StoredPhoto {
 	title: string;
 	alt: string;
 	src: string;
-	sortOrder?: number;
 	/** ISO timestamp when moved to recycle bin; omitted when active. */
 	deletedAt?: string | null;
 	/**

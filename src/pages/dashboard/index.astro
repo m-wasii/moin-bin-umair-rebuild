@@ -1,34 +1,11 @@
 ---
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
-import type { ProjectCategory } from "../../data/projects";
-import { hasWritableMedia, listVideos, type StoredVideo } from "../../lib/store";
+import { hasWritableMedia, listVideos } from "../../lib/store";
 
 export const prerender = false;
 
 const videos = await listVideos();
 const writable = hasWritableMedia();
-
-const sectionMeta: Array<{
-	key: ProjectCategory;
-	label: string;
-}> = [
-	{ key: "commercial", label: "Commercial" },
-	{ key: "art", label: "Art & Films" },
-	{ key: "shorts", label: "Shorts" },
-];
-
-function sortVideos(list: StoredVideo[]) {
-	return [...list].sort((a, b) => {
-		const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
-		if (order !== 0) return order;
-		return a.slug.localeCompare(b.slug);
-	});
-}
-
-const sections = sectionMeta.map((section) => ({
-	...section,
-	videos: sortVideos(videos.filter((video) => video.category === section.key)),
-}));
 ---
 
 <DashboardLayout title="Videos" section="videos">
@@ -37,9 +14,7 @@ const sections = sectionMeta.map((section) => ({
 			<p>Catalog</p>
 			<h1>Videos</h1>
 		</div>
-		<p>
-			Browse, drag to reorder, edit inline, or select and delete (sends to Trash).
-		</p>
+		<p>Paste a Vimeo or YouTube link to add it to the site catalog.</p>
 	</header>
 
 	{
@@ -51,78 +26,72 @@ const sections = sectionMeta.map((section) => ({
 		)
 	}
 
-	<details class="dash-disclose">
-		<summary>Add video</summary>
-		<form class="dash-form" data-video-form>
-			<label>
-				<span>Video URL</span>
-				<input
-					name="url"
-					type="url"
-					required
-					placeholder="https://vimeo.com/… or YouTube"
-				/>
-			</label>
-			<label>
-				<span>Category</span>
-				<select name="category" required>
-					<option value="commercial">Commercial</option>
-					<option value="art">Art & Films</option>
-					<option value="shorts">Shorts</option>
-				</select>
-			</label>
-			<label>
-				<span>Title override</span>
-				<input name="title" type="text" placeholder="Optional" />
-			</label>
-			<label>
-				<span>Year (YouTube)</span>
-				<input name="year" type="number" min="1900" max="2100" />
-			</label>
-			<label>
-				<span>Duration seconds (YouTube)</span>
-				<input name="duration" type="number" min="1" />
-			</label>
-			<label class="dash-form__check">
-				<input name="featured" type="checkbox" />
-				<span>Featured</span>
-			</label>
-			<label class="dash-form__wide">
-				<span>Description</span>
-				<textarea name="description" rows="3"></textarea>
-			</label>
-			<button type="submit">Add video</button>
-			<p class="dash-form__status" data-form-status hidden></p>
-		</form>
-	</details>
+	<form class="dash-form" data-video-form>
+		<label>
+			<span>Video URL</span>
+			<input
+				name="url"
+				type="url"
+				required
+				placeholder="https://vimeo.com/… or YouTube"
+			/>
+		</label>
+		<label>
+			<span>Category</span>
+			<select name="category" required>
+				<option value="commercial">Commercial</option>
+				<option value="art">Art & Films</option>
+				<option value="shorts">Shorts</option>
+			</select>
+		</label>
+		<label>
+			<span>Title override</span>
+			<input name="title" type="text" placeholder="Optional" />
+		</label>
+		<label>
+			<span>Year (YouTube)</span>
+			<input name="year" type="number" min="1900" max="2100" />
+		</label>
+		<label>
+			<span>Duration seconds (YouTube)</span>
+			<input name="duration" type="number" min="1" />
+		</label>
+		<label class="dash-form__check">
+			<input name="featured" type="checkbox" />
+			<span>Featured</span>
+		</label>
+		<label class="dash-form__wide">
+			<span>Description</span>
+			<textarea name="description" rows="3"></textarea>
+		</label>
+		<button type="submit">Add video</button>
+		<p class="dash-form__status" data-form-status hidden></p>
+	</form>
 
-	{
-		sections.map((section) => (
-			<section class="dash-group" data-video-section={section.key}>
-				<h2>
-					{section.label}
-					<span class="dash-muted">{section.videos.length}</span>
-				</h2>
-				{section.videos.length === 0 ? (
-					<p class="dash-muted">No videos in this section yet.</p>
-				) : (
-					<ul class="dash-rows" data-sortable="videos">
-						{section.videos.map((video) => (
-							<li
-								class="dash-row"
-								data-slug={video.slug}
-								data-category={video.category}
-								draggable="false"
-							>
-								<button
-									type="button"
-									class="dash-handle"
-									data-drag-handle
-									aria-label={`Reorder ${video.title}`}
-									title="Drag to reorder"
-								>
-									⋮⋮
-								</button>
+	<div class="dash-toolbar">
+		<p class="dash-muted" data-selection-count>0 selected</p>
+		<button type="button" class="dash-trash-btn" data-move-trash disabled>
+			Move to recycle bin
+		</button>
+	</div>
+
+	<div class="dash-table-wrap">
+		<table class="dash-table">
+			<thead>
+				<tr>
+					<th class="dash-check-col">
+						<span class="visually-hidden">Select</span>
+					</th>
+					<th>Title</th>
+					<th>Category</th>
+					<th>Year</th>
+				</tr>
+			</thead>
+			<tbody data-video-rows>
+				{
+					videos.map((video) => (
+						<tr data-slug={video.slug}>
+							<td class="dash-check-col">
 								<label class="dash-check">
 									<input
 										type="checkbox"
@@ -130,106 +99,20 @@ const sections = sectionMeta.map((section) => ({
 										data-kind="video"
 										value={video.slug}
 									/>
-									<span class="visually-hidden">Select {video.title}</span>
+									<span class="visually-hidden">Mark {video.title}</span>
 								</label>
-								<div class="dash-row__body" data-row-view>
-									<div class="dash-row__main">
-										<strong data-field="title">{video.title}</strong>
-										<div class="dash-muted">{video.provider}</div>
-									</div>
-									<div class="dash-row__meta">
-										<span data-field="year">{video.year}</span>
-										{video.featured ? (
-											<span class="dash-pill">Featured</span>
-										) : null}
-									</div>
-									<button type="button" class="dash-ghost" data-edit-open>
-										Edit
-									</button>
-								</div>
-								<form class="dash-inline-edit" data-row-edit hidden>
-									<label>
-										<span>Title</span>
-										<input name="title" type="text" value={video.title} required />
-									</label>
-									<label>
-										<span>URL</span>
-										<input name="url" type="url" value={video.url} required />
-									</label>
-									<label>
-										<span>Category</span>
-										<select name="category" required>
-											<option
-												value="commercial"
-												selected={video.category === "commercial"}
-											>
-												Commercial
-											</option>
-											<option value="art" selected={video.category === "art"}>
-												Art & Films
-											</option>
-											<option
-												value="shorts"
-												selected={video.category === "shorts"}
-											>
-												Shorts
-											</option>
-										</select>
-									</label>
-									<label>
-										<span>Year</span>
-										<input
-											name="year"
-											type="number"
-											min="1900"
-											max="2100"
-											value={video.year}
-										/>
-									</label>
-									<label>
-										<span>Duration (s)</span>
-										<input
-											name="duration"
-											type="number"
-											min="1"
-											value={video.duration}
-										/>
-									</label>
-									<label class="dash-form__check">
-										<input
-											name="featured"
-											type="checkbox"
-											checked={Boolean(video.featured)}
-										/>
-										<span>Featured</span>
-									</label>
-									<label class="dash-form__wide">
-										<span>Description</span>
-										<textarea name="description" rows="2">{video.description ?? ""}</textarea>
-									</label>
-									<div class="dash-inline-edit__actions">
-										<button type="submit">Save</button>
-										<button type="button" class="dash-ghost" data-edit-cancel>
-											Cancel
-										</button>
-									</div>
-								</form>
-							</li>
-						))}
-					</ul>
-				)}
-			</section>
-		))
-	}
-
-	<div class="dash-sticky-bar" data-sticky-bar hidden>
-		<div>
-			<p data-selection-count>0 selected</p>
-			<p class="dash-muted">Delete sends items to Trash (recoverable).</p>
-		</div>
-		<button type="button" class="dash-trash-btn" data-move-trash disabled>
-			Delete
-		</button>
+							</td>
+							<td>
+								<strong>{video.title}</strong>
+								<div class="dash-muted">{video.provider}</div>
+							</td>
+							<td>{video.category}</td>
+							<td>{video.year}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
 	</div>
 </DashboardLayout>
 
@@ -237,7 +120,6 @@ const sections = sectionMeta.map((section) => ({
 	const form = document.querySelector<HTMLFormElement>("[data-video-form]");
 	const status = document.querySelector<HTMLElement>("[data-form-status]");
 	const moveBtn = document.querySelector<HTMLButtonElement>("[data-move-trash]");
-	const stickyBar = document.querySelector<HTMLElement>("[data-sticky-bar]");
 	const countEl = document.querySelector<HTMLElement>("[data-selection-count]");
 
 	function setStatus(message: string, isError = false) {
@@ -257,7 +139,6 @@ const sections = sectionMeta.map((section) => ({
 		const count = selectedMarks().length;
 		if (countEl) countEl.textContent = `${count} selected`;
 		if (moveBtn) moveBtn.disabled = count === 0;
-		if (stickyBar) stickyBar.hidden = count === 0;
 	}
 
 	document.addEventListener("change", (event) => {
@@ -296,7 +177,7 @@ const sections = sectionMeta.map((section) => ({
 		if (!marks.length) return;
 		if (
 			!confirm(
-				`Delete ${marks.length} video${marks.length === 1 ? "" : "s"}? They will be moved to Trash and can be restored.`,
+				`Move ${marks.length} video${marks.length === 1 ? "" : "s"} to the recycle bin?`,
 			)
 		) {
 			return;
@@ -313,134 +194,11 @@ const sections = sectionMeta.map((section) => ({
 		});
 		const result = await response.json();
 		if (!response.ok) {
-			alert(result.error ?? "Could not delete.");
+			alert(result.error ?? "Could not move to trash.");
 			moveBtn.disabled = false;
 			return;
 		}
 		location.reload();
-	});
-
-	document.addEventListener("click", (event) => {
-		const target = event.target as HTMLElement;
-		const open = target.closest<HTMLButtonElement>("[data-edit-open]");
-		if (open) {
-			const row = open.closest<HTMLElement>(".dash-row");
-			if (!row) return;
-			row.querySelector<HTMLElement>("[data-row-view]")!.hidden = true;
-			row.querySelector<HTMLElement>("[data-row-edit]")!.hidden = false;
-			return;
-		}
-		const cancel = target.closest<HTMLButtonElement>("[data-edit-cancel]");
-		if (cancel) {
-			const row = cancel.closest<HTMLElement>(".dash-row");
-			if (!row) return;
-			row.querySelector<HTMLElement>("[data-row-view]")!.hidden = false;
-			row.querySelector<HTMLElement>("[data-row-edit]")!.hidden = true;
-		}
-	});
-
-	document.addEventListener("submit", async (event) => {
-		const editForm = (event.target as HTMLElement).closest<HTMLFormElement>(
-			"[data-row-edit]",
-		);
-		if (!editForm) return;
-		event.preventDefault();
-		const row = editForm.closest<HTMLElement>(".dash-row");
-		const slug = row?.dataset.slug;
-		if (!slug) return;
-		const data = new FormData(editForm);
-		const response = await fetch("/api/videos", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				slug,
-				title: String(data.get("title") ?? ""),
-				url: String(data.get("url") ?? ""),
-				category: String(data.get("category") ?? ""),
-				year: data.get("year") ? Number(data.get("year")) : undefined,
-				duration: data.get("duration") ? Number(data.get("duration")) : undefined,
-				featured: data.get("featured") === "on",
-				description: String(data.get("description") ?? ""),
-			}),
-		});
-		const result = await response.json();
-		if (!response.ok) {
-			alert(result.error ?? "Could not save.");
-			return;
-		}
-		location.reload();
-	});
-
-	let dragRow: HTMLElement | null = null;
-
-	document.addEventListener("pointerdown", (event) => {
-		const handle = (event.target as HTMLElement).closest<HTMLElement>(
-			"[data-drag-handle]",
-		);
-		if (!handle) return;
-		const row = handle.closest<HTMLElement>(".dash-row");
-		if (!row) return;
-		row.draggable = true;
-	});
-
-	document.addEventListener("dragstart", (event) => {
-		const row = (event.target as HTMLElement).closest<HTMLElement>(".dash-row");
-		if (!row || !row.draggable) return;
-		dragRow = row;
-		row.classList.add("is-dragging");
-		event.dataTransfer?.setData("text/plain", row.dataset.slug ?? "");
-		event.dataTransfer!.effectAllowed = "move";
-	});
-
-	document.addEventListener("dragend", () => {
-		if (dragRow) {
-			dragRow.draggable = false;
-			dragRow.classList.remove("is-dragging");
-		}
-		dragRow = null;
-		document
-			.querySelectorAll(".dash-row.is-drop-target")
-			.forEach((el) => el.classList.remove("is-drop-target"));
-	});
-
-	document.addEventListener("dragover", (event) => {
-		if (!dragRow) return;
-		const over = (event.target as HTMLElement).closest<HTMLElement>(".dash-row");
-		if (!over || over === dragRow) return;
-		const list = over.closest("[data-sortable='videos']");
-		if (!list || !dragRow.closest("[data-sortable='videos']") || list !== dragRow.closest("[data-sortable='videos']")) {
-			return;
-		}
-		event.preventDefault();
-		over.classList.add("is-drop-target");
-		const rect = over.getBoundingClientRect();
-		const before = event.clientY < rect.top + rect.height / 2;
-		list.insertBefore(dragRow, before ? over : over.nextSibling);
-	});
-
-	document.addEventListener("dragleave", (event) => {
-		const over = (event.target as HTMLElement).closest<HTMLElement>(".dash-row");
-		over?.classList.remove("is-drop-target");
-	});
-
-	document.addEventListener("drop", async (event) => {
-		if (!dragRow) return;
-		event.preventDefault();
-		const list = dragRow.closest<HTMLElement>("[data-sortable='videos']");
-		if (!list) return;
-		const slugs = [...list.querySelectorAll<HTMLElement>(".dash-row")].map(
-			(row) => row.dataset.slug!,
-		);
-		const response = await fetch("/api/videos", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ action: "reorder", slugs }),
-		});
-		const result = await response.json();
-		if (!response.ok) {
-			alert(result.error ?? "Could not reorder.");
-			location.reload();
-		}
 	});
 
 	syncSelection();
