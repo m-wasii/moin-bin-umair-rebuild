@@ -14,10 +14,7 @@ const writable = hasWritableMedia();
 			<p>Catalog</p>
 			<h1>Videos</h1>
 		</div>
-		<p>
-			Paste a Vimeo or YouTube link. Google Access is the only login — nothing
-			is saved to GitHub.
-		</p>
+		<p>Paste a Vimeo or YouTube link to add it to the site catalog.</p>
 	</header>
 
 	{
@@ -44,10 +41,8 @@ const writable = hasWritableMedia();
 			<select name="category" required>
 				<option value="commercial">Commercial</option>
 				<option value="art">Art & Films</option>
+				<option value="shorts">Shorts</option>
 			</select>
-			<span class="dash-muted"
-				>File Shorts are managed separately (not via this video catalog).</span
-			>
 		</label>
 		<label>
 			<span>Title override</span>
@@ -73,35 +68,46 @@ const writable = hasWritableMedia();
 		<p class="dash-form__status" data-form-status hidden></p>
 	</form>
 
+	<div class="dash-toolbar">
+		<p class="dash-muted" data-selection-count>0 selected</p>
+		<button type="button" class="dash-trash-btn" data-move-trash disabled>
+			Move to recycle bin
+		</button>
+	</div>
+
 	<div class="dash-table-wrap">
 		<table class="dash-table">
 			<thead>
 				<tr>
+					<th class="dash-check-col">
+						<span class="visually-hidden">Select</span>
+					</th>
 					<th>Title</th>
 					<th>Category</th>
 					<th>Year</th>
-					<th></th>
 				</tr>
 			</thead>
 			<tbody data-video-rows>
 				{
 					videos.map((video) => (
 						<tr data-slug={video.slug}>
+							<td class="dash-check-col">
+								<label class="dash-check">
+									<input
+										type="checkbox"
+										data-mark
+										data-kind="video"
+										value={video.slug}
+									/>
+									<span class="visually-hidden">Mark {video.title}</span>
+								</label>
+							</td>
 							<td>
 								<strong>{video.title}</strong>
 								<div class="dash-muted">{video.provider}</div>
 							</td>
 							<td>{video.category}</td>
 							<td>{video.year}</td>
-							<td>
-								<button
-									type="button"
-									class="dash-delete"
-									data-delete-video={video.slug}
-								>
-									Delete
-								</button>
-							</td>
 						</tr>
 					))
 				}
@@ -113,7 +119,8 @@ const writable = hasWritableMedia();
 <script>
 	const form = document.querySelector<HTMLFormElement>("[data-video-form]");
 	const status = document.querySelector<HTMLElement>("[data-form-status]");
-	const rows = document.querySelector<HTMLElement>("[data-video-rows]");
+	const moveBtn = document.querySelector<HTMLButtonElement>("[data-move-trash]");
+	const countEl = document.querySelector<HTMLElement>("[data-selection-count]");
 
 	function setStatus(message: string, isError = false) {
 		if (!status) return;
@@ -122,15 +129,22 @@ const writable = hasWritableMedia();
 		status.dataset.error = isError ? "true" : "false";
 	}
 
-	async function readResponse(response: Response): Promise<{ error?: string }> {
-		const text = await response.text();
-		if (!text) return {};
-		try {
-			return JSON.parse(text) as { error?: string };
-		} catch {
-			return { error: text };
-		}
+	function selectedMarks() {
+		return [
+			...document.querySelectorAll<HTMLInputElement>("[data-mark]:checked"),
+		];
 	}
+
+	function syncSelection() {
+		const count = selectedMarks().length;
+		if (countEl) countEl.textContent = `${count} selected`;
+		if (moveBtn) moveBtn.disabled = count === 0;
+	}
+
+	document.addEventListener("change", (event) => {
+		const target = event.target as HTMLElement;
+		if (target.matches?.("[data-mark]")) syncSelection();
+	});
 
 	form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
@@ -150,7 +164,7 @@ const writable = hasWritableMedia();
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify(payload),
 		});
-		const result = await readResponse(response);
+		const result = await response.json();
 		if (!response.ok) {
 			setStatus(result.error ?? "Could not save.", true);
 			return;
@@ -158,21 +172,34 @@ const writable = hasWritableMedia();
 		location.reload();
 	});
 
-	rows?.addEventListener("click", async (event) => {
-		const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-			"[data-delete-video]",
-		);
-		if (!button) return;
-		const slug = button.dataset.deleteVideo;
-		if (!slug || !confirm("Remove this video from the site?")) return;
-		const response = await fetch(`/api/videos?slug=${encodeURIComponent(slug)}`, {
-			method: "DELETE",
-		});
-		const result = await readResponse(response);
-		if (!response.ok) {
-			alert(result.error ?? "Could not delete.");
+	moveBtn?.addEventListener("click", async () => {
+		const marks = selectedMarks();
+		if (!marks.length) return;
+		if (
+			!confirm(
+				`Move ${marks.length} video${marks.length === 1 ? "" : "s"} to the recycle bin?`,
+			)
+		) {
 			return;
 		}
-		button.closest("tr")?.remove();
+		moveBtn.disabled = true;
+		const items = marks.map((input) => ({
+			kind: "video" as const,
+			slug: input.value,
+		}));
+		const response = await fetch("/api/trash", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ action: "move", items }),
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			alert(result.error ?? "Could not move to trash.");
+			moveBtn.disabled = false;
+			return;
+		}
+		location.reload();
 	});
+
+	syncSelection();
 </script>
