@@ -3,7 +3,14 @@ import seedVideos from "../data/videos.seed.json";
 import seedPhotos from "../data/photos.seed.json";
 import seedShorts from "../data/shorts.seed.json";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
-import type { PhotoCategory, StoredPhoto } from "../data/photos";
+import {
+	defaultPhotoCategories,
+	isActiveCategory,
+	isActivePhoto,
+	type PhotoCategory,
+	type StoredPhoto,
+	type StoredPhotoCategory,
+} from "../data/photos";
 import type { StoredShort } from "../data/shorts";
 
 export interface StoredVideo {
@@ -19,12 +26,16 @@ export interface StoredVideo {
 	description?: string;
 	featured?: boolean;
 	sortOrder?: number;
+	/** ISO timestamp when moved to recycle bin; omitted when active. */
+	deletedAt?: string | null;
 }
 
 const VIDEOS_KEY = "catalog/videos.json";
 const PHOTOS_KEY = "catalog/photos.json";
+const PHOTO_CATEGORIES_KEY = "catalog/photo-categories.json";
 const SHORTS_KEY = "catalog/shorts.json";
 
+export type { StoredPhotoCategory };
 interface MediaObject {
 	json<T = unknown>(): Promise<T>;
 	arrayBuffer(): Promise<ArrayBuffer>;
@@ -70,6 +81,13 @@ function seedVideoList(): StoredVideo[] {
 
 function seedPhotoList(): StoredPhoto[] {
 	return (seedPhotos as { photos: StoredPhoto[] }).photos;
+}
+
+function seedPhotoCategoryList(): StoredPhotoCategory[] {
+	return defaultPhotoCategories.map((entry) => ({
+		slug: entry.slug,
+		label: entry.label,
+	}));
 }
 
 function seedShortList(): StoredShort[] {
@@ -140,19 +158,28 @@ export function hasWritableMedia() {
 	return Boolean(getBucket()) || import.meta.env.DEV;
 }
 
-export async function listVideos(): Promise<StoredVideo[]> {
+export async function listVideos(
+	options: { includeDeleted?: boolean } = {},
+): Promise<StoredVideo[]> {
+	const { includeDeleted = false } = options;
+	let videos: StoredVideo[];
+
 	const bucket = getBucket();
 	if (bucket) {
 		const object = await bucket.get(VIDEOS_KEY);
 		if (object) {
 			const payload = (await object.json()) as { videos?: StoredVideo[] };
-			if (Array.isArray(payload.videos)) return payload.videos;
+			videos = Array.isArray(payload.videos) ? payload.videos : seedVideoList();
+		} else {
+			videos = seedVideoList();
 		}
-		return seedVideoList();
+	} else {
+		const local = await readLocalJson<{ videos: StoredVideo[] }>(VIDEOS_KEY);
+		videos = local?.videos ?? seedVideoList();
 	}
 
-	const local = await readLocalJson<{ videos: StoredVideo[] }>(VIDEOS_KEY);
-	return local?.videos ?? seedVideoList();
+	if (includeDeleted) return videos;
+	return videos.filter((video) => !video.deletedAt);
 }
 
 export async function saveVideos(videos: StoredVideo[]) {
@@ -167,19 +194,35 @@ export async function saveVideos(videos: StoredVideo[]) {
 	await writeLocalJson(VIDEOS_KEY, payload);
 }
 
-export async function listPhotos(): Promise<StoredPhoto[]> {
+export async function listPhotos(
+	options: { includeDeleted?: boolean } = {},
+): Promise<StoredPhoto[]> {
+	const { includeDeleted = false } = options;
+	let photos: StoredPhoto[];
+
 	const bucket = getBucket();
 	if (bucket) {
 		const object = await bucket.get(PHOTOS_KEY);
 		if (object) {
 			const payload = (await object.json()) as { photos?: StoredPhoto[] };
-			if (Array.isArray(payload.photos)) return payload.photos;
+			photos = Array.isArray(payload.photos) ? payload.photos : seedPhotoList();
+		} else {
+			photos = seedPhotoList();
 		}
-		return seedPhotoList();
+	} else {
+		const local = await readLocalJson<{ photos: StoredPhoto[] }>(PHOTOS_KEY);
+		photos = local?.photos ?? seedPhotoList();
 	}
 
-	const local = await readLocalJson<{ photos: StoredPhoto[] }>(PHOTOS_KEY);
-	return local?.photos ?? seedPhotoList();
+	if (includeDeleted) return photos;
+
+	const categories = await listPhotoCategories({ includeDeleted: true });
+	const activeCategorySlugs = new Set(
+		categories.filter(isActiveCategory).map((entry) => entry.slug),
+	);
+	return photos.filter(
+		(photo) => isActivePhoto(photo) && activeCategorySlugs.has(photo.category),
+	);
 }
 
 export async function savePhotos(photos: StoredPhoto[]) {
@@ -192,6 +235,58 @@ export async function savePhotos(photos: StoredPhoto[]) {
 		return;
 	}
 	await writeLocalJson(PHOTOS_KEY, payload);
+}
+
+export async function listPhotoCategories(
+	options: { includeDeleted?: boolean } = {},
+): Promise<StoredPhotoCategory[]> {
+	const { includeDeleted = false } = options;
+	let categories: StoredPhotoCategory[];
+
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(PHOTO_CATEGORIES_KEY);
+		if (object) {
+			const payload = (await object.json()) as {
+				categories?: StoredPhotoCategory[];
+			};
+			categories = Array.isArray(payload.categories)
+				? payload.categories
+				: seedPhotoCategoryList();
+		} else {
+			categories = seedPhotoCategoryList();
+		}
+	} else {
+		const local = await readLocalJson<{ categories: StoredPhotoCategory[] }>(
+			PHOTO_CATEGORIES_KEY,
+		);
+		categories = local?.categories ?? seedPhotoCategoryList();
+	}
+
+	if (includeDeleted) return categories;
+	return categories.filter(isActiveCategory);
+}
+
+export async function savePhotoCategories(categories: StoredPhotoCategory[]) {
+	const payload = { categories };
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(PHOTO_CATEGORIES_KEY, JSON.stringify(payload), {
+			httpMetadata: { contentType: "application/json" },
+		});
+		return;
+	}
+	await writeLocalJson(PHOTO_CATEGORIES_KEY, payload);
+}
+
+export async function findPhotoCategory(
+	slug: string,
+	options: { includeDeleted?: boolean } = {},
+) {
+	const categories = await listPhotoCategories({
+		includeDeleted: options.includeDeleted ?? true,
+	});
+	return categories.find((entry) => entry.slug === slug) ?? null;
 }
 
 export function photoObjectKey(category: PhotoCategory, slug: string) {

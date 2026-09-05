@@ -1,22 +1,33 @@
 ---
-import type { StoredPhoto } from "../data/photos";
-import { photoCategories } from "../data/photos";
+import type { StoredPhoto, StoredPhotoCategory } from "../data/photos";
+import { defaultPhotoCategories } from "../data/photos";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 
 interface Props {
 	photos: StoredPhoto[];
+	categories: StoredPhotoCategory[];
 	lang: Lang;
 	surface?: "section" | "overlays";
 }
 
-const { photos, lang, surface = "section" } = Astro.props;
+const { photos, categories, lang, surface = "section" } = Astro.props;
 const t = useTranslations(lang);
+const translatedCategorySlugs: ReadonlySet<string> = new Set(
+	defaultPhotoCategories.map((entry) => entry.slug as string),
+);
 
-const grouped = photoCategories
+function categoryTitle(category: StoredPhotoCategory) {
+	if (translatedCategorySlugs.has(category.slug)) {
+		return t(`photo.category.${category.slug}` as UiKey);
+	}
+	return category.label;
+}
+
+const grouped = categories
 	.map((category) => ({
-		category,
-		title: t(`photo.category.${category}` as UiKey),
-		items: photos.filter((photo) => photo.category === category),
+		category: category.slug,
+		title: categoryTitle(category),
+		items: photos.filter((photo) => photo.category === category.slug),
 	}))
 	.filter((group) => group.items.length > 0);
 

@@ -1,14 +1,26 @@
-export const photoCategories = [
-	"film-portraits-trieste",
-	"architecture",
-	"behind-the-scenes",
-	"portraits-fashion",
-	"fashion-lookbook",
-	"events-wedding",
-	"street-photography",
+export const defaultPhotoCategories = [
+	{ slug: "film-portraits-trieste", label: "Trieste" },
+	{ slug: "architecture", label: "Architecture" },
+	{ slug: "behind-the-scenes", label: "Behind the scenes" },
+	{ slug: "portraits-fashion", label: "Portraits & fashion" },
+	{ slug: "fashion-lookbook", label: "Fashion lookbook" },
+	{ slug: "events-wedding", label: "Events & wedding" },
+	{ slug: "street-photography", label: "Street" },
 ] as const;
 
-export type PhotoCategory = (typeof photoCategories)[number];
+/** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */
+export const photoCategories = defaultPhotoCategories.map(
+	(entry) => entry.slug,
+);
+
+export type PhotoCategory = string;
+
+export interface StoredPhotoCategory {
+	slug: string;
+	label: string;
+	/** ISO timestamp when moved to recycle bin; omitted when active. */
+	deletedAt?: string | null;
+}
 
 export interface StoredPhoto {
 	slug: string;
@@ -16,14 +28,34 @@ export interface StoredPhoto {
 	title: string;
 	alt: string;
 	src: string;
+	/** ISO timestamp when moved to recycle bin; omitted when active. */
+	deletedAt?: string | null;
+	/**
+	 * When set, this photo was trashed as part of its category bundle.
+	 * Restore/purge with the category, not alone.
+	 */
+	trashedWithCategory?: string | null;
 }
 
 export function photoMediaSrc(category: PhotoCategory, slug: string) {
 	return `/media/photos/${category}/${slug}.webp`;
 }
 
+export function isPhotoCategorySlug(value: string): boolean {
+	return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= 80;
+}
+
+/** Accepts any valid category slug shape (catalog may be dynamic). */
 export function isPhotoCategory(value: string): value is PhotoCategory {
-	return (photoCategories as readonly string[]).includes(value);
+	return isPhotoCategorySlug(value);
+}
+
+export function isActivePhoto(photo: StoredPhoto) {
+	return !photo.deletedAt;
+}
+
+export function isActiveCategory(category: StoredPhotoCategory) {
+	return !category.deletedAt;
 }
 
 export function slugifyPhotoName(value: string) {

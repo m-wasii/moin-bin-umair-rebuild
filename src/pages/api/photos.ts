@@ -1,12 +1,12 @@
 import type { APIRoute } from "astro";
 import {
-	isPhotoCategory,
+	isPhotoCategorySlug,
 	photoMediaSrc,
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
 import {
-	deletePhotoBytes,
+	findPhotoCategory,
 	hasWritableMedia,
 	listPhotos,
 	putPhotoBytes,
@@ -47,8 +47,17 @@ export const POST: APIRoute = async ({ request }) => {
 	if (!(file instanceof File) || file.size === 0) {
 		return json({ error: "Choose an image to upload." }, 400);
 	}
-	if (!isPhotoCategory(category)) {
+	if (!isPhotoCategorySlug(category)) {
 		return json({ error: "Pick a photo category." }, 400);
+	}
+	const categoryMeta = await findPhotoCategory(category, {
+		includeDeleted: true,
+	});
+	if (!categoryMeta || categoryMeta.deletedAt) {
+		return json(
+			{ error: "That category is missing or in the recycle bin." },
+			400,
+		);
 	}
 	if (file.type !== "image/webp") {
 		return json(
@@ -74,7 +83,7 @@ export const POST: APIRoute = async ({ request }) => {
 	);
 	if (!slug) slug = `photo-${Date.now()}`;
 
-	const photos = await listPhotos();
+	const photos = await listPhotos({ includeDeleted: true });
 	if (
 		photos.some((photo) => photo.slug === slug && photo.category === category)
 	) {
@@ -95,26 +104,16 @@ export const POST: APIRoute = async ({ request }) => {
 	return json({ photo }, 201);
 };
 
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async () => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
 
-	const url = new URL(request.url);
-	const slug = url.searchParams.get("slug");
-	const category = url.searchParams.get("category");
-	if (!slug || !category || !isPhotoCategory(category)) {
-		return json({ error: "Missing slug or category." }, 400);
-	}
-
-	const photos = await listPhotos();
-	const next = photos.filter(
-		(photo) => !(photo.slug === slug && photo.category === category),
+	return json(
+		{
+			error:
+				"Hard delete is disabled. Mark items and use Move to recycle bin, then permanently delete from Trash.",
+		},
+		405,
 	);
-	if (next.length === photos.length)
-		return json({ error: "Photo not found." }, 404);
-
-	await deletePhotoBytes(category, slug);
-	await savePhotos(next);
-	return json({ ok: true });
 };

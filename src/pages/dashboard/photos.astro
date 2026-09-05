@@ -1,22 +1,18 @@
 ---
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
-import { photoCategories } from "../../data/photos";
-import { hasWritableMedia, listPhotos } from "../../lib/store";
+import {
+	hasWritableMedia,
+	listPhotoCategories,
+	listPhotos,
+} from "../../lib/store";
 
 export const prerender = false;
 
-const photos = await listPhotos();
+const [photos, categories] = await Promise.all([
+	listPhotos(),
+	listPhotoCategories(),
+]);
 const writable = hasWritableMedia();
-
-const labels: Record<(typeof photoCategories)[number], string> = {
-	architecture: "Architecture",
-	"behind-the-scenes": "Behind the scenes",
-	"portraits-fashion": "Portraits & fashion",
-	"fashion-lookbook": "Fashion lookbook",
-	"events-wedding": "Events & wedding",
-	"street-photography": "Street",
-	"film-portraits-trieste": "Trieste",
-};
 ---
 
 <DashboardLayout title="Photos" section="photos">
@@ -27,7 +23,7 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		</div>
 		<p>
 			Drop JPEG, PNG, GIF, BMP, or WebP. They are resized and stored as WebP.
-			Rank is not used.
+			Mark items, then move them to the recycle bin.
 		</p>
 	</header>
 
@@ -39,13 +35,22 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		)
 	}
 
+	<form class="dash-form" data-category-form>
+		<label class="dash-form__wide">
+			<span>New category</span>
+			<input name="label" type="text" required placeholder="e.g. Travel" />
+		</label>
+		<button type="submit">Add category</button>
+		<p class="dash-form__status" data-category-status hidden></p>
+	</form>
+
 	<form class="dash-form" data-photo-form>
 		<label>
 			<span>Category</span>
 			<select name="category" required>
 				{
-					photoCategories.map((category) => (
-						<option value={category}>{labels[category]}</option>
+					categories.map((category) => (
+						<option value={category.slug}>{category.label}</option>
 					))
 				}
 			</select>
@@ -71,63 +76,104 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		<p class="dash-form__status" data-form-status hidden></p>
 	</form>
 
+	<div class="dash-toolbar">
+		<p class="dash-muted" data-selection-count>0 selected</p>
+		<button type="button" class="dash-trash-btn" data-move-trash disabled>
+			Move to recycle bin
+		</button>
+	</div>
+
 	{
-		photoCategories.map((category) => {
-			const items = photos.filter((photo) => photo.category === category);
-			return (
-				<section class="dash-photos">
-					<h2>
-						{labels[category]}
-						<span>{items.length}</span>
-					</h2>
-					{items.length === 0 ? (
-						<p class="dash-muted">No stills in this category yet.</p>
-					) : (
-						<ul class="dash-photo-grid">
-							{items.map((photo) => (
-								<li>
-									<img src={photo.src} alt={photo.alt} />
-									<div>
-										<strong>{photo.title}</strong>
-										<button
-											type="button"
-											class="dash-delete"
-											data-delete-photo={photo.slug}
-											data-category={photo.category}
-										>
-											Delete
-										</button>
-									</div>
-								</li>
-							))}
-						</ul>
-					)}
-				</section>
-			);
-		})
+		categories.length === 0 ? (
+			<p class="dash-muted">No photo categories yet. Add one above.</p>
+		) : (
+			categories.map((category) => {
+				const items = photos.filter((photo) => photo.category === category.slug);
+				return (
+					<section class="dash-photos">
+						<h2>
+							<label class="dash-check dash-check--heading">
+								<input
+									type="checkbox"
+									data-mark
+									data-kind="category"
+									value={category.slug}
+								/>
+								<span>
+									{category.label}
+									<span class="dash-muted">{items.length}</span>
+								</span>
+							</label>
+						</h2>
+						{items.length === 0 ? (
+							<p class="dash-muted">No stills in this category yet.</p>
+						) : (
+							<ul class="dash-photo-grid">
+								{items.map((photo) => (
+									<li>
+										<label class="dash-photo-select">
+											<input
+												type="checkbox"
+												data-mark
+												data-kind="photo"
+												data-category={photo.category}
+												value={photo.slug}
+											/>
+											<img src={photo.src} alt={photo.alt} />
+										</label>
+										<div>
+											<strong>{photo.title}</strong>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+				);
+			})
+		)
 	}
 </DashboardLayout>
 
 <script>
 	const form = document.querySelector<HTMLFormElement>("[data-photo-form]");
+	const categoryForm = document.querySelector<HTMLFormElement>(
+		"[data-category-form]",
+	);
 	const status = document.querySelector<HTMLElement>("[data-form-status]");
+	const categoryStatus = document.querySelector<HTMLElement>(
+		"[data-category-status]",
+	);
+	const moveBtn = document.querySelector<HTMLButtonElement>("[data-move-trash]");
+	const countEl = document.querySelector<HTMLElement>("[data-selection-count]");
 
-	function setStatus(message: string, isError = false) {
-		if (!status) return;
-		status.hidden = !message;
-		status.textContent = message;
-		status.dataset.error = isError ? "true" : "false";
+	function setStatus(
+		el: HTMLElement | null,
+		message: string,
+		isError = false,
+	) {
+		if (!el) return;
+		el.hidden = !message;
+		el.textContent = message;
+		el.dataset.error = isError ? "true" : "false";
 	}
 
-	async function readResponse(response: Response): Promise<{ error?: string }> {
-		const text = await response.text();
-		if (!text) return {};
-		try {
-			return JSON.parse(text) as { error?: string };
-		} catch {
-			return { error: text };
-		}
+	function selectedMarks() {
+		return [
+			...document.querySelectorAll<HTMLInputElement>("[data-mark]:checked"),
+		];
 	}
+
+	function syncSelection() {
+		const count = selectedMarks().length;
+		if (countEl) countEl.textContent = `${count} selected`;
+		if (moveBtn) moveBtn.disabled = count === 0;
+	}
+
+	document.addEventListener("change", (event) => {
+		const target = event.target as HTMLElement;
+		if (target.matches?.("[data-mark]")) syncSelection();
+	});
 
 	async function toWebp(file: File) {
 		const type = file.type || "";
@@ -163,12 +209,31 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 			canvas.toBlob(resolve, "image/webp", 0.8);
 		});
 		if (!blob) {
-			throw new Error("This browser could not encode WebP. Try a current Chrome or Firefox.");
+			throw new Error(
+				"This browser could not encode WebP. Try a current Chrome or Firefox.",
+			);
 		}
 		return new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
 			type: "image/webp",
 		});
 	}
+
+	categoryForm?.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		const data = new FormData(categoryForm);
+		setStatus(categoryStatus, "Saving…");
+		const response = await fetch("/api/photo-categories", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ label: String(data.get("label") ?? "") }),
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			setStatus(categoryStatus, result.error ?? "Could not add category.", true);
+			return;
+		}
+		location.reload();
+	});
 
 	form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
@@ -176,46 +241,65 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		const file = input?.files?.[0];
 		if (!file) return;
 		try {
-			setStatus("Converting to WebP…");
+			setStatus(status, "Converting to WebP…");
 			const webp = await toWebp(file);
 			const payload = new FormData(form);
 			payload.set("file", webp);
-			setStatus("Uploading…");
+			setStatus(status, "Uploading…");
 			const response = await fetch("/api/photos", {
 				method: "POST",
 				body: payload,
 			});
-			const result = await readResponse(response);
+			const result = await response.json();
 			if (!response.ok) {
-				setStatus(result.error ?? "Upload failed.", true);
+				setStatus(status, result.error ?? "Upload failed.", true);
 				return;
 			}
 			location.reload();
 		} catch (error) {
 			setStatus(
+				status,
 				error instanceof Error ? error.message : "Could not convert image.",
 				true,
 			);
 		}
 	});
 
-	document.addEventListener("click", async (event) => {
-		const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-			"[data-delete-photo]",
-		);
-		if (!button) return;
-		const slug = button.dataset.deletePhoto;
-		const category = button.dataset.category;
-		if (!slug || !category || !confirm("Remove this still?")) return;
-		const response = await fetch(
-			`/api/photos?slug=${encodeURIComponent(slug)}&category=${encodeURIComponent(category)}`,
-			{ method: "DELETE" },
-		);
-		const result = await readResponse(response);
-		if (!response.ok) {
-			alert(result.error ?? "Could not delete.");
+	moveBtn?.addEventListener("click", async () => {
+		const marks = selectedMarks();
+		if (!marks.length) return;
+		if (
+			!confirm(
+				`Move ${marks.length} marked item${marks.length === 1 ? "" : "s"} to the recycle bin? Categories take their photos with them.`,
+			)
+		) {
 			return;
 		}
-		button.closest("li")?.remove();
+		moveBtn.disabled = true;
+		const items = marks.map((input) => {
+			const kind = input.dataset.kind;
+			if (kind === "category") {
+				return { kind: "category" as const, slug: input.value };
+			}
+			return {
+				kind: "photo" as const,
+				slug: input.value,
+				category: String(input.dataset.category ?? ""),
+			};
+		});
+		const response = await fetch("/api/trash", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ action: "move", items }),
+		});
+		const result = await response.json();
+		if (!response.ok) {
+			alert(result.error ?? "Could not move to trash.");
+			moveBtn.disabled = false;
+			return;
+		}
+		location.reload();
 	});
+
+	syncSelection();
 </script>
