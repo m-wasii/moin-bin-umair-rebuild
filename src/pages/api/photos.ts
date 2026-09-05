@@ -8,6 +8,7 @@ import {
 import {
 	deletePhotoBytes,
 	hasWritableMedia,
+	listPhotoCategories,
 	listPhotos,
 	putPhotoBytes,
 	savePhotos,
@@ -48,6 +49,10 @@ export const POST: APIRoute = async ({ request }) => {
 		return json({ error: "Choose an image to upload." }, 400);
 	}
 	if (!isPhotoCategory(category)) {
+		return json({ error: "Pick a photo category." }, 400);
+	}
+	const knownCategories = await listPhotoCategories();
+	if (!knownCategories.some((entry) => entry.slug === category)) {
 		return json({ error: "Pick a photo category." }, 400);
 	}
 	if (file.type !== "image/webp") {
@@ -93,6 +98,57 @@ export const POST: APIRoute = async ({ request }) => {
 	photos.push(photo);
 	await savePhotos(photos);
 	return json({ photo }, 201);
+};
+
+export const PATCH: APIRoute = async ({ request }) => {
+	if (!hasWritableMedia()) {
+		return json({ error: "R2 is not bound yet." }, 503);
+	}
+
+	let body: Record<string, unknown>;
+	try {
+		body = (await request.json()) as Record<string, unknown>;
+	} catch {
+		return json({ error: "Invalid JSON" }, 400);
+	}
+
+	if (body.action !== "reorder") {
+		return json({ error: "Unsupported action." }, 400);
+	}
+
+	const category = String(body.category ?? "");
+	const slugs = Array.isArray(body.slugs)
+		? body.slugs.map((slug) => String(slug))
+		: [];
+	if (!category || !isPhotoCategory(category)) {
+		return json({ error: "Missing category." }, 400);
+	}
+	if (!slugs.length) return json({ error: "Missing slugs." }, 400);
+
+	const photos = await listPhotos();
+	const inCategory = photos.filter((photo) => photo.category === category);
+	const bySlug = new Map(inCategory.map((photo) => [photo.slug, photo]));
+	if (slugs.some((slug) => !bySlug.has(slug)) || slugs.length !== inCategory.length) {
+		return json({ error: "One or more photos were not found." }, 404);
+	}
+
+	const reordered = slugs.map((slug) => bySlug.get(slug)!);
+	let inserted = false;
+	const next = [];
+	for (const photo of photos) {
+		if (photo.category === category) {
+			if (!inserted) {
+				next.push(...reordered);
+				inserted = true;
+			}
+			continue;
+		}
+		next.push(photo);
+	}
+	if (!inserted) next.push(...reordered);
+
+	await savePhotos(next);
+	return json({ ok: true });
 };
 
 export const DELETE: APIRoute = async ({ request }) => {

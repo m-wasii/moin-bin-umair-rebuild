@@ -4,7 +4,11 @@ import { hasWritableMedia, listVideos } from "../../lib/store";
 
 export const prerender = false;
 
-const videos = await listVideos();
+const videos = [...(await listVideos())].sort((a, b) => {
+	const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
+	if (order !== 0) return order;
+	return a.slug.localeCompare(b.slug);
+});
 const writable = hasWritableMedia();
 ---
 
@@ -15,8 +19,8 @@ const writable = hasWritableMedia();
 			<h1>Videos</h1>
 		</div>
 		<p>
-			Paste a Vimeo or YouTube link. Google Access is the only login — nothing
-			is saved to GitHub.
+			Paste a Vimeo or YouTube link. Drag the ⠿ handle to reorder. Google Access
+			is the only login — nothing is saved to GitHub.
 		</p>
 	</header>
 
@@ -77,6 +81,7 @@ const writable = hasWritableMedia();
 		<table class="dash-table">
 			<thead>
 				<tr>
+					<th class="dash-handle-col" aria-label="Reorder"></th>
 					<th>Title</th>
 					<th>Category</th>
 					<th>Year</th>
@@ -86,7 +91,19 @@ const writable = hasWritableMedia();
 			<tbody data-video-rows>
 				{
 					videos.map((video) => (
-						<tr data-slug={video.slug}>
+						<tr data-slug={video.slug} data-reorder-item>
+							<td>
+								<button
+									type="button"
+									class="dash-handle"
+									draggable="true"
+									data-drag-handle
+									aria-label={`Reorder ${video.title}`}
+									title="Drag to reorder"
+								>
+									⠿
+								</button>
+							</td>
 							<td>
 								<strong>{video.title}</strong>
 								<div class="dash-muted">{video.provider}</div>
@@ -175,4 +192,69 @@ const writable = hasWritableMedia();
 		}
 		button.closest("tr")?.remove();
 	});
+
+	function setupReorder(list: HTMLElement) {
+		let dragEl: HTMLElement | null = null;
+
+		list.addEventListener("dragstart", (event) => {
+			const handle = (event.target as HTMLElement).closest<HTMLElement>(
+				"[data-drag-handle]",
+			);
+			if (!handle || !list.contains(handle)) return;
+			const item = handle.closest<HTMLElement>("[data-reorder-item]");
+			if (!item) return;
+			dragEl = item;
+			item.classList.add("is-dragging");
+			event.dataTransfer?.setData("text/plain", item.dataset.slug ?? "");
+			if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+		});
+
+		list.addEventListener("dragend", () => {
+			dragEl?.classList.remove("is-dragging");
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			dragEl = null;
+		});
+
+		list.addEventListener("dragover", (event) => {
+			if (!dragEl) return;
+			event.preventDefault();
+			const over = (event.target as HTMLElement).closest<HTMLElement>(
+				"[data-reorder-item]",
+			);
+			if (!over || over === dragEl || !list.contains(over)) return;
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			over.classList.add("is-drop-target");
+			const rect = over.getBoundingClientRect();
+			const before = event.clientY < rect.top + rect.height / 2;
+			if (before) list.insertBefore(dragEl, over);
+			else list.insertBefore(dragEl, over.nextSibling);
+		});
+
+		list.addEventListener("drop", async (event) => {
+			event.preventDefault();
+			if (!dragEl) return;
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			const slugs = [...list.querySelectorAll<HTMLElement>("[data-reorder-item]")]
+				.map((el) => el.dataset.slug)
+				.filter((slug): slug is string => Boolean(slug));
+			const response = await fetch("/api/videos", {
+				method: "PATCH",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ action: "reorder", slugs }),
+			});
+			const result = await readResponse(response);
+			if (!response.ok) {
+				alert(result.error ?? "Could not reorder.");
+				location.reload();
+			}
+		});
+	}
+
+	if (rows) setupReorder(rows);
 </script>

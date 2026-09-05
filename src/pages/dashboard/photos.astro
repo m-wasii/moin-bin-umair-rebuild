@@ -1,22 +1,16 @@
 ---
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
-import { photoCategories } from "../../data/photos";
-import { hasWritableMedia, listPhotos } from "../../lib/store";
+import {
+	hasWritableMedia,
+	listPhotoCategories,
+	listPhotos,
+} from "../../lib/store";
 
 export const prerender = false;
 
 const photos = await listPhotos();
+const categories = await listPhotoCategories();
 const writable = hasWritableMedia();
-
-const labels: Record<(typeof photoCategories)[number], string> = {
-	architecture: "Architecture",
-	"behind-the-scenes": "Behind the scenes",
-	"portraits-fashion": "Portraits & fashion",
-	"fashion-lookbook": "Fashion lookbook",
-	"events-wedding": "Events & wedding",
-	"street-photography": "Street",
-	"film-portraits-trieste": "Trieste",
-};
 ---
 
 <DashboardLayout title="Photos" section="photos">
@@ -27,7 +21,7 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		</div>
 		<p>
 			Drop JPEG, PNG, GIF, BMP, or WebP. They are resized and stored as WebP.
-			Rank is not used.
+			Drag ⠿ to reorder photos within an album or whole albums.
 		</p>
 	</header>
 
@@ -39,13 +33,22 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		)
 	}
 
+	<form class="dash-form" data-category-form>
+		<label class="dash-form__wide">
+			<span>New album name</span>
+			<input name="label" type="text" required placeholder="e.g. Studio portraits" />
+		</label>
+		<button type="submit">Add album</button>
+		<p class="dash-form__status" data-category-status hidden></p>
+	</form>
+
 	<form class="dash-form" data-photo-form>
 		<label>
 			<span>Category</span>
 			<select name="category" required>
 				{
-					photoCategories.map((category) => (
-						<option value={category}>{labels[category]}</option>
+					categories.map((category) => (
+						<option value={category.slug}>{category.label}</option>
 					))
 				}
 			</select>
@@ -71,52 +74,92 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		<p class="dash-form__status" data-form-status hidden></p>
 	</form>
 
-	{
-		photoCategories.map((category) => {
-			const items = photos.filter((photo) => photo.category === category);
-			return (
-				<section class="dash-photos">
-					<h2>
-						{labels[category]}
-						<span>{items.length}</span>
-					</h2>
-					{items.length === 0 ? (
-						<p class="dash-muted">No stills in this category yet.</p>
-					) : (
-						<ul class="dash-photo-grid">
-							{items.map((photo) => (
-								<li>
-									<img src={photo.src} alt={photo.alt} />
-									<div>
-										<strong>{photo.title}</strong>
+	<div data-category-list>
+		{
+			categories.map((category) => {
+				const items = photos.filter((photo) => photo.category === category.slug);
+				return (
+					<section
+						class="dash-photos dash-category"
+						data-reorder-item
+						data-category={category.slug}
+					>
+						<div class="dash-category__head">
+							<button
+								type="button"
+								class="dash-handle"
+								draggable="true"
+								data-drag-handle
+								data-category-handle
+								aria-label={`Reorder album ${category.label}`}
+								title="Drag to reorder album"
+							>
+								⠿
+							</button>
+							<h2>
+								{category.label}
+								<span>{items.length}</span>
+							</h2>
+						</div>
+						{items.length === 0 ? (
+							<p class="dash-muted">No stills in this category yet.</p>
+						) : (
+							<ul class="dash-photo-grid" data-photo-list={category.slug}>
+								{items.map((photo) => (
+									<li
+										class="dash-photo-card"
+										data-reorder-item
+										data-slug={photo.slug}
+									>
 										<button
 											type="button"
-											class="dash-delete"
-											data-delete-photo={photo.slug}
-											data-category={photo.category}
+											class="dash-handle dash-handle--photo"
+											draggable="true"
+											data-drag-handle
+											aria-label={`Reorder ${photo.title}`}
+											title="Drag to reorder"
 										>
-											Delete
+											⠿
 										</button>
-									</div>
-								</li>
-							))}
-						</ul>
-					)}
-				</section>
-			);
-		})
-	}
+										<img src={photo.src} alt={photo.alt} />
+										<div class="dash-photo-card__meta">
+											<strong>{photo.title}</strong>
+											<button
+												type="button"
+												class="dash-delete"
+												data-delete-photo={photo.slug}
+												data-category={photo.category}
+											>
+												Delete
+											</button>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+				);
+			})
+		}
+	</div>
 </DashboardLayout>
 
 <script>
 	const form = document.querySelector<HTMLFormElement>("[data-photo-form]");
+	const categoryForm = document.querySelector<HTMLFormElement>("[data-category-form]");
 	const status = document.querySelector<HTMLElement>("[data-form-status]");
+	const categoryStatus = document.querySelector<HTMLElement>("[data-category-status]");
+	const categoryList = document.querySelector<HTMLElement>("[data-category-list]");
 
-	function setStatus(message: string, isError = false) {
-		if (!status) return;
-		status.hidden = !message;
-		status.textContent = message;
-		status.dataset.error = isError ? "true" : "false";
+	function setStatus(
+		target: HTMLElement | null,
+		message: string,
+		isError = false,
+	) {
+		if (!target) return;
+		target.hidden = !message;
+		target.textContent = message;
+		target.dataset.error = isError ? "true" : "false";
 	}
 
 	async function readResponse(response: Response): Promise<{ error?: string }> {
@@ -170,29 +213,47 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 		});
 	}
 
+	categoryForm?.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		const data = new FormData(categoryForm);
+		setStatus(categoryStatus, "Saving…");
+		const response = await fetch("/api/photo-categories", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ label: String(data.get("label") ?? "") }),
+		});
+		const result = await readResponse(response);
+		if (!response.ok) {
+			setStatus(categoryStatus, result.error ?? "Could not save album.", true);
+			return;
+		}
+		location.reload();
+	});
+
 	form?.addEventListener("submit", async (event) => {
 		event.preventDefault();
 		const input = form.querySelector<HTMLInputElement>('input[name="file"]');
 		const file = input?.files?.[0];
 		if (!file) return;
 		try {
-			setStatus("Converting to WebP…");
+			setStatus(status, "Converting to WebP…");
 			const webp = await toWebp(file);
 			const payload = new FormData(form);
 			payload.set("file", webp);
-			setStatus("Uploading…");
+			setStatus(status, "Uploading…");
 			const response = await fetch("/api/photos", {
 				method: "POST",
 				body: payload,
 			});
 			const result = await readResponse(response);
 			if (!response.ok) {
-				setStatus(result.error ?? "Upload failed.", true);
+				setStatus(status, result.error ?? "Upload failed.", true);
 				return;
 			}
 			location.reload();
 		} catch (error) {
 			setStatus(
+				status,
 				error instanceof Error ? error.message : "Could not convert image.",
 				true,
 			);
@@ -217,5 +278,117 @@ const labels: Record<(typeof photoCategories)[number], string> = {
 			return;
 		}
 		button.closest("li")?.remove();
+	});
+
+	function setupReorder(
+		list: HTMLElement,
+		options: {
+			handleSelector: string;
+			slugFrom: (el: HTMLElement) => string | undefined;
+			persist: (slugs: string[]) => Promise<void>;
+			axis?: "y" | "xy";
+		},
+	) {
+		let dragEl: HTMLElement | null = null;
+		const axis = options.axis ?? "y";
+
+		list.addEventListener("dragstart", (event) => {
+			const handle = (event.target as HTMLElement).closest<HTMLElement>(
+				options.handleSelector,
+			);
+			if (!handle || !list.contains(handle)) return;
+			const item = handle.closest<HTMLElement>("[data-reorder-item]");
+			if (!item || item.parentElement !== list) return;
+			dragEl = item;
+			item.classList.add("is-dragging");
+			event.dataTransfer?.setData("text/plain", options.slugFrom(item) ?? "");
+			if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+		});
+
+		list.addEventListener("dragend", () => {
+			dragEl?.classList.remove("is-dragging");
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			dragEl = null;
+		});
+
+		list.addEventListener("dragover", (event) => {
+			if (!dragEl) return;
+			event.preventDefault();
+			const over = (event.target as HTMLElement).closest<HTMLElement>(
+				"[data-reorder-item]",
+			);
+			if (!over || over === dragEl || over.parentElement !== list) return;
+
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			over.classList.add("is-drop-target");
+			const rect = over.getBoundingClientRect();
+			const before =
+				axis === "xy"
+					? event.clientX < rect.left + rect.width / 2
+					: event.clientY < rect.top + rect.height / 2;
+			if (before) list.insertBefore(dragEl, over);
+			else list.insertBefore(dragEl, over.nextSibling);
+		});
+
+		list.addEventListener("drop", async (event) => {
+			event.preventDefault();
+			if (!dragEl) return;
+			list
+				.querySelectorAll(".is-drop-target")
+				.forEach((el) => el.classList.remove("is-drop-target"));
+			const slugs = [...list.children]
+				.filter((el): el is HTMLElement => el instanceof HTMLElement)
+				.map((el) => options.slugFrom(el))
+				.filter((slug): slug is string => Boolean(slug));
+			try {
+				await options.persist(slugs);
+			} catch (error) {
+				alert(error instanceof Error ? error.message : "Could not reorder.");
+				location.reload();
+			}
+		});
+	}
+
+	if (categoryList) {
+		setupReorder(categoryList, {
+			handleSelector: "[data-category-handle]",
+			slugFrom: (el) => el.dataset.category,
+			persist: async (slugs) => {
+				const response = await fetch("/api/photo-categories", {
+					method: "PATCH",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ action: "reorder", slugs }),
+				});
+				const result = await readResponse(response);
+				if (!response.ok) {
+					throw new Error(result.error ?? "Could not reorder albums.");
+				}
+			},
+		});
+	}
+
+	document.querySelectorAll<HTMLElement>("[data-photo-list]").forEach((list) => {
+		const category = list.dataset.photoList;
+		if (!category) return;
+		setupReorder(list, {
+			handleSelector: ".dash-handle--photo",
+			slugFrom: (el) => el.dataset.slug,
+			axis: "xy",
+			persist: async (slugs) => {
+				const response = await fetch("/api/photos", {
+					method: "PATCH",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ action: "reorder", category, slugs }),
+				});
+				const result = await readResponse(response);
+				if (!response.ok) {
+					throw new Error(result.error ?? "Could not reorder photos.");
+				}
+			},
+		});
 	});
 </script>

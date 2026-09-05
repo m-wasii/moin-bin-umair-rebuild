@@ -3,7 +3,12 @@ import seedVideos from "../data/videos.seed.json";
 import seedPhotos from "../data/photos.seed.json";
 import seedShorts from "../data/shorts.seed.json";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
-import type { PhotoCategory, StoredPhoto } from "../data/photos";
+import {
+	defaultPhotoCategories,
+	type PhotoCategory,
+	type StoredPhoto,
+	type StoredPhotoCategory,
+} from "../data/photos";
 import type { StoredShort } from "../data/shorts";
 
 export interface StoredVideo {
@@ -21,8 +26,11 @@ export interface StoredVideo {
 	sortOrder?: number;
 }
 
+export type { StoredPhotoCategory };
+
 const VIDEOS_KEY = "catalog/videos.json";
 const PHOTOS_KEY = "catalog/photos.json";
+const PHOTO_CATEGORIES_KEY = "catalog/photo-categories.json";
 const SHORTS_KEY = "catalog/shorts.json";
 
 interface MediaObject {
@@ -70,6 +78,13 @@ function seedVideoList(): StoredVideo[] {
 
 function seedPhotoList(): StoredPhoto[] {
 	return (seedPhotos as { photos: StoredPhoto[] }).photos;
+}
+
+function seedPhotoCategoryList(): StoredPhotoCategory[] {
+	return defaultPhotoCategories.map((entry) => ({
+		slug: entry.slug,
+		label: entry.label,
+	}));
 }
 
 function seedShortList(): StoredShort[] {
@@ -192,6 +207,37 @@ export async function savePhotos(photos: StoredPhoto[]) {
 		return;
 	}
 	await writeLocalJson(PHOTOS_KEY, payload);
+}
+
+export async function listPhotoCategories(): Promise<StoredPhotoCategory[]> {
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(PHOTO_CATEGORIES_KEY);
+		if (object) {
+			const payload = (await object.json()) as {
+				categories?: StoredPhotoCategory[];
+			};
+			if (Array.isArray(payload.categories)) return payload.categories;
+		}
+		return seedPhotoCategoryList();
+	}
+
+	const local = await readLocalJson<{ categories: StoredPhotoCategory[] }>(
+		PHOTO_CATEGORIES_KEY,
+	);
+	return local?.categories ?? seedPhotoCategoryList();
+}
+
+export async function savePhotoCategories(categories: StoredPhotoCategory[]) {
+	const payload = { categories };
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(PHOTO_CATEGORIES_KEY, JSON.stringify(payload), {
+			httpMetadata: { contentType: "application/json" },
+		});
+		return;
+	}
+	await writeLocalJson(PHOTO_CATEGORIES_KEY, payload);
 }
 
 export function photoObjectKey(category: PhotoCategory, slug: string) {
