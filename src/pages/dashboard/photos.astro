@@ -164,73 +164,15 @@ const writable = hasWritableMedia();
 		];
 	}
 
-	function photoMarksInCategory(slug: string) {
-		return [
-			...document.querySelectorAll<HTMLInputElement>(
-				`[data-mark][data-kind="photo"][data-category="${CSS.escape(slug)}"]`,
-			),
-		];
-	}
-
-	function syncCategoryFromPhotos(slug: string) {
-		const categoryInput = document.querySelector<HTMLInputElement>(
-			`[data-mark][data-kind="category"][value="${CSS.escape(slug)}"]`,
-		);
-		if (!categoryInput) return;
-		const photos = photoMarksInCategory(slug);
-		if (!photos.length) {
-			categoryInput.indeterminate = false;
-			return;
-		}
-		const checked = photos.filter((photo) => photo.checked).length;
-		categoryInput.checked = checked === photos.length;
-		categoryInput.indeterminate = checked > 0 && checked < photos.length;
-	}
-
-	/** Photos under a checked category are implied; don't double-count them. */
-	function trashPayloadFromMarks(marks: HTMLInputElement[]) {
-		const categorySlugs = new Set(
-			marks
-				.filter((input) => input.dataset.kind === "category")
-				.map((input) => input.value),
-		);
-		const items: Array<
-			| { kind: "category"; slug: string }
-			| { kind: "photo"; slug: string; category: string }
-		> = [];
-		for (const input of marks) {
-			if (input.dataset.kind === "category") {
-				items.push({ kind: "category", slug: input.value });
-				continue;
-			}
-			if (input.dataset.kind !== "photo") continue;
-			const category = String(input.dataset.category ?? "");
-			if (categorySlugs.has(category)) continue;
-			items.push({ kind: "photo", slug: input.value, category });
-		}
-		return items;
-	}
-
 	function syncSelection() {
-		const count = trashPayloadFromMarks(selectedMarks()).length;
+		const count = selectedMarks().length;
 		if (countEl) countEl.textContent = `${count} selected`;
 		if (moveBtn) moveBtn.disabled = count === 0;
 	}
 
 	document.addEventListener("change", (event) => {
-		const target = event.target as HTMLInputElement;
-		if (!target.matches?.("[data-mark]")) return;
-
-		if (target.dataset.kind === "category") {
-			for (const photo of photoMarksInCategory(target.value)) {
-				photo.checked = target.checked;
-			}
-			target.indeterminate = false;
-		} else if (target.dataset.kind === "photo" && target.dataset.category) {
-			syncCategoryFromPhotos(target.dataset.category);
-		}
-
-		syncSelection();
+		const target = event.target as HTMLElement;
+		if (target.matches?.("[data-mark]")) syncSelection();
 	});
 
 	async function toWebp(file: File) {
@@ -324,16 +266,27 @@ const writable = hasWritableMedia();
 	});
 
 	moveBtn?.addEventListener("click", async () => {
-		const items = trashPayloadFromMarks(selectedMarks());
-		if (!items.length) return;
+		const marks = selectedMarks();
+		if (!marks.length) return;
 		if (
 			!confirm(
-				`Move ${items.length} marked item${items.length === 1 ? "" : "s"} to the recycle bin? Categories take their photos with them.`,
+				`Move ${marks.length} marked item${marks.length === 1 ? "" : "s"} to the recycle bin? Categories take their photos with them.`,
 			)
 		) {
 			return;
 		}
 		moveBtn.disabled = true;
+		const items = marks.map((input) => {
+			const kind = input.dataset.kind;
+			if (kind === "category") {
+				return { kind: "category" as const, slug: input.value };
+			}
+			return {
+				kind: "photo" as const,
+				slug: input.value,
+				category: String(input.dataset.category ?? ""),
+			};
+		});
 		const response = await fetch("/api/trash", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
