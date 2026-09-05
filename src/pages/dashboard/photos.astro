@@ -5,7 +5,6 @@ import {
 	listPhotoCategories,
 	listPhotos,
 } from "../../lib/store";
-import type { StoredPhoto, StoredPhotoCategory } from "../../data/photos";
 
 export const prerender = false;
 
@@ -14,22 +13,6 @@ const [photos, categories] = await Promise.all([
 	listPhotoCategories(),
 ]);
 const writable = hasWritableMedia();
-
-function sortByOrder<T extends { sortOrder?: number; slug: string }>(list: T[]) {
-	return [...list].sort((a, b) => {
-		const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
-		if (order !== 0) return order;
-		return a.slug.localeCompare(b.slug);
-	});
-}
-
-const orderedCategories = sortByOrder(categories);
-
-function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
-	return sortByOrder(
-		photos.filter((photo) => photo.category === category.slug),
-	);
-}
 ---
 
 <DashboardLayout title="Photos" section="photos">
@@ -39,8 +22,8 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 			<h1>Photos</h1>
 		</div>
 		<p>
-			Browse categories, drag to reorder, edit labels or titles, or select and
-			delete (sends to Trash).
+			Drop JPEG, PNG, GIF, BMP, or WebP. They are resized and stored as WebP.
+			Mark items, then move them to the recycle bin.
 		</p>
 	</header>
 
@@ -52,207 +35,104 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 		)
 	}
 
-	<details class="dash-disclose">
-		<summary>Add category</summary>
-		<form class="dash-form" data-category-form>
-			<label class="dash-form__wide">
-				<span>New category</span>
-				<input name="label" type="text" required placeholder="e.g. Travel" />
-			</label>
-			<button type="submit">Add category</button>
-			<p class="dash-form__status" data-category-status hidden></p>
-		</form>
-	</details>
+	<form class="dash-form" data-category-form>
+		<label class="dash-form__wide">
+			<span>New category</span>
+			<input name="label" type="text" required placeholder="e.g. Travel" />
+		</label>
+		<button type="submit">Add category</button>
+		<p class="dash-form__status" data-category-status hidden></p>
+	</form>
 
-	<details class="dash-disclose">
-		<summary>Add photo</summary>
-		<form class="dash-form" data-photo-form>
-			<label>
-				<span>Category</span>
-				<select name="category" required>
-					{
-						orderedCategories.map((category) => (
-							<option value={category.slug}>{category.label}</option>
-						))
-					}
-				</select>
-			</label>
-			<label>
-				<span>Title</span>
-				<input name="title" type="text" placeholder="Optional" />
-			</label>
-			<label>
-				<span>Alt text</span>
-				<input name="alt" type="text" placeholder="Optional" />
-			</label>
-			<label class="dash-form__wide">
-				<span>Image</span>
-				<input
-					name="file"
-					type="file"
-					required
-					accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,.jpg,.jpeg,.png,.webp,.gif,.bmp"
-				/>
-			</label>
-			<button type="submit">Upload photo</button>
-			<p class="dash-form__status" data-form-status hidden></p>
-		</form>
-	</details>
+	<form class="dash-form" data-photo-form>
+		<label>
+			<span>Category</span>
+			<select name="category" required>
+				{
+					categories.map((category) => (
+						<option value={category.slug}>{category.label}</option>
+					))
+				}
+			</select>
+		</label>
+		<label>
+			<span>Title</span>
+			<input name="title" type="text" placeholder="Optional" />
+		</label>
+		<label>
+			<span>Alt text</span>
+			<input name="alt" type="text" placeholder="Optional" />
+		</label>
+		<label class="dash-form__wide">
+			<span>Image</span>
+			<input
+				name="file"
+				type="file"
+				required
+				accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,.jpg,.jpeg,.png,.webp,.gif,.bmp"
+			/>
+		</label>
+		<button type="submit">Upload photo</button>
+		<p class="dash-form__status" data-form-status hidden></p>
+	</form>
 
-	{
-		orderedCategories.length === 0 ? (
-			<p class="dash-muted">No photo categories yet. Add one above.</p>
-		) : (
-			<div class="dash-category-list" data-sortable="categories">
-				{orderedCategories.map((category) => {
-					const items = photosFor(category);
-					return (
-						<section
-							class="dash-photos dash-category"
-							data-category-slug={category.slug}
-							draggable="false"
-						>
-							<header class="dash-category__head">
-								<button
-									type="button"
-									class="dash-handle"
-									data-drag-handle
-									data-drag-scope="category"
-									aria-label={`Reorder category ${category.label}`}
-									title="Drag to reorder categories"
-								>
-									⋮⋮
-								</button>
-								<label class="dash-check dash-check--heading">
-									<input
-										type="checkbox"
-										data-mark
-										data-kind="category"
-										value={category.slug}
-									/>
-									<span class="visually-hidden">Select {category.label}</span>
-								</label>
-								<div class="dash-category__title" data-category-view>
-									<h2>
-										<span data-field="label">{category.label}</span>
-										<span class="dash-muted">{items.length}</span>
-									</h2>
-									<p class="dash-muted">Slug: {category.slug}</p>
-									<button type="button" class="dash-ghost" data-edit-category>
-										Edit
-									</button>
-								</div>
-								<form class="dash-inline-edit" data-category-edit hidden>
-									<label>
-										<span>Label</span>
-										<input
-											name="label"
-											type="text"
-											value={category.label}
-											required
-										/>
-									</label>
-									<div class="dash-inline-edit__actions">
-										<button type="submit">Save</button>
-										<button
-											type="button"
-											class="dash-ghost"
-											data-cancel-category
-										>
-											Cancel
-										</button>
-									</div>
-								</form>
-							</header>
-
-							{items.length === 0 ? (
-								<p class="dash-muted">No stills in this category yet.</p>
-							) : (
-								<ul
-									class="dash-photo-grid"
-									data-sortable="photos"
-									data-category={category.slug}
-								>
-									{items.map((photo) => (
-										<li
-											class="dash-photo-card"
-											data-slug={photo.slug}
-											data-category={photo.category}
-											draggable="false"
-										>
-											<button
-												type="button"
-												class="dash-handle dash-handle--photo"
-												data-drag-handle
-												data-drag-scope="photo"
-												aria-label={`Reorder ${photo.title}`}
-												title="Drag to reorder"
-											>
-												⋮⋮
-											</button>
-											<label class="dash-photo-select">
-												<input
-													type="checkbox"
-													data-mark
-													data-kind="photo"
-													data-category={photo.category}
-													value={photo.slug}
-												/>
-												<img src={photo.src} alt={photo.alt} />
-											</label>
-											<div class="dash-photo-card__meta" data-photo-view>
-												<strong data-field="title">{photo.title}</strong>
-												<button type="button" class="dash-ghost" data-edit-photo>
-													Edit
-												</button>
-											</div>
-											<form class="dash-inline-edit" data-photo-edit hidden>
-												<label>
-													<span>Title</span>
-													<input
-														name="title"
-														type="text"
-														value={photo.title}
-														required
-													/>
-												</label>
-												<label>
-													<span>Alt</span>
-													<input name="alt" type="text" value={photo.alt} />
-												</label>
-												<div class="dash-inline-edit__actions">
-													<button type="submit">Save</button>
-													<button
-														type="button"
-														class="dash-ghost"
-														data-cancel-photo
-													>
-														Cancel
-													</button>
-												</div>
-											</form>
-										</li>
-									))}
-								</ul>
-							)}
-						</section>
-					);
-				})}
-			</div>
-		)
-	}
-
-	<div class="dash-sticky-bar" data-sticky-bar hidden>
-		<div>
-			<p data-selection-count>0 selected</p>
-			<p class="dash-muted">
-				Delete sends to Trash. Categories take their photos with them.
-			</p>
-		</div>
+	<div class="dash-toolbar">
+		<p class="dash-muted" data-selection-count>0 selected</p>
 		<button type="button" class="dash-trash-btn" data-move-trash disabled>
-			Delete
+			Move to recycle bin
 		</button>
 	</div>
+
+	{
+		categories.length === 0 ? (
+			<p class="dash-muted">No photo categories yet. Add one above.</p>
+		) : (
+			categories.map((category) => {
+				const items = photos.filter((photo) => photo.category === category.slug);
+				return (
+					<section class="dash-photos">
+						<h2>
+							<label class="dash-check dash-check--heading">
+								<input
+									type="checkbox"
+									data-mark
+									data-kind="category"
+									value={category.slug}
+								/>
+								<span>
+									{category.label}
+									<span class="dash-muted">{items.length}</span>
+								</span>
+							</label>
+						</h2>
+						{items.length === 0 ? (
+							<p class="dash-muted">No stills in this category yet.</p>
+						) : (
+							<ul class="dash-photo-grid">
+								{items.map((photo) => (
+									<li>
+										<label class="dash-photo-select">
+											<input
+												type="checkbox"
+												data-mark
+												data-kind="photo"
+												data-category={photo.category}
+												value={photo.slug}
+											/>
+											<img src={photo.src} alt={photo.alt} />
+										</label>
+										<div>
+											<strong>{photo.title}</strong>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+				);
+			})
+		)
+	}
 </DashboardLayout>
 
 <script>
@@ -265,7 +145,6 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 		"[data-category-status]",
 	);
 	const moveBtn = document.querySelector<HTMLButtonElement>("[data-move-trash]");
-	const stickyBar = document.querySelector<HTMLElement>("[data-sticky-bar]");
 	const countEl = document.querySelector<HTMLElement>("[data-selection-count]");
 
 	function setStatus(
@@ -285,74 +164,15 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 		];
 	}
 
-	function photoMarksInCategory(slug: string) {
-		return [
-			...document.querySelectorAll<HTMLInputElement>(
-				`[data-mark][data-kind="photo"][data-category="${CSS.escape(slug)}"]`,
-			),
-		];
-	}
-
-	function syncCategoryFromPhotos(slug: string) {
-		const categoryInput = document.querySelector<HTMLInputElement>(
-			`[data-mark][data-kind="category"][value="${CSS.escape(slug)}"]`,
-		);
-		if (!categoryInput) return;
-		const photos = photoMarksInCategory(slug);
-		if (!photos.length) {
-			categoryInput.indeterminate = false;
-			return;
-		}
-		const checked = photos.filter((photo) => photo.checked).length;
-		categoryInput.checked = checked === photos.length;
-		categoryInput.indeterminate = checked > 0 && checked < photos.length;
-	}
-
-	/** Photos under a checked category are implied; don't double-count them. */
-	function trashPayloadFromMarks(marks: HTMLInputElement[]) {
-		const categorySlugs = new Set(
-			marks
-				.filter((input) => input.dataset.kind === "category")
-				.map((input) => input.value),
-		);
-		const items: Array<
-			| { kind: "category"; slug: string }
-			| { kind: "photo"; slug: string; category: string }
-		> = [];
-		for (const input of marks) {
-			if (input.dataset.kind === "category") {
-				items.push({ kind: "category", slug: input.value });
-				continue;
-			}
-			if (input.dataset.kind !== "photo") continue;
-			const category = String(input.dataset.category ?? "");
-			if (categorySlugs.has(category)) continue;
-			items.push({ kind: "photo", slug: input.value, category });
-		}
-		return items;
-	}
-
 	function syncSelection() {
-		const count = trashPayloadFromMarks(selectedMarks()).length;
+		const count = selectedMarks().length;
 		if (countEl) countEl.textContent = `${count} selected`;
 		if (moveBtn) moveBtn.disabled = count === 0;
-		if (stickyBar) stickyBar.hidden = count === 0;
 	}
 
 	document.addEventListener("change", (event) => {
-		const target = event.target as HTMLInputElement;
-		if (!target.matches?.("[data-mark]")) return;
-
-		if (target.dataset.kind === "category") {
-			for (const photo of photoMarksInCategory(target.value)) {
-				photo.checked = target.checked;
-			}
-			target.indeterminate = false;
-		} else if (target.dataset.kind === "photo" && target.dataset.category) {
-			syncCategoryFromPhotos(target.dataset.category);
-		}
-
-		syncSelection();
+		const target = event.target as HTMLElement;
+		if (target.matches?.("[data-mark]")) syncSelection();
 	});
 
 	async function toWebp(file: File) {
@@ -446,16 +266,27 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 	});
 
 	moveBtn?.addEventListener("click", async () => {
-		const items = trashPayloadFromMarks(selectedMarks());
-		if (!items.length) return;
+		const marks = selectedMarks();
+		if (!marks.length) return;
 		if (
 			!confirm(
-				`Send ${items.length} item${items.length === 1 ? "" : "s"} to Trash?`,
+				`Move ${marks.length} marked item${marks.length === 1 ? "" : "s"} to the recycle bin? Categories take their photos with them.`,
 			)
 		) {
 			return;
 		}
 		moveBtn.disabled = true;
+		const items = marks.map((input) => {
+			const kind = input.dataset.kind;
+			if (kind === "category") {
+				return { kind: "category" as const, slug: input.value };
+			}
+			return {
+				kind: "photo" as const,
+				slug: input.value,
+				category: String(input.dataset.category ?? ""),
+			};
+		});
 		const response = await fetch("/api/trash", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
@@ -463,221 +294,11 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 		});
 		const result = await response.json();
 		if (!response.ok) {
-			alert(result.error ?? "Could not delete.");
+			alert(result.error ?? "Could not move to trash.");
 			moveBtn.disabled = false;
 			return;
 		}
 		location.reload();
-	});
-
-	document.addEventListener("click", (event) => {
-		const target = event.target as HTMLElement;
-
-		const editCategory = target.closest<HTMLButtonElement>("[data-edit-category]");
-		if (editCategory) {
-			const section = editCategory.closest<HTMLElement>(".dash-category");
-			section!.querySelector<HTMLElement>("[data-category-view]")!.hidden = true;
-			section!.querySelector<HTMLElement>("[data-category-edit]")!.hidden = false;
-			return;
-		}
-		const cancelCategory = target.closest<HTMLButtonElement>(
-			"[data-cancel-category]",
-		);
-		if (cancelCategory) {
-			const section = cancelCategory.closest<HTMLElement>(".dash-category");
-			section!.querySelector<HTMLElement>("[data-category-view]")!.hidden = false;
-			section!.querySelector<HTMLElement>("[data-category-edit]")!.hidden = true;
-			return;
-		}
-
-		const editPhoto = target.closest<HTMLButtonElement>("[data-edit-photo]");
-		if (editPhoto) {
-			const card = editPhoto.closest<HTMLElement>(".dash-photo-card");
-			card!.querySelector<HTMLElement>("[data-photo-view]")!.hidden = true;
-			card!.querySelector<HTMLElement>("[data-photo-edit]")!.hidden = false;
-			return;
-		}
-		const cancelPhoto = target.closest<HTMLButtonElement>("[data-cancel-photo]");
-		if (cancelPhoto) {
-			const card = cancelPhoto.closest<HTMLElement>(".dash-photo-card");
-			card!.querySelector<HTMLElement>("[data-photo-view]")!.hidden = false;
-			card!.querySelector<HTMLElement>("[data-photo-edit]")!.hidden = true;
-		}
-	});
-
-	document.addEventListener("submit", async (event) => {
-		const target = event.target as HTMLElement;
-		const categoryEdit = target.closest<HTMLFormElement>("[data-category-edit]");
-		if (categoryEdit) {
-			event.preventDefault();
-			const section = categoryEdit.closest<HTMLElement>(".dash-category");
-			const slug = section?.dataset.categorySlug;
-			if (!slug) return;
-			const data = new FormData(categoryEdit);
-			const response = await fetch("/api/photo-categories", {
-				method: "PATCH",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					slug,
-					label: String(data.get("label") ?? ""),
-				}),
-			});
-			const result = await response.json();
-			if (!response.ok) {
-				alert(result.error ?? "Could not save category.");
-				return;
-			}
-			location.reload();
-			return;
-		}
-
-		const photoEdit = target.closest<HTMLFormElement>("[data-photo-edit]");
-		if (photoEdit) {
-			event.preventDefault();
-			const card = photoEdit.closest<HTMLElement>(".dash-photo-card");
-			const slug = card?.dataset.slug;
-			const category = card?.dataset.category;
-			if (!slug || !category) return;
-			const data = new FormData(photoEdit);
-			const response = await fetch("/api/photos", {
-				method: "PATCH",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					slug,
-					category,
-					title: String(data.get("title") ?? ""),
-					alt: String(data.get("alt") ?? ""),
-				}),
-			});
-			const result = await response.json();
-			if (!response.ok) {
-				alert(result.error ?? "Could not save photo.");
-				return;
-			}
-			location.reload();
-		}
-	});
-
-	let dragEl: HTMLElement | null = null;
-	let dragScope: "category" | "photo" | null = null;
-
-	document.addEventListener("pointerdown", (event) => {
-		const handle = (event.target as HTMLElement).closest<HTMLElement>(
-			"[data-drag-handle]",
-		);
-		if (!handle) return;
-		const scope = handle.dataset.dragScope as "category" | "photo" | undefined;
-		if (scope === "category") {
-			const section = handle.closest<HTMLElement>(".dash-category");
-			if (!section) return;
-			section.draggable = true;
-			dragScope = "category";
-		} else if (scope === "photo") {
-			const card = handle.closest<HTMLElement>(".dash-photo-card");
-			if (!card) return;
-			card.draggable = true;
-			dragScope = "photo";
-		}
-	});
-
-	document.addEventListener("dragstart", (event) => {
-		const target = event.target as HTMLElement;
-		const category = target.closest<HTMLElement>(".dash-category");
-		const photo = target.closest<HTMLElement>(".dash-photo-card");
-		if (dragScope === "category" && category?.draggable) {
-			dragEl = category;
-		} else if (dragScope === "photo" && photo?.draggable) {
-			dragEl = photo;
-		} else {
-			return;
-		}
-		dragEl.classList.add("is-dragging");
-		event.dataTransfer!.effectAllowed = "move";
-		event.dataTransfer?.setData("text/plain", "reorder");
-	});
-
-	document.addEventListener("dragend", () => {
-		if (dragEl) {
-			dragEl.draggable = false;
-			dragEl.classList.remove("is-dragging");
-		}
-		dragEl = null;
-		dragScope = null;
-		document
-			.querySelectorAll(".is-drop-target")
-			.forEach((el) => el.classList.remove("is-drop-target"));
-	});
-
-	document.addEventListener("dragover", (event) => {
-		if (!dragEl || !dragScope) return;
-		if (dragScope === "category") {
-			const over = (event.target as HTMLElement).closest<HTMLElement>(
-				".dash-category",
-			);
-			const list = over?.closest("[data-sortable='categories']");
-			if (!over || !list || over === dragEl) return;
-			event.preventDefault();
-			over.classList.add("is-drop-target");
-			const rect = over.getBoundingClientRect();
-			const before = event.clientY < rect.top + rect.height / 2;
-			list.insertBefore(dragEl, before ? over : over.nextSibling);
-			return;
-		}
-
-		const over = (event.target as HTMLElement).closest<HTMLElement>(
-			".dash-photo-card",
-		);
-		const list = over?.closest<HTMLElement>("[data-sortable='photos']");
-		const fromList = dragEl.closest<HTMLElement>("[data-sortable='photos']");
-		if (!over || !list || !fromList || list !== fromList || over === dragEl) {
-			return;
-		}
-		event.preventDefault();
-		over.classList.add("is-drop-target");
-		const rect = over.getBoundingClientRect();
-		const before = event.clientY < rect.top + rect.height / 2;
-		list.insertBefore(dragEl, before ? over : over.nextSibling);
-	});
-
-	document.addEventListener("drop", async (event) => {
-		if (!dragEl || !dragScope) return;
-		event.preventDefault();
-
-		if (dragScope === "category") {
-			const list = dragEl.closest<HTMLElement>("[data-sortable='categories']");
-			if (!list) return;
-			const slugs = [
-				...list.querySelectorAll<HTMLElement>(".dash-category"),
-			].map((el) => el.dataset.categorySlug!);
-			const response = await fetch("/api/photo-categories", {
-				method: "PATCH",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ action: "reorder", slugs }),
-			});
-			const result = await response.json();
-			if (!response.ok) {
-				alert(result.error ?? "Could not reorder categories.");
-				location.reload();
-			}
-			return;
-		}
-
-		const list = dragEl.closest<HTMLElement>("[data-sortable='photos']");
-		const category = list?.dataset.category;
-		if (!list || !category) return;
-		const slugs = [...list.querySelectorAll<HTMLElement>(".dash-photo-card")].map(
-			(el) => el.dataset.slug!,
-		);
-		const response = await fetch("/api/photos", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ action: "reorder", category, slugs }),
-		});
-		const result = await response.json();
-		if (!response.ok) {
-			alert(result.error ?? "Could not reorder photos.");
-			location.reload();
-		}
 	});
 
 	syncSelection();

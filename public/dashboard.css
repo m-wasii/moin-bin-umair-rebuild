@@ -45,7 +45,7 @@
 }
 
 .dash-main {
-	padding: 2rem 1.5rem 5.5rem;
+	padding: 2rem 1.5rem 4rem;
 	max-width: 72rem;
 }
 
@@ -62,9 +62,7 @@
 }
 
 .dash-heading h1,
-.dash-photos h2,
-.dash-group h2,
-.dash-category__title h2 {
+.dash-photos h2 {
 	margin: 0;
 	font-family: Outfit, "Avenir Next", sans-serif;
 	text-transform: uppercase;
@@ -76,44 +74,15 @@
 	background: rgba(245, 158, 11, 0.08);
 }
 
-.dash-disclose {
-	margin-bottom: 1.25rem;
-	border: 1px solid rgba(245, 158, 11, 0.22);
-	padding: 0.35rem 0.85rem 0.85rem;
-}
-
-.dash-disclose summary {
-	cursor: pointer;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	padding: 0.65rem 0;
-	color: #e8b45a;
-	list-style: none;
-}
-
-.dash-disclose summary::-webkit-details-marker {
-	display: none;
-}
-
-.dash-disclose summary::before {
-	content: "+ ";
-}
-
-.dash-disclose[open] summary::before {
-	content: "− ";
-}
-
 .dash-form {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 	gap: 1rem;
-	margin: 0.5rem 0 0;
+	margin-bottom: 2.5rem;
 }
 
 .dash-form label,
-.dash-form__wide,
-.dash-inline-edit label {
+.dash-form__wide {
 	display: grid;
 	gap: 0.35rem;
 	font-size: 0.8rem;
@@ -127,10 +96,7 @@
 
 .dash-form input,
 .dash-form select,
-.dash-form textarea,
-.dash-inline-edit input,
-.dash-inline-edit select,
-.dash-inline-edit textarea {
+.dash-form textarea {
 	padding: 0.65rem 0.7rem;
 	border: 1px solid rgba(245, 158, 11, 0.28);
 	border-radius: 0.4rem;
@@ -147,8 +113,7 @@
 }
 
 .dash-form button,
-.dash-delete,
-.dash-inline-edit__actions button[type="submit"] {
+.dash-delete {
 	padding: 0.7rem 1rem;
 	border: 0;
 	border-radius: 999px;
@@ -156,145 +121,47 @@
 	color: #1a1208;
 	font-weight: 700;
 	cursor: pointer;
-	font: inherit;
 }
 
-.dash-delete,
-.dash-ghost {
+.dash-delete {
 	background: transparent;
 	color: #e8b45a;
 	border: 1px solid rgba(245, 158, 11, 0.35);
-	border-radius: 999px;
-	padding: 0.45rem 0.85rem;
-	font-weight: 700;
-	cursor: pointer;
-	font: inherit;
 }
 
 .dash-form__status[data-error="true"] {
 	color: #fca5a5;
 }
 
-.dash-group {
-	margin: 2rem 0;
+.dash-table-wrap {
+	overflow-x: auto;
 }
 
-.dash-group h2,
-.dash-category__title h2 {
-	display: flex;
-	gap: 0.75rem;
-	align-items: baseline;
-	font-size: 1.25rem;
-	margin-bottom: 0.85rem;
+.dash-table {
+	width: 100%;
+	border-collapse: collapse;
 }
 
-.dash-rows {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	display: grid;
-	gap: 0.35rem;
-}
-
-.dash-row {
-	display: grid;
-	grid-template-columns: auto auto 1fr;
-	gap: 0.75rem;
-	align-items: start;
-	padding: 0.75rem 0.35rem;
-	border-bottom: 1px solid rgba(245, 158, 11, 0.16);
-}
-
-.dash-row__body {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto auto;
-	gap: 0.75rem;
-	align-items: center;
-}
-
-.dash-row__meta {
-	display: flex;
-	gap: 0.5rem;
-	align-items: center;
-	color: #c4a574;
-	font-size: 0.9rem;
-}
-
-.dash-pill {
-	font-size: 0.7rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	border: 1px solid rgba(245, 158, 11, 0.35);
-	padding: 0.15rem 0.45rem;
-	color: #e8b45a;
-}
-
-.dash-handle {
-	border: 0;
-	background: transparent;
-	color: #c4a574;
-	cursor: grab;
-	padding: 0.2rem 0.35rem;
-	font: inherit;
-	line-height: 1;
-	letter-spacing: -0.12em;
-	user-select: none;
-}
-
-.dash-handle:active {
-	cursor: grabbing;
-}
-
-.dash-handle--photo {
-	position: absolute;
-	top: 0.35rem;
-	left: 0.35rem;
-	z-index: 2;
-	background: rgba(8, 8, 8, 0.72);
-	border-radius: 0.25rem;
-}
-
-.dash-inline-edit {
-	grid-column: 1 / -1;
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-	gap: 0.75rem;
-	padding: 0.75rem 0 0.25rem;
-}
-
-.dash-inline-edit__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	align-items: end;
+.dash-table th,
+.dash-table td {
+	padding: 0.75rem 0.5rem;
+	border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+	text-align: left;
 }
 
 .dash-photos {
-	margin: 2rem 0;
+	margin: 2.5rem 0;
 }
 
-.dash-category {
-	padding: 0.5rem 0 1rem;
-	border-bottom: 1px solid rgba(245, 158, 11, 0.14);
-}
-
-.dash-category__head {
-	display: grid;
-	grid-template-columns: auto auto 1fr;
+.dash-photos h2 {
+	display: flex;
 	gap: 0.75rem;
-	align-items: start;
+	align-items: baseline;
+	font-size: 1.4rem;
 	margin-bottom: 1rem;
 }
 
-.dash-category__title {
-	display: grid;
-	gap: 0.35rem;
-	justify-items: start;
-}
-
-.dash-photos h2 span,
-.dash-group h2 span,
-.dash-category__title h2 span {
+.dash-photos h2 span {
 	color: #c4a574;
 	font-size: 0.9rem;
 }
@@ -307,12 +174,6 @@
 	list-style: none;
 }
 
-.dash-photo-card {
-	position: relative;
-	display: grid;
-	gap: 0.4rem;
-}
-
 .dash-photo-grid img {
 	width: 100%;
 	aspect-ratio: 4 / 5;
@@ -320,11 +181,11 @@
 	border-radius: 0.6rem;
 }
 
-.dash-photo-card__meta {
+.dash-photo-grid div {
 	display: flex;
 	justify-content: space-between;
 	gap: 0.5rem;
-	align-items: start;
+	margin-top: 0.4rem;
 	font-size: 0.9rem;
 }
 
@@ -347,27 +208,6 @@
 	justify-content: space-between;
 	gap: 0.75rem;
 	margin-bottom: 1.25rem;
-}
-
-.dash-sticky-bar {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 20;
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.85rem;
-	padding: 0.85rem 1.5rem;
-	border-top: 1px solid rgba(245, 158, 11, 0.28);
-	background: rgba(8, 8, 8, 0.94);
-	backdrop-filter: blur(8px);
-}
-
-.dash-sticky-bar p {
-	margin: 0;
 }
 
 .dash-trash-btn,
@@ -410,6 +250,10 @@
 	color: #fca5a5;
 }
 
+.dash-check-col {
+	width: 2.5rem;
+}
+
 .dash-check {
 	display: inline-flex;
 	align-items: center;
@@ -418,7 +262,7 @@
 }
 
 .dash-check--heading {
-	padding-top: 0.2rem;
+	width: 100%;
 }
 
 .dash-check input,
@@ -491,28 +335,4 @@
 	height: 4.2rem;
 	object-fit: cover;
 	border-radius: 0.4rem;
-}
-
-.is-dragging {
-	opacity: 0.55;
-}
-
-.is-drop-target {
-	outline: 1px dashed rgba(245, 158, 11, 0.55);
-	outline-offset: 2px;
-}
-
-@media (max-width: 720px) {
-	.dash-row__body {
-		grid-template-columns: 1fr;
-		justify-items: start;
-	}
-
-	.dash-category__head {
-		grid-template-columns: auto auto 1fr;
-	}
-
-	.dash-sticky-bar {
-		padding: 0.75rem 1rem;
-	}
 }

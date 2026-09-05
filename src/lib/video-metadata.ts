@@ -1,7 +1,7 @@
 import type { Project, ProjectCategory, VideoProvider } from "../data/projects";
 import type { StoredVideo } from "./store";
 
-const CATEGORIES = new Set<ProjectCategory>(["commercial", "art", "shorts"]);
+const CATEGORIES = new Set<ProjectCategory>(["commercial", "art"]);
 
 export function isProjectCategory(value: string): value is ProjectCategory {
 	return CATEGORIES.has(value as ProjectCategory);

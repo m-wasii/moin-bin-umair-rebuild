@@ -34,12 +34,12 @@ const isEmpty =
 <DashboardLayout title="Trash" section="trash">
 	<header class="dash-heading">
 		<div>
-			<p>Recoverable</p>
+			<p>Recycle bin</p>
 			<h1>Trash</h1>
 		</div>
 		<p>
-			Restore items, delete forever, or empty trash. Nothing expires
-			automatically.
+			Restore items, permanently delete one at a time, or empty the bin.
+			Nothing expires automatically.
 		</p>
 	</header>
 
@@ -56,7 +56,7 @@ const isEmpty =
 			<div class="dash-toolbar">
 				<p class="dash-muted">Manual purge only — restore anytime.</p>
 				<button type="button" class="dash-danger" data-empty-trash>
-					Empty trash
+					Empty recycle bin
 				</button>
 			</div>
 		)
@@ -64,7 +64,7 @@ const isEmpty =
 
 	{
 		isEmpty ? (
-			<p class="dash-muted">Trash is empty.</p>
+			<p class="dash-muted">Recycle bin is empty.</p>
 		) : (
 			<>
 				{trashedVideos.length > 0 && (
@@ -246,7 +246,7 @@ const isEmpty =
 		if (empty) {
 			await trashAction(
 				{ action: "empty" },
-				"Empty the entire trash permanently? This cannot be undone.",
+				"Empty the entire recycle bin permanently? This cannot be undone.",
 			);
 		}
 	});

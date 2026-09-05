@@ -90,17 +90,6 @@ export const POST: APIRoute = async ({ request }) => {
 		slug = `${slug}-${Date.now().toString(36)}`;
 	}
 
-	const activeInCategory = photos.filter(
-		(photo) =>
-			!photo.deletedAt &&
-			!photo.trashedWithCategory &&
-			photo.category === category,
-	);
-	const maxOrder = activeInCategory.reduce(
-		(max, photo) => Math.max(max, photo.sortOrder ?? 0),
-		0,
-	);
-
 	await putPhotoBytes(category, slug, bytes);
 
 	const photo = {
@@ -109,80 +98,10 @@ export const POST: APIRoute = async ({ request }) => {
 		title: title || titleFromSlug(slug),
 		alt: alt || title || titleFromSlug(slug),
 		src: photoMediaSrc(category, slug),
-		sortOrder: maxOrder + 10,
 	};
 	photos.push(photo);
 	await savePhotos(photos);
 	return json({ photo }, 201);
-};
-
-export const PATCH: APIRoute = async ({ request }) => {
-	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
-	}
-
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
-
-	const photos = await listPhotos({ includeDeleted: true });
-
-	if (body.action === "reorder") {
-		const category = String(body.category ?? "");
-		const slugs = Array.isArray(body.slugs)
-			? body.slugs.map((slug) => String(slug))
-			: [];
-		if (!category || !isPhotoCategorySlug(category)) {
-			return json({ error: "Missing category." }, 400);
-		}
-		if (!slugs.length) return json({ error: "Missing slugs." }, 400);
-
-		const orderBySlug = new Map(
-			slugs.map((slug, index) => [slug, (index + 1) * 10]),
-		);
-		let matched = 0;
-		const next = photos.map((photo) => {
-			if (photo.deletedAt || photo.category !== category) return photo;
-			const sortOrder = orderBySlug.get(photo.slug);
-			if (sortOrder == null) return photo;
-			matched += 1;
-			return { ...photo, sortOrder };
-		});
-		if (matched !== slugs.length) {
-			return json({ error: "One or more photos were not found." }, 404);
-		}
-		await savePhotos(next);
-		return json({ ok: true });
-	}
-
-	const slug = String(body.slug ?? "");
-	const category = String(body.category ?? "");
-	if (!slug || !category || !isPhotoCategorySlug(category)) {
-		return json({ error: "Missing slug or category." }, 400);
-	}
-
-	const index = photos.findIndex(
-		(photo) =>
-			photo.slug === slug && photo.category === category && !photo.deletedAt,
-	);
-	if (index === -1) return json({ error: "Photo not found." }, 404);
-
-	const current = photos[index];
-	const title =
-		typeof body.title === "string" ? body.title.trim() : current.title;
-	const alt = typeof body.alt === "string" ? body.alt.trim() : current.alt;
-	if (!title) return json({ error: "Title is required." }, 400);
-
-	photos[index] = {
-		...current,
-		title,
-		alt: alt || title,
-	};
-	await savePhotos(photos);
-	return json({ photo: photos[index] });
 };
 
 export const DELETE: APIRoute = async () => {
@@ -193,7 +112,7 @@ export const DELETE: APIRoute = async () => {
 	return json(
 		{
 			error:
-				"Hard delete is disabled. Select items and use Delete (sends to Trash), then permanently delete from Trash.",
+				"Hard delete is disabled. Mark items and use Move to recycle bin, then permanently delete from Trash.",
 		},
 		405,
 	);
