@@ -450,7 +450,7 @@ function photosFor(category: StoredPhotoCategory): StoredPhoto[] {
 		if (!items.length) return;
 		if (
 			!confirm(
-				`Send ${items.length} item${items.length === 1 ? "" : "s"} to Trash?`,
+				`Delete ${items.length} marked item${items.length === 1 ? "" : "s"}? They will be moved to Trash. Categories take their photos with them.`,
 			)
 		) {
 			return;

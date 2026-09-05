@@ -91,15 +91,6 @@ function seedPhotoCategoryList(): StoredPhotoCategory[] {
 	}));
 }
 
-function bySortOrderThenSlug<T extends { sortOrder?: number; slug: string }>(
-	a: T,
-	b: T,
-) {
-	const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
-	if (order !== 0) return order;
-	return a.slug.localeCompare(b.slug);
-}
-
 function seedShortList(): StoredShort[] {
 	return (seedShorts as { shorts: StoredShort[] }).shorts;
 }
@@ -188,10 +179,8 @@ export async function listVideos(
 		videos = local?.videos ?? seedVideoList();
 	}
 
-	const filtered = includeDeleted
-		? videos
-		: videos.filter((video) => !video.deletedAt);
-	return [...filtered].sort(bySortOrderThenSlug);
+	if (includeDeleted) return videos;
+	return videos.filter((video) => !video.deletedAt);
 }
 
 export async function saveVideos(videos: StoredVideo[]) {
@@ -226,20 +215,15 @@ export async function listPhotos(
 		photos = local?.photos ?? seedPhotoList();
 	}
 
-	let filtered: StoredPhoto[];
-	if (includeDeleted) {
-		filtered = photos;
-	} else {
-		const categories = await listPhotoCategories({ includeDeleted: true });
-		const activeCategorySlugs = new Set(
-			categories.filter(isActiveCategory).map((entry) => entry.slug),
-		);
-		filtered = photos.filter(
-			(photo) =>
-				isActivePhoto(photo) && activeCategorySlugs.has(photo.category),
-		);
-	}
-	return [...filtered].sort(bySortOrderThenSlug);
+	if (includeDeleted) return photos;
+
+	const categories = await listPhotoCategories({ includeDeleted: true });
+	const activeCategorySlugs = new Set(
+		categories.filter(isActiveCategory).map((entry) => entry.slug),
+	);
+	return photos.filter(
+		(photo) => isActivePhoto(photo) && activeCategorySlugs.has(photo.category),
+	);
 }
 
 export async function savePhotos(photos: StoredPhoto[]) {
@@ -280,10 +264,8 @@ export async function listPhotoCategories(
 		categories = local?.categories ?? seedPhotoCategoryList();
 	}
 
-	const filtered = includeDeleted
-		? categories
-		: categories.filter(isActiveCategory);
-	return [...filtered].sort(bySortOrderThenSlug);
+	if (includeDeleted) return categories;
+	return categories.filter(isActiveCategory);
 }
 
 export async function savePhotoCategories(categories: StoredPhotoCategory[]) {
