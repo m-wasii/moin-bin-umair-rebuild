@@ -1,14 +1,22 @@
-export const photoCategories = [
-	"film-portraits-trieste",
-	"architecture",
-	"behind-the-scenes",
-	"portraits-fashion",
-	"fashion-lookbook",
-	"events-wedding",
-	"street-photography",
+export const defaultPhotoCategories = [
+	{ slug: "film-portraits-trieste", label: "Trieste" },
+	{ slug: "architecture", label: "Architecture" },
+	{ slug: "behind-the-scenes", label: "Behind the scenes" },
+	{ slug: "portraits-fashion", label: "Portraits & fashion" },
+	{ slug: "fashion-lookbook", label: "Fashion lookbook" },
+	{ slug: "events-wedding", label: "Events & wedding" },
+	{ slug: "street-photography", label: "Street" },
 ] as const;
 
-export type PhotoCategory = (typeof photoCategories)[number];
+/** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */
+export const photoCategories = defaultPhotoCategories.map((entry) => entry.slug);
+
+export type PhotoCategory = string;
+
+export interface StoredPhotoCategory {
+	slug: string;
+	label: string;
+}
 
 export interface StoredPhoto {
 	slug: string;
@@ -22,8 +30,13 @@ export function photoMediaSrc(category: PhotoCategory, slug: string) {
 	return `/media/photos/${category}/${slug}.webp`;
 }
 
+export function isPhotoCategorySlug(value: string): boolean {
+	return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= 80;
+}
+
+/** Accepts any valid category slug shape (catalog may be dynamic). */
 export function isPhotoCategory(value: string): value is PhotoCategory {
-	return (photoCategories as readonly string[]).includes(value);
+	return isPhotoCategorySlug(value);
 }
 
 export function slugifyPhotoName(value: string) {

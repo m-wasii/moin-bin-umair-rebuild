@@ -1,7 +1,13 @@
 import type { APIRoute } from "astro";
 import { isProjectCategory } from "../../lib/video-metadata";
 import { enrichVideo } from "../../lib/video-metadata";
-import { hasWritableMedia, listVideos, saveVideos, youtubeApiKey } from "../../lib/store";
+import {
+	hasWritableMedia,
+	listVideos,
+	saveVideos,
+	youtubeApiKey,
+	type StoredVideo,
+} from "../../lib/store";
 
 export const prerender = false;
 
@@ -9,6 +15,17 @@ function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
 		status,
 		headers: { "content-type": "application/json; charset=utf-8" },
+	});
+}
+
+function rewriteSortOrders(videos: StoredVideo[], slugs: string[]): StoredVideo[] {
+	const orderBySlug = new Map(
+		slugs.map((slug, index) => [slug, (index + 1) * 10]),
+	);
+	return videos.map((video) => {
+		const next = orderBySlug.get(video.slug);
+		if (next == null) return video;
+		return { ...video, sortOrder: next };
 	});
 }
 
@@ -44,6 +61,10 @@ export const POST: APIRoute = async ({ request }) => {
 
 	try {
 		const videos = await listVideos();
+		const maxOrder = videos.reduce(
+			(max, item) => Math.max(max, item.sortOrder ?? 0),
+			0,
+		);
 		const video = await enrichVideo(
 			{
 				url,
@@ -58,6 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
 						: undefined,
 				featured: Boolean(body.featured),
 				slug: typeof body.slug === "string" ? body.slug : undefined,
+				sortOrder: maxOrder + 10,
 			},
 			youtubeApiKey(),
 		);
@@ -91,6 +113,22 @@ export const PATCH: APIRoute = async ({ request }) => {
 		body = (await request.json()) as Record<string, unknown>;
 	} catch {
 		return json({ error: "Invalid JSON" }, 400);
+	}
+
+	if (body.action === "reorder") {
+		const slugs = Array.isArray(body.slugs)
+			? body.slugs.map((slug) => String(slug))
+			: [];
+		if (!slugs.length) return json({ error: "Missing slugs." }, 400);
+
+		const videos = await listVideos();
+		const known = new Set(videos.map((video) => video.slug));
+		if (slugs.some((slug) => !known.has(slug))) {
+			return json({ error: "One or more videos were not found." }, 404);
+		}
+
+		await saveVideos(rewriteSortOrders(videos, slugs));
+		return json({ ok: true });
 	}
 
 	const slug = String(body.slug ?? "");

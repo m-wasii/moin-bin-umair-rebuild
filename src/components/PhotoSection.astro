@@ -1,6 +1,6 @@
 ---
 import type { StoredPhoto } from "../data/photos";
-import { photoCategories } from "../data/photos";
+import { listPhotoCategories } from "../lib/store";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 
 interface Props {
@@ -11,12 +11,21 @@ interface Props {
 
 const { photos, lang, surface = "section" } = Astro.props;
 const t = useTranslations(lang);
+const categories = await listPhotoCategories();
 
-const grouped = photoCategories
+function albumTitle(slug: string, label: string) {
+	const key = `photo.category.${slug}` as UiKey;
+	const translated = t(key);
+	return typeof translated === "string" && translated.length > 0
+		? translated
+		: label;
+}
+
+const grouped = categories
 	.map((category) => ({
-		category,
-		title: t(`photo.category.${category}` as UiKey),
-		items: photos.filter((photo) => photo.category === category),
+		category: category.slug,
+		title: albumTitle(category.slug, category.label),
+		items: photos.filter((photo) => photo.category === category.slug),
 	}))
 	.filter((group) => group.items.length > 0);
 
