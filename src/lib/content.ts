@@ -40,7 +40,17 @@ export async function loadPhotos(): Promise<{
 		listPhotos(),
 		listPhotoCategories(),
 	]);
-	return { photos, categories };
+	const sortedCategories = [...categories].sort((a, b) => {
+		const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
+		if (order !== 0) return order;
+		return a.slug.localeCompare(b.slug);
+	});
+	const sortedPhotos = [...photos].sort((a, b) => {
+		const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
+		if (order !== 0) return order;
+		return a.slug.localeCompare(b.slug);
+	});
+	return { photos: sortedPhotos, categories: sortedCategories };
 }
 
 export async function loadShorts(): Promise<{

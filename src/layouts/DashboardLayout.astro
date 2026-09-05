@@ -1,5 +1,10 @@
 ---
 import { siteOrigin } from "../lib/hosts";
+import {
+	listPhotoCategories,
+	listPhotos,
+	listVideos,
+} from "../lib/store";
 
 interface Props {
 	title: string;
@@ -8,6 +13,18 @@ interface Props {
 
 const { title, section } = Astro.props;
 const siteHref = siteOrigin(Astro.url);
+
+const [videos, photos, categories] = await Promise.all([
+	listVideos({ includeDeleted: true }),
+	listPhotos({ includeDeleted: true }),
+	listPhotoCategories({ includeDeleted: true }),
+]);
+
+const trashCount =
+	videos.filter((video) => video.deletedAt).length +
+	categories.filter((category) => category.deletedAt).length +
+	photos.filter((photo) => photo.deletedAt && !photo.trashedWithCategory)
+		.length;
 ---
 
 <!doctype html>
@@ -35,7 +52,8 @@ const siteHref = siteOrigin(Astro.url);
 				>
 				<a
 					href="/dashboard/trash"
-					aria-current={section === "trash" ? "page" : undefined}>Trash</a
+					aria-current={section === "trash" ? "page" : undefined}
+					>Trash{trashCount > 0 ? ` (${trashCount})` : ""}</a
 				>
 			</nav>
 			<a class="dash-bar__site" href={siteHref}>View site</a>
