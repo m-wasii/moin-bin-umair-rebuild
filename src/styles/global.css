@@ -2015,7 +2015,8 @@ html.video-open {
 	}
 
 	.video-dialog__header p {
-		max-width: 48%;
+		flex: 1 1 auto;
+		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
