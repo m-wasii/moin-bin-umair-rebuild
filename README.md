@@ -148,8 +148,13 @@ Dashboard saves write to the same bucket. The API token needs
    3. Allowlist editor emails
    4. Do not put the public site hostname in this Access app
 
-On `*.workers.dev`, Access is not enforced. The public Worker redirects
-`/dashboard` to `dashboard.<account>.workers.dev`.
+The public Worker redirects `/dashboard` to `dashboard.<account>.workers.dev`.
+That dashboard hostname is gated the same way as a custom domain: Cloudflare
+Access (Google) plus an app-level check for
+`cf-access-authenticated-user-email`. Without Access configured, the Worker
+returns 401 (set `DASHBOARD_ENFORCE_CF_ACCESS=false` only while bringing Access
+online). Ephemeral PR preview Workers (`mbu-pr-*`) are not dashboard hosts, so
+their on-host `/dashboard` stays open for QA.
 
 Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
 Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not
