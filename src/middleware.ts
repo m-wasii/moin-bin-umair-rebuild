@@ -4,7 +4,6 @@ import {
 	dashboardOrigin,
 	isDashboardHost,
 	isDashboardPath,
-	isPreviewHost,
 	siteOrigin,
 } from "./lib/hosts";
 
@@ -13,7 +12,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	const host = url.host;
 	const onDashboard = isDashboardHost(host);
 	const dashboardPath = isDashboardPath(url.pathname);
-	const preview = isPreviewHost(host);
 
 	if (onDashboard && url.pathname === "/") {
 		return context.redirect("/dashboard");
@@ -33,9 +31,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		}
 	}
 
-	const protectDashboard =
-		(onDashboard || (preview && dashboardPath)) && import.meta.env.PROD;
-	if (protectDashboard && !preview) {
+	// Fail closed on every dashboard hostname in production — including
+	// dashboard.*.workers.dev. Do not skip *.workers.dev: that host is both
+	// "preview" and the live editor, and skipping left the catalog public.
+	// Ephemeral PR Workers (mbu-pr-*) are not dashboard hosts; /dashboard
+	// there stays reachable for QA without a Zero Trust app per preview URL.
+	if (onDashboard && import.meta.env.PROD) {
 		const enforceAccess = dashboardAccessEnforced();
 		const accessEmail = context.request.headers.get(
 			"cf-access-authenticated-user-email",
