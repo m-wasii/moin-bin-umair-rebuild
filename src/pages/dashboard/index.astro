@@ -296,7 +296,7 @@ const sections = sectionMeta.map((section) => ({
 		if (!marks.length) return;
 		if (
 			!confirm(
-				`Delete ${marks.length} video${marks.length === 1 ? "" : "s"}? They will be moved to Trash and can be restored.`,
+				`Send ${marks.length} item${marks.length === 1 ? "" : "s"} to Trash?`,
 			)
 		) {
 			return;
