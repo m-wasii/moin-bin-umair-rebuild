@@ -258,7 +258,7 @@ main {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
-	color: var(--amber);
+	color: color-mix(in srgb, var(--amber) 55%, transparent);
 	font-family: var(--font-sans);
 	font-size: 0.75rem;
 	font-weight: 600;
@@ -772,7 +772,8 @@ main {
 	align-items: center;
 	gap: 0.8rem;
 	margin-top: clamp(2rem, 3.5vw, 3rem);
-	padding: 0;
+	min-height: 2.75rem;
+	padding: 0.65rem 0;
 	border: 0;
 	background: transparent;
 	color: var(--amber);
@@ -1569,6 +1570,11 @@ html.video-open {
 	padding: 0.75rem 1rem 0.75rem 1.2rem;
 }
 
+.video-dialog__title {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
 .video-dialog__header p,
 .video-dialog__close,
 .video-dialog__about,
@@ -1763,6 +1769,14 @@ html.video-open {
 
 	.lang-switch {
 		padding-right: 0.15rem;
+	}
+
+	.lang-switch__option {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
 	}
 
 	.nav-toggle {
@@ -2014,11 +2028,24 @@ html.video-open {
 		height: 100svh;
 	}
 
-	.video-dialog__header p {
-		max-width: 48%;
+	.video-dialog__title {
 		overflow: hidden;
-		text-overflow: ellipsis;
+		container-type: inline-size;
+		container-name: video-dialog-title;
+	}
+
+	.video-dialog__header p {
+		display: inline-block;
+		width: max-content;
+		max-width: none;
 		white-space: nowrap;
+		/* Scroll only when wider than the reserved header slot; short titles stay still. */
+		animation: video-dialog-title-scroll 9s ease-in-out infinite alternate;
+	}
+
+	.video-dialog__title:hover p,
+	.video-dialog__title:focus-within p {
+		animation-play-state: paused;
 	}
 
 	.video-dialog__body--about-open {
@@ -2039,7 +2066,30 @@ html.video-open {
 	}
 }
 
+@keyframes video-dialog-title-scroll {
+	0%,
+	12% {
+		transform: translateX(0);
+	}
+
+	88%,
+	100% {
+		/* 100cqi = title slot width; 100% = text width. Short titles → min(0, +) = 0 (no move). */
+		transform: translateX(min(0px, calc(100cqi - 100%)));
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
+	.video-dialog__title {
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: thin;
+	}
+
+	.video-dialog__header p {
+		animation: none;
+	}
+
 	html {
 		scroll-behavior: auto;
 	}

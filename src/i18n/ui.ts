@@ -29,8 +29,10 @@ const ui = {
 		"section.commercial.title": "Commercial",
 		"section.commercial.description":
 			"Brand films, campaigns, and behind-the-scenes projects.",
+		"section.commercial.empty": "Commercial work will appear here.",
 		"section.art.title": "Art & Films",
 		"section.art.description": "Narrative films, trailers, and personal work.",
+		"section.art.empty": "Art & films will appear here.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Campaigns and standalone short-form films.",
 		"section.shorts.campaigns": "Campaigns",
@@ -70,7 +72,8 @@ const ui = {
 		"photo.prev": "Previous",
 		"photo.next": "Next",
 		"contact.meta": "Enquiries",
-		"contact.titleHtml": "Let’s make something<br />worth watching.",
+		"contact.title": "Let’s make something worth watching.",
+		"contact.titleHtml": "Let’s make something<br /> worth watching.",
 		"contact.description":
 			"Commercial films, narrative projects, and creative collaborations.",
 		"contact.email": "Email",
@@ -105,7 +108,7 @@ const ui = {
 		"a11y.navToggle": "Navigation umschalten",
 		"a11y.primaryNav": "Hauptnavigation",
 		"a11y.langSwitch": "Sprache",
-		"nav.home": "Home",
+		"nav.home": "Start",
 		"nav.commercial": "Werbung",
 		"nav.art": "Kunst & Filme",
 		"nav.photography": "Fotografie",
@@ -117,8 +120,10 @@ const ui = {
 		"section.commercial.title": "Werbung",
 		"section.commercial.description":
 			"Markenfilme, Kampagnen und Behind-the-Scenes-Projekte.",
+		"section.commercial.empty": "Werbefilme erscheinen hier.",
 		"section.art.title": "Kunst & Filme",
 		"section.art.description": "Spielfilme, Trailer und persönliche Arbeiten.",
+		"section.art.empty": "Kunst & Filme erscheinen hier.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Kampagnen und eigenständige Kurzfilme.",
 		"section.shorts.campaigns": "Kampagnen",
@@ -158,8 +163,9 @@ const ui = {
 		"photo.prev": "Zurück",
 		"photo.next": "Weiter",
 		"contact.meta": "Anfragen",
+		"contact.title": "Lass uns etwas machen, das man sehen will.",
 		"contact.titleHtml":
-			"Lass uns etwas machen,<br />das man sehen will.",
+			"Lass uns etwas machen,<br /> das man sehen will.",
 		"contact.description":
 			"Werbefilme, narrative Projekte und kreative Zusammenarbeiten.",
 		"contact.email": "E-Mail",

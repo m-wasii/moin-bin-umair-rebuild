@@ -1,10 +1,15 @@
 import type { Project, ProjectCategory, VideoProvider } from "../data/projects";
 import type { StoredVideo } from "./store";
 
-const CATEGORIES = new Set<ProjectCategory>(["commercial", "art", "shorts"]);
+const CATEGORIES = new Set<ProjectCategory>(["commercial", "art"]);
 
 export function isProjectCategory(value: string): value is ProjectCategory {
 	return CATEGORIES.has(value as ProjectCategory);
+}
+
+function coerceYear(value: unknown, fallback: number): number {
+	const n = typeof value === "number" ? value : Number(value);
+	return Number.isFinite(n) && n >= 1900 && n <= 2100 ? Math.trunc(n) : fallback;
 }
 
 export function parseVideoUrl(url: string): { provider: VideoProvider; id: string } {
@@ -114,8 +119,7 @@ export async function enrichVideo(
 			input.title?.trim() || String(video.title ?? "").trim() || `Vimeo ${id}`;
 		const year =
 			input.year ??
-			Number(String(video.upload_date ?? "").slice(0, 4)) ??
-			new Date().getFullYear();
+			coerceYear(String(video.upload_date ?? "").slice(0, 4), new Date().getFullYear());
 		const duration = input.duration ?? Number(video.duration ?? 0);
 		const thumbnail = upgradeVimeoThumbnail(
 			String(

@@ -27,9 +27,11 @@ const t = useTranslations(lang);
 		aria-labelledby="video-dialog-title"
 	>
 		<header class="video-dialog__header">
-			<p id="video-dialog-title" data-video-dialog-title>
-				{t("dialog.projectFilm")}
-			</p>
+			<div class="video-dialog__title">
+				<p id="video-dialog-title" data-video-dialog-title>
+					{t("dialog.projectFilm")}
+				</p>
+			</div>
 			<div class="video-dialog__actions">
 				<button
 					class="video-dialog__about"

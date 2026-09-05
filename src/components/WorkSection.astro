@@ -1,7 +1,7 @@
 ---
 import type { Project } from "../data/projects";
 import { mosaicRowSizes, mosaicSpans } from "../lib/mosaic";
-import { useTranslations, type Lang } from "../i18n/ui";
+import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
 
 const { id, number, title, description, projects, lang } = Astro.props;
 const t = useTranslations(lang);
+const emptyKey = `section.${id}.empty` as UiKey;
 
 const metaLabel =
 	projects.length === 0
@@ -91,7 +92,7 @@ const visibleCount = canCollapse
 			</>
 		) : (
 			<p class="work-section__empty" data-reveal>
-				{t("section.shorts.empty")}
+				{t(emptyKey)}
 			</p>
 		)
 	}

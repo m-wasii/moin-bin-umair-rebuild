@@ -60,7 +60,11 @@ const socialLinks = [
 			<p>05</p>
 			<p>{t("contact.meta")}</p>
 		</div>
-		<h2 id="contact-title" set:html={t("contact.titleHtml")} />
+		<h2
+			id="contact-title"
+			aria-label={t("contact.title")}
+			set:html={t("contact.titleHtml")}
+		/>
 		<p class="section-heading__description">{t("contact.description")}</p>
 	</header>
 
