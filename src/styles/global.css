@@ -1569,6 +1569,11 @@ html.video-open {
 	padding: 0.75rem 1rem 0.75rem 1.2rem;
 }
 
+.video-dialog__title {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
 .video-dialog__header p,
 .video-dialog__close,
 .video-dialog__about,
@@ -2014,12 +2019,24 @@ html.video-open {
 		height: 100svh;
 	}
 
-	.video-dialog__header p {
-		flex: 1 1 auto;
-		min-width: 0;
+	.video-dialog__title {
 		overflow: hidden;
-		text-overflow: ellipsis;
+		container-type: inline-size;
+		container-name: video-dialog-title;
+	}
+
+	.video-dialog__header p {
+		display: inline-block;
+		width: max-content;
+		max-width: none;
 		white-space: nowrap;
+		/* Scroll only when wider than the reserved header slot; short titles stay still. */
+		animation: video-dialog-title-scroll 9s ease-in-out infinite alternate;
+	}
+
+	.video-dialog__title:hover p,
+	.video-dialog__title:focus-within p {
+		animation-play-state: paused;
 	}
 
 	.video-dialog__body--about-open {
@@ -2040,7 +2057,30 @@ html.video-open {
 	}
 }
 
+@keyframes video-dialog-title-scroll {
+	0%,
+	12% {
+		transform: translateX(0);
+	}
+
+	88%,
+	100% {
+		/* 100cqi = title slot width; 100% = text width. Short titles → min(0, +) = 0 (no move). */
+		transform: translateX(min(0px, calc(100cqi - 100%)));
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
+	.video-dialog__title {
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: thin;
+	}
+
+	.video-dialog__header p {
+		animation: none;
+	}
+
 	html {
 		scroll-behavior: auto;
 	}
