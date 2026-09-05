@@ -1,13 +1,7 @@
 import { storedVideoToProject } from "./video-metadata";
-import {
-	listPhotoCategories,
-	listPhotos,
-	listShorts,
-	listVideos,
-	type StoredVideo,
-} from "./store";
+import { listPhotos, listShorts, listVideos, type StoredVideo } from "./store";
 import type { Project } from "../data/projects";
-import type { StoredPhoto, StoredPhotoCategory } from "../data/photos";
+import type { StoredPhoto } from "../data/photos";
 import { isShortCampaign, type StoredShort } from "../data/shorts";
 
 export async function loadProjects(): Promise<{
@@ -32,15 +26,8 @@ export async function loadProjects(): Promise<{
 	};
 }
 
-export async function loadPhotos(): Promise<{
-	photos: StoredPhoto[];
-	categories: StoredPhotoCategory[];
-}> {
-	const [photos, categories] = await Promise.all([
-		listPhotos(),
-		listPhotoCategories(),
-	]);
-	return { photos, categories };
+export async function loadPhotos(): Promise<StoredPhoto[]> {
+	return listPhotos();
 }
 
 export async function loadShorts(): Promise<{

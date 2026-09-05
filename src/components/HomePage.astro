@@ -19,7 +19,7 @@ const { lang } = Astro.props;
 const t = useTranslations(lang);
 const { commercial, art } = await loadProjects();
 const { campaigns, singles } = await loadShorts();
-const { photos, categories } = await loadPhotos();
+const photos = await loadPhotos();
 ---
 
 <BaseLayout lang={lang}>
@@ -46,19 +46,14 @@ const { photos, categories } = await loadPhotos();
 			lang={lang}
 		/>
 
-		<PhotoSection photos={photos} categories={categories} lang={lang} />
+		<PhotoSection photos={photos} lang={lang} />
 
 		<ShortsSection campaigns={campaigns} singles={singles} lang={lang} />
 
 		<Contact lang={lang} />
 	</main>
 
-	<PhotoSection
-		photos={photos}
-		categories={categories}
-		lang={lang}
-		surface="overlays"
-	/>
+	<PhotoSection photos={photos} lang={lang} surface="overlays" />
 	<VideoDialog lang={lang} />
 	<PhotoDialog lang={lang} />
 </BaseLayout>

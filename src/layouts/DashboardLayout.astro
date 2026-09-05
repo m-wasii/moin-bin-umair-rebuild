@@ -3,7 +3,7 @@ import { siteOrigin } from "../lib/hosts";
 
 interface Props {
 	title: string;
-	section: "videos" | "photos" | "trash";
+	section: "videos" | "photos";
 }
 
 const { title, section } = Astro.props;
@@ -32,10 +32,6 @@ const siteHref = siteOrigin(Astro.url);
 				<a
 					href="/dashboard/photos"
 					aria-current={section === "photos" ? "page" : undefined}>Photos</a
-				>
-				<a
-					href="/dashboard/trash"
-					aria-current={section === "trash" ? "page" : undefined}>Trash</a
 				>
 			</nav>
 			<a class="dash-bar__site" href={siteHref}>View site</a>

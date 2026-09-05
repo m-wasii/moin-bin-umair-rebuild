@@ -141,16 +141,17 @@ export const PATCH: APIRoute = async ({ request }) => {
 	}
 };
 
-export const DELETE: APIRoute = async () => {
+export const DELETE: APIRoute = async ({ request }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
 
-	return json(
-		{
-			error:
-				"Hard delete is disabled. Mark items and use Move to recycle bin, then permanently delete from Trash.",
-		},
-		405,
-	);
+	const slug = new URL(request.url).searchParams.get("slug");
+	if (!slug) return json({ error: "Missing slug." }, 400);
+
+	const videos = await listVideos();
+	const next = videos.filter((item) => item.slug !== slug);
+	if (next.length === videos.length) return json({ error: "Video not found." }, 404);
+	await saveVideos(next);
+	return json({ ok: true });
 };
