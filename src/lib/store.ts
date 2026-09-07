@@ -156,6 +156,11 @@ export function hasWritableMedia() {
 }
 
 export async function listVideos(): Promise<StoredVideo[]> {
+	const raw = await readVideoCatalog();
+	return raw.map(normalizeStoredVideo);
+}
+
+async function readVideoCatalog(): Promise<StoredVideo[]> {
 	const bucket = getBucket();
 	if (bucket) {
 		const object = await bucket.get(VIDEOS_KEY);
@@ -168,6 +173,14 @@ export async function listVideos(): Promise<StoredVideo[]> {
 
 	const local = await readLocalJson<{ videos: StoredVideo[] }>(VIDEOS_KEY);
 	return local?.videos ?? seedVideoList();
+}
+
+function normalizeStoredVideo(video: StoredVideo): StoredVideo {
+	const raw = video.category as string;
+	const category =
+		raw === "commercial" ? "indie" : raw === "art" ? "local" : video.category;
+	if (category === video.category) return video;
+	return { ...video, category };
 }
 
 export async function saveVideos(videos: StoredVideo[]) {

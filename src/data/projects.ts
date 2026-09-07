@@ -1,4 +1,4 @@
-export type ProjectCategory = "commercial" | "art" | "shorts";
+export type ProjectCategory = "indie" | "local" | "bts" | "shorts";
 export type VideoProvider = "vimeo" | "youtube";
 
 export interface Project {

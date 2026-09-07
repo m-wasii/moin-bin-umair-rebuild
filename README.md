@@ -45,7 +45,7 @@ Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
 ### Videos
 
 1. Open `/dashboard`
-2. Paste a Vimeo or YouTube URL, pick Commercial / Art / Shorts
+2. Paste a Vimeo or YouTube URL, pick Indie / Art / Local Films / BTS & trailers
 3. Save — title, thumbnail, and (for Vimeo) year/duration are fetched automatically
 4. YouTube needs **year** and **duration** (seconds) unless `YOUTUBE_API_KEY` is set
 

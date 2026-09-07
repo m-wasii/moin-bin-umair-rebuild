@@ -5,7 +5,7 @@ import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
 interface Props {
-	id: "commercial" | "art" | "shorts";
+	id: "indie" | "local" | "bts" | "shorts";
 	number: string;
 	title: string;
 	description: string;
@@ -27,7 +27,7 @@ const metaLabel =
 			}`;
 const spans = mosaicSpans(projects.length);
 
-const EXPANDABLE_IDS = new Set(["commercial", "art"]);
+const EXPANDABLE_IDS = new Set(["indie", "local", "bts"]);
 const MAX_VISIBLE_ROWS = 3;
 const rowSizes = mosaicRowSizes(projects.length);
 const canCollapse =

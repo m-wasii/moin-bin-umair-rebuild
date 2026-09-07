@@ -10,7 +10,7 @@ const ui = {
 	en: {
 		"meta.title": "Moin Bin Umair — Filmmaker",
 		"meta.description":
-			"Commercial work, short films, and visual stories by filmmaker Moin Bin Umair.",
+			"Indie films, local work, photography, and short-form stories by filmmaker Moin Bin Umair.",
 		"meta.jobTitle": "Filmmaker",
 		"a11y.skip": "Skip to selected work",
 		"a11y.home": "home",
@@ -18,21 +18,27 @@ const ui = {
 		"a11y.primaryNav": "Primary navigation",
 		"a11y.langSwitch": "Language",
 		"nav.home": "Home",
-		"nav.commercial": "Commercial",
-		"nav.art": "Art & Films",
+		"nav.indie": "Indie / Art",
+		"nav.local": "Local Films",
 		"nav.photography": "Photography",
+		"nav.bts": "BTS & trailers",
 		"nav.shorts": "Shorts",
 		"nav.contact": "Contact",
 		"hero.tagline": "Filmmaker · Visual storyteller",
 		"hero.orbit": "Still · Motion · Story · Still · Motion · Story ·",
 		"hero.explore": "Explore the work",
-		"section.commercial.title": "Commercial",
-		"section.commercial.description":
-			"Brand films, campaigns, and behind-the-scenes projects.",
-		"section.commercial.empty": "Commercial work will appear here.",
-		"section.art.title": "Art & Films",
-		"section.art.description": "Narrative films, trailers, and personal work.",
-		"section.art.empty": "Art & films will appear here.",
+		"section.indie.title": "Indie / Art",
+		"section.indie.description":
+			"International films and personal narrative work.",
+		"section.indie.empty": "Indie / Art films will appear here.",
+		"section.local.title": "Local Films",
+		"section.local.description":
+			"Karachi and local narrative films.",
+		"section.local.empty": "Local films will appear here.",
+		"section.bts.title": "BTS & trailers",
+		"section.bts.description":
+			"Behind-the-scenes cuts and trailers.",
+		"section.bts.empty": "BTS and trailers will appear here.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Campaigns and standalone short-form films.",
 		"section.shorts.campaigns": "Campaigns",
@@ -75,7 +81,7 @@ const ui = {
 		"contact.title": "Let’s make something worth watching.",
 		"contact.titleHtml": "Let’s make something<br /> worth watching.",
 		"contact.description":
-			"Commercial films, narrative projects, and creative collaborations.",
+			"Indie films, narrative projects, and creative collaborations.",
 		"contact.email": "Email",
 		"contact.phone": "Phone",
 		"contact.whatsapp": "WhatsApp",
@@ -101,7 +107,7 @@ const ui = {
 	de: {
 		"meta.title": "Moin Bin Umair — Filmemacher",
 		"meta.description":
-			"Werbefilme, Kurzfilme und visuelle Geschichten von Filmemacher Moin Bin Umair.",
+			"Indiefilme, lokale Arbeiten, Fotografie und Kurzformate von Filmemacher Moin Bin Umair.",
 		"meta.jobTitle": "Filmemacher",
 		"a11y.skip": "Zur ausgewählten Arbeit springen",
 		"a11y.home": "Start",
@@ -109,21 +115,27 @@ const ui = {
 		"a11y.primaryNav": "Hauptnavigation",
 		"a11y.langSwitch": "Sprache",
 		"nav.home": "Start",
-		"nav.commercial": "Werbung",
-		"nav.art": "Kunst & Filme",
+		"nav.indie": "Indie / Art",
+		"nav.local": "Lokale Filme",
 		"nav.photography": "Fotografie",
+		"nav.bts": "BTS & Trailer",
 		"nav.shorts": "Shorts",
 		"nav.contact": "Kontakt",
 		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
 		"hero.orbit": "Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
 		"hero.explore": "Arbeit entdecken",
-		"section.commercial.title": "Werbung",
-		"section.commercial.description":
-			"Markenfilme, Kampagnen und Behind-the-Scenes-Projekte.",
-		"section.commercial.empty": "Werbefilme erscheinen hier.",
-		"section.art.title": "Kunst & Filme",
-		"section.art.description": "Spielfilme, Trailer und persönliche Arbeiten.",
-		"section.art.empty": "Kunst & Filme erscheinen hier.",
+		"section.indie.title": "Indie / Art",
+		"section.indie.description":
+			"Internationale Filme und persönliche narrative Arbeiten.",
+		"section.indie.empty": "Indie-/Art-Filme erscheinen hier.",
+		"section.local.title": "Lokale Filme",
+		"section.local.description":
+			"Karachi und lokale narrative Filme.",
+		"section.local.empty": "Lokale Filme erscheinen hier.",
+		"section.bts.title": "BTS & Trailer",
+		"section.bts.description":
+			"Behind-the-Scenes und Trailer.",
+		"section.bts.empty": "BTS und Trailer erscheinen hier.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Kampagnen und eigenständige Kurzfilme.",
 		"section.shorts.campaigns": "Kampagnen",
@@ -167,7 +179,7 @@ const ui = {
 		"contact.titleHtml":
 			"Lass uns etwas machen,<br /> das man sehen will.",
 		"contact.description":
-			"Werbefilme, narrative Projekte und kreative Zusammenarbeiten.",
+			"Indiefilme, narrative Projekte und kreative Zusammenarbeiten.",
 		"contact.email": "E-Mail",
 		"contact.phone": "Telefon",
 		"contact.whatsapp": "WhatsApp",
@@ -227,9 +239,10 @@ export function getNavigation(lang: Lang) {
 	const t = useTranslations(lang);
 	return [
 		{ label: t("nav.home"), href: "#home" },
-		{ label: t("nav.commercial"), href: "#commercial" },
-		{ label: t("nav.art"), href: "#art" },
+		{ label: t("nav.indie"), href: "#indie" },
+		{ label: t("nav.local"), href: "#local" },
 		{ label: t("nav.photography"), href: "#photography" },
+		{ label: t("nav.bts"), href: "#bts" },
 		{ label: t("nav.shorts"), href: "#shorts" },
 		{ label: t("nav.contact"), href: "#contact" },
 	] as const;
