@@ -27,6 +27,9 @@ pnpm-debug.log*
 # Shorts MP4s stay local/R2-only (large); WebP posters are committed like photography
 public/shorts/**/*.mp4
 
+# local WhatsApp chat / Whisper scratch (exports + opus + transcripts)
+_tmp_moin_chats/
+
 # macOS-specific files
 .DS_Store
 
