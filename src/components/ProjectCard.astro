@@ -34,7 +34,11 @@ const description = localizedProjectDescription(project, lang);
 			"project-card--vertical": isVertical,
 		},
 	]}
-	style={`--card-index: ${index}; --card-span: ${span ?? 6}`}
+	style={
+		span != null
+			? `--card-index: ${index}; --card-span: ${span}`
+			: `--card-index: ${index}`
+	}
 	data-reveal
 	data-work-overflow={overflow ? true : undefined}
 	hidden={overflow}
