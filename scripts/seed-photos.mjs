@@ -30,14 +30,14 @@ const albums = [
 		category: "film-portraits-trieste",
 		folders: ["Film-Portraits-Trieste"],
 	},
-	{ category: "architecture", folders: ["Architecture"] },
 	{ category: "behind-the-scenes", folders: ["Behind-The-Scenes"] },
-	{ category: "portraits-fashion", folders: ["Portraits-Fashion"] },
-	{ category: "fashion-lookbook", folders: ["Fashion-Lookbook"] },
-	{ category: "events-wedding", folders: ["Events-Wedding"] },
 	{ category: "street-photography", folders: ["Street-Photography"] },
+	{ category: "fashion-lookbook", folders: ["Fashion-Lookbook"] },
+	{ category: "portraits-fashion", folders: ["Portraits-Fashion"] },
+	{ category: "events-wedding", folders: ["Events-Wedding"] },
 	{ category: "portfolio-spreads", folders: ["Portfolio-Spreads"] },
 	{ category: "product-photography", folders: ["Product-Photography"] },
+	{ category: "architecture", folders: ["Architecture"] },
 ];
 
 const IMAGE_EXT = new Set([
@@ -174,14 +174,14 @@ writeFileSync(
 		{
 			categories: [
 				{ slug: "film-portraits-trieste", label: "Trieste" },
-				{ slug: "architecture", label: "Architecture" },
 				{ slug: "behind-the-scenes", label: "Behind the scenes" },
-				{ slug: "portraits-fashion", label: "Portraits & fashion" },
-				{ slug: "fashion-lookbook", label: "Fashion Editorial" },
-				{ slug: "events-wedding", label: "Events & wedding" },
 				{ slug: "street-photography", label: "Street" },
+				{ slug: "fashion-lookbook", label: "Fashion Editorial" },
+				{ slug: "portraits-fashion", label: "Portraits & fashion" },
+				{ slug: "events-wedding", label: "Events & wedding" },
 				{ slug: "portfolio-spreads", label: "Portfolio Spreads" },
 				{ slug: "product-photography", label: "Product Photography" },
+				{ slug: "architecture", label: "Architecture" },
 			],
 		},
 		null,
