@@ -156,6 +156,11 @@ export function hasWritableMedia() {
 }
 
 export async function listVideos(): Promise<StoredVideo[]> {
+	const raw = await readVideoCatalog();
+	return raw.map(normalizeStoredVideo);
+}
+
+async function readVideoCatalog(): Promise<StoredVideo[]> {
 	const bucket = getBucket();
 	if (bucket) {
 		const object = await bucket.get(VIDEOS_KEY);
@@ -168,6 +173,14 @@ export async function listVideos(): Promise<StoredVideo[]> {
 
 	const local = await readLocalJson<{ videos: StoredVideo[] }>(VIDEOS_KEY);
 	return local?.videos ?? seedVideoList();
+}
+
+function normalizeStoredVideo(video: StoredVideo): StoredVideo {
+	const raw = video.category as string;
+	const category =
+		raw === "commercial" ? "indie" : raw === "art" ? "local" : video.category;
+	if (category === video.category) return video;
+	return { ...video, category };
 }
 
 export async function saveVideos(videos: StoredVideo[]) {
@@ -271,6 +284,40 @@ export async function getPhotoBytes(category: PhotoCategory, slug: string) {
 	return local ? new Uint8Array(local) : null;
 }
 
+/** R2 / local `.data/media` object (e.g. `media/hero-loop.mp4`). */
+export async function getMediaObject(key: string) {
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(key);
+		if (object) {
+			const bytes = new Uint8Array(await object.arrayBuffer());
+			return {
+				body: bytes,
+				size: bytes.byteLength,
+				contentType:
+					object.httpMetadata?.contentType ||
+					(key.toLowerCase().endsWith(".webp")
+						? "image/webp"
+						: key.toLowerCase().endsWith(".mp4")
+							? "video/mp4"
+							: "application/octet-stream"),
+			};
+		}
+	}
+
+	const local = await readLocalBytes(key);
+	if (!local) return null;
+	return {
+		body: new Uint8Array(local),
+		size: local.byteLength,
+		contentType: key.toLowerCase().endsWith(".webp")
+			? "image/webp"
+			: key.toLowerCase().endsWith(".mp4")
+				? "video/mp4"
+				: "application/octet-stream",
+	};
+}
+
 export async function deletePhotoBytes(category: PhotoCategory, slug: string) {
 	const key = photoObjectKey(category, slug);
 	const bucket = getBucket();
@@ -301,7 +348,7 @@ function rewriteShortMediaPath(path: string) {
 	return path.startsWith("/shorts/") ? `/media${path}` : path;
 }
 
-/** Ensure clip src/poster URLs go through /media/shorts (R2 + static fallback), not bare /shorts. */
+/** Ensure clip src/poster URLs go through /media/shorts (R2), not bare /shorts. */
 function normalizeShortMedia(shorts: StoredShort[]): StoredShort[] {
 	return shorts.map((entry) => ({
 		...entry,

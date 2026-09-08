@@ -1,7 +1,22 @@
 import type { Project, ProjectCategory, VideoProvider } from "../data/projects";
 import type { StoredVideo } from "./store";
 
-const CATEGORIES = new Set<ProjectCategory>(["commercial", "art"]);
+const CATEGORIES = new Set<ProjectCategory>(["indie", "local", "bts"]);
+
+/** Map legacy catalog keys from pre–Indie/Art IA. */
+const LEGACY_CATEGORIES: Record<string, ProjectCategory> = {
+	commercial: "indie",
+	art: "local",
+};
+
+export function normalizeProjectCategory(
+	value: string,
+): ProjectCategory | null {
+	if (CATEGORIES.has(value as ProjectCategory)) {
+		return value as ProjectCategory;
+	}
+	return LEGACY_CATEGORIES[value] ?? null;
+}
 
 export function isProjectCategory(value: string): value is ProjectCategory {
 	return CATEGORIES.has(value as ProjectCategory);
@@ -194,10 +209,11 @@ export async function enrichVideo(
 }
 
 export function storedVideoToProject(video: StoredVideo): Project {
+	const category = normalizeProjectCategory(video.category) ?? video.category;
 	return {
 		id: video.id,
 		title: video.title,
-		category: video.category,
+		category,
 		year: video.year,
 		duration: video.duration,
 		thumbnail: video.thumbnail,

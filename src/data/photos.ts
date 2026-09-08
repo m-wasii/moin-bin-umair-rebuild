@@ -1,11 +1,13 @@
 export const defaultPhotoCategories = [
 	{ slug: "film-portraits-trieste", label: "Trieste" },
-	{ slug: "architecture", label: "Architecture" },
 	{ slug: "behind-the-scenes", label: "Behind the scenes" },
-	{ slug: "portraits-fashion", label: "Portraits & fashion" },
-	{ slug: "fashion-lookbook", label: "Fashion lookbook" },
-	{ slug: "events-wedding", label: "Events & wedding" },
 	{ slug: "street-photography", label: "Street" },
+	{ slug: "fashion-lookbook", label: "Fashion Editorial" },
+	{ slug: "portraits-fashion", label: "Portraits & fashion" },
+	{ slug: "events-wedding", label: "Events & wedding" },
+	{ slug: "portfolio-spreads", label: "Portfolio Spreads" },
+	{ slug: "product-photography", label: "Product Photography" },
+	{ slug: "architecture", label: "Architecture" },
 ] as const;
 
 /** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */

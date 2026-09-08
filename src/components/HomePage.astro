@@ -17,7 +17,7 @@ interface Props {
 
 const { lang } = Astro.props;
 const t = useTranslations(lang);
-const { commercial, art } = await loadProjects();
+const { indie, local, bts } = await loadProjects();
 const { campaigns, singles } = await loadShorts();
 const photos = await loadPhotos();
 ---
@@ -29,25 +29,35 @@ const photos = await loadPhotos();
 		<Hero lang={lang} />
 
 		<WorkSection
-			id="commercial"
+			id="indie"
 			number="01"
-			title={t("section.commercial.title")}
-			description={t("section.commercial.description")}
-			projects={commercial}
+			title={t("section.indie.title")}
+			description={t("section.indie.description")}
+			projects={indie}
 			lang={lang}
 		/>
 
 		<WorkSection
-			id="art"
+			id="local"
 			number="02"
-			title={t("section.art.title")}
-			description={t("section.art.description")}
-			projects={art}
+			title={t("section.local.title")}
+			description={t("section.local.description")}
+			projects={local}
 			lang={lang}
 		/>
 
 		<PhotoSection photos={photos} lang={lang} />
 
+		<WorkSection
+			id="bts"
+			number="04"
+			title={t("section.bts.title")}
+			description={t("section.bts.description")}
+			projects={bts}
+			lang={lang}
+		/>
+
+		{/* Alyy’s vertical series titles TBD — do not invent placeholders. */}
 		<ShortsSection campaigns={campaigns} singles={singles} lang={lang} />
 
 		<Contact lang={lang} />

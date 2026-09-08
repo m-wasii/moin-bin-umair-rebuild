@@ -5,7 +5,7 @@ import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 import ProjectCard from "./ProjectCard.astro";
 
 interface Props {
-	id: "commercial" | "art" | "shorts";
+	id: "indie" | "local" | "bts" | "shorts";
 	number: string;
 	title: string;
 	description: string;
@@ -25,11 +25,21 @@ const metaLabel =
 					? t("section.meta.project")
 					: t("section.meta.projects")
 			}`;
-const spans = mosaicSpans(projects.length);
 
-const EXPANDABLE_IDS = new Set(["commercial", "art"]);
+/** Indie / Local: even 16:9 tiles. BTS keeps mosaic. */
+const useUniformGrid = id === "indie" || id === "local";
+const spans = useUniformGrid ? undefined : mosaicSpans(projects.length);
+
+const EXPANDABLE_IDS = new Set(["indie", "local", "bts"]);
 const MAX_VISIBLE_ROWS = 3;
-const rowSizes = mosaicRowSizes(projects.length);
+const UNIFORM_COLUMNS = 2;
+const rowSizes = useUniformGrid
+	? Array.from(
+			{ length: Math.ceil(projects.length / UNIFORM_COLUMNS) },
+			(_, row) =>
+				Math.min(UNIFORM_COLUMNS, projects.length - row * UNIFORM_COLUMNS),
+		)
+	: mosaicRowSizes(projects.length);
 const canCollapse =
 	EXPANDABLE_IDS.has(id) && rowSizes.length > MAX_VISIBLE_ROWS;
 const visibleCount = canCollapse
@@ -43,7 +53,10 @@ const visibleCount = canCollapse
 	class:list={[
 		"work-section",
 		`work-section--${id}`,
-		{ "work-section--shorts": id === "shorts" },
+		{
+			"work-section--shorts": id === "shorts",
+			"work-section--uniform": useUniformGrid,
+		},
 	]}
 	id={id}
 	aria-labelledby={`${id}-title`}
@@ -63,13 +76,18 @@ const visibleCount = canCollapse
 	{
 		projects.length > 0 ? (
 			<>
-				<div class="project-grid">
+				<div
+					class:list={[
+						"project-grid",
+						{ "project-grid--uniform": useUniformGrid },
+					]}
+				>
 					{projects.map((project, index) => (
 						<ProjectCard
 							project={project}
 							lang={lang}
 							index={index}
-							span={spans[index]}
+							span={spans?.[index]}
 							overflow={canCollapse && index >= visibleCount}
 						/>
 					))}

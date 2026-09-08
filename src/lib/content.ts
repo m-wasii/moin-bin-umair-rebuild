@@ -6,8 +6,9 @@ import { isShortCampaign, type StoredShort } from "../data/shorts";
 
 export async function loadProjects(): Promise<{
 	projects: Project[];
-	commercial: Project[];
-	art: Project[];
+	indie: Project[];
+	local: Project[];
+	bts: Project[];
 	shorts: Project[];
 	videos: StoredVideo[];
 }> {
@@ -20,8 +21,9 @@ export async function loadProjects(): Promise<{
 	return {
 		videos,
 		projects,
-		commercial: projects.filter((project) => project.category === "commercial"),
-		art: projects.filter((project) => project.category === "art"),
+		indie: projects.filter((project) => project.category === "indie"),
+		local: projects.filter((project) => project.category === "local"),
+		bts: projects.filter((project) => project.category === "bts"),
 		shorts: projects.filter((project) => project.category === "shorts"),
 	};
 }

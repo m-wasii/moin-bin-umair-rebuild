@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Upload seed stills, shorts media, and catalog JSON to the moin-media R2 bucket.
+ * Upload seed stills, shorts media, hero reel, and catalog JSON to the
+ * moin-media R2 bucket. Local source of truth is `.data/media/` (gitignored).
  *
  * Requires CLOUDFLARE_API_TOKEN (and usually CLOUDFLARE_ACCOUNT_ID).
  *
@@ -19,10 +20,10 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const bucket = "moin-media";
-const photographyRoot = join(root, "public/photography");
-const shortsRoot = existsSync(join(root, ".data", "media", "shorts"))
-	? join(root, ".data", "media", "shorts")
-	: join(root, "public", "shorts");
+const mediaRoot = join(root, ".data", "media");
+const photographyRoot = join(mediaRoot, "photography");
+const shortsRoot = join(mediaRoot, "shorts");
+const heroRoot = join(mediaRoot, "media");
 const wranglerCli = join(root, "node_modules/wrangler/bin/wrangler.js");
 const tmpDir = join(root, ".data", "r2-seed");
 
@@ -37,7 +38,7 @@ function listFiles(dir, match) {
 	return out;
 }
 
-function putObject(key, file, contentType) {
+function putObjectOnce(key, file, contentType) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(
 			process.execPath,
@@ -66,6 +67,25 @@ function putObject(key, file, contentType) {
 			else reject(new Error(`Failed to put ${key}: ${stderr.trim()}`));
 		});
 	});
+}
+
+async function putObject(key, file, contentType, attempts = 4) {
+	let lastError;
+	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+		try {
+			await putObjectOnce(key, file, contentType);
+			return;
+		} catch (error) {
+			lastError = error;
+			if (attempt === attempts) break;
+			const delayMs = 1000 * attempt;
+			console.warn(
+				`  retry ${attempt}/${attempts - 1} ${key} in ${delayMs}ms`,
+			);
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
+	}
+	throw lastError;
 }
 
 async function runPool(items, limit, worker) {
@@ -152,16 +172,49 @@ if (missingShortMp4s.length) {
 		[
 			"seed-r2: Shorts MP4s are missing from the media root.",
 			`Looked in ${shortsRoot}`,
-			"Run npm run seed:shorts first (MP4s are gitignored; WebP posters alone are not enough).",
+			"Run npm run seed:shorts first (binaries stay in .data/media; never public/).",
 			`Missing (${missingShortMp4s.length}):`,
 			...missingShortMp4s.map((key) => `  - ${key}`),
 		].join("\n"),
 	);
 }
 
+const heroFiles = [
+	{
+		key: "media/hero-loop.mp4",
+		file: join(heroRoot, "hero-loop.mp4"),
+		contentType: "video/mp4",
+	},
+	{
+		key: "media/hero-poster.webp",
+		file: join(heroRoot, "hero-poster.webp"),
+		contentType: "image/webp",
+	},
+];
+const missingHero = heroFiles.filter((item) => !existsSync(item.file));
+if (missingHero.length) {
+	throw new Error(
+		[
+			"seed-r2: hero reel missing under .data/media/media/.",
+			...missingHero.map((item) => `  - ${item.file}`),
+		].join("\n"),
+	);
+}
+
+const photoCategoriesPath = join(mediaRoot, "catalog", "photo-categories.json");
+const photoCategoriesCatalog = existsSync(photoCategoriesPath)
+	? photoCategoriesPath
+	: null;
+if (!photoCategoriesCatalog) {
+	console.warn(
+		"seed-r2: catalog/photo-categories.json missing locally; R2 categories fall back to code defaults after photos seed.",
+	);
+}
+
 const objects = [
 	...stills,
 	...shortMedia,
+	...heroFiles,
 	{
 		key: "catalog/photos.json",
 		file: photosCatalog,
@@ -177,6 +230,15 @@ const objects = [
 		file: shortsCatalog,
 		contentType: "application/json",
 	},
+	...(photoCategoriesCatalog
+		? [
+				{
+					key: "catalog/photo-categories.json",
+					file: photoCategoriesCatalog,
+					contentType: "application/json",
+				},
+			]
+		: []),
 ];
 
 console.log(`seed-r2: uploading ${objects.length} objects to ${bucket}`);

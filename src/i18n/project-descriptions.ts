@@ -7,10 +7,6 @@ const descriptionsDe: Record<string, string> = {
 		"Ein klarer Werbeschnitt für Mr Spex, gebaut um präzise Produktbeats und einen selbstbewussten visuellen Rhythmus.",
 	"898735203":
 		"Ein Blick hinter die Kulissen von The Hook — Set, Crew und das Handwerk hinter dem fertigen Film.",
-	"887931494":
-		"Ein kurzer Werbespot für Helpers A.D mit warmen Figuren und einem klaren, überzeugenden Erzählbogen.",
-	"887931489":
-		"Ein knapper, rasanter Spot für Dresscode A.D., der Stil und Haltung in unter zwanzig Sekunden setzt.",
 	"838576202":
 		"Ein längerer Werbefilm, der den Alltag der Landwirtschaft mit geerdeter Erzählung und filmischem Maßstab zeigt.",
 	"898735413":
