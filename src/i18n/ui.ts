@@ -115,7 +115,7 @@ const ui = {
 		"a11y.primaryNav": "Hauptnavigation",
 		"a11y.langSwitch": "Sprache",
 		"nav.home": "Start",
-		"nav.indie": "Indie / Art",
+		"nav.indie": "Indie / Kunst",
 		"nav.local": "Lokale Filme",
 		"nav.photography": "Fotografie",
 		"nav.bts": "BTS & Trailer",
@@ -124,10 +124,10 @@ const ui = {
 		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
 		"hero.orbit": "Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
 		"hero.explore": "Arbeit entdecken",
-		"section.indie.title": "Indie / Art",
+		"section.indie.title": "Indie / Kunst",
 		"section.indie.description":
 			"Internationale Filme und persönliche narrative Arbeiten.",
-		"section.indie.empty": "Indie-/Art-Filme erscheinen hier.",
+		"section.indie.empty": "Indie-/Kunstfilme erscheinen hier.",
 		"section.local.title": "Lokale Filme",
 		"section.local.description":
 			"Karachi und lokale narrative Filme.",
