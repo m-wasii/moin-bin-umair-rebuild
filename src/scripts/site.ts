@@ -9,8 +9,8 @@ const navLinks = Array.from(
 	document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
 );
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-/* Keep in sync with @media (max-width: 1150px) header rules in global.css */
-const NAV_COMPACT_MQ = "(max-width: 1150px)";
+/* Keep in sync with @media (max-width: 1320px) header rules in global.css */
+const NAV_COMPACT_MQ = "(max-width: 1320px)";
 const navCompactMq = window.matchMedia(NAV_COMPACT_MQ);
 
 let scrollFrame = 0;
