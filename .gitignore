@@ -38,3 +38,11 @@ _deploy_park*/
 
 # jetbrains setting folder
 .idea/
+
+# Impeccable local/runtime (shared config + DESIGN sidecar are committed)
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook-pending.json
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
