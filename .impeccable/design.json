@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-08T20:50:00.000Z",
+  "title": "Design System: Moin Bin Umair",
+  "extensions": {
+    "colorMeta": {
+      "ink": { "role": "neutral", "displayName": "Ink", "purpose": "Primary page ground / stage base." },
+      "ink-soft": { "role": "neutral", "displayName": "Ink Soft", "purpose": "Secondary deep navy within stage wash." },
+      "paper": { "role": "neutral", "displayName": "Paper", "purpose": "Primary text on dark stage; selection inverse." },
+      "peach": { "role": "neutral", "displayName": "Peach", "purpose": "Contact section ground (same hex as paper)." },
+      "muted": { "role": "primary", "displayName": "Muted Tungsten", "purpose": "Secondary labels and descriptions on stage." },
+      "amber": { "role": "primary", "displayName": "Amber", "purpose": "Primary accent / tungsten practical." },
+      "orange": { "role": "primary", "displayName": "Orange", "purpose": "Warmer companion accent in stage glows." },
+      "panel": { "role": "neutral", "displayName": "Panel Glass", "purpose": "Frosted header and overlay panels." }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Outfit Display", "purpose": "Section titles, brand-scale type, ghost headlines." },
+      "body": { "displayName": "DM Sans Body", "purpose": "Body copy and general UI." },
+      "label": { "displayName": "DM Sans Label", "purpose": "Nav, meta, uppercase chrome." }
+    },
+    "shadows": [
+      {
+        "name": "header-soft",
+        "value": "0 1rem 2.5rem rgba(5, 10, 18, 0.32)",
+        "purpose": "Fixed site header lift over the stage."
+      },
+      {
+        "name": "dialog-deep",
+        "value": "0 2rem 8rem rgba(0, 0, 0, 0.5)",
+        "purpose": "Video/photo dialog elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ui-fast",
+        "value": "180ms ease",
+        "purpose": "Link/color/transform micro-interactions."
+      },
+      {
+        "name": "ui-medium",
+        "value": "250ms ease",
+        "purpose": "Border and panel state changes."
+      },
+      {
+        "name": "hero-rise",
+        "value": "800ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Hero footer entrance."
+      },
+      {
+        "name": "hero-orbit",
+        "value": "32s linear infinite",
+        "purpose": "Hero orbiting label path."
+      }
+    ],
+    "breakpoints": [
+      { "name": "nav-collapse", "value": "960px" },
+      { "name": "grid-tighten", "value": "1150px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Skip Link",
+      "kind": "button",
+      "refersTo": "skip-link",
+      "description": "Focusable skip control; paper on ink.",
+      "html": "<a class=\"skip-link\" href=\"#indie\">Skip to selected work</a>",
+      "css": ".skip-link { position: fixed; z-index: 200; top: 0.75rem; left: 0.75rem; padding: 0.75rem 1rem; background: #ffedd5; color: #050a12; font-family: \"DM Sans\", sans-serif; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; }"
+    },
+    {
+      "name": "Project Card",
+      "kind": "card",
+      "refersTo": "project-card",
+      "description": "Image-led film tile with soft radius.",
+      "html": "<article class=\"project-card\"><a class=\"project-card__link\" href=\"#\">Film</a></article>",
+      "css": ".project-card__link { display: block; height: 100%; border-radius: 1.35rem; overflow: hidden; background: #050a12; }"
+    },
+    {
+      "name": "Contact Pill",
+      "kind": "button",
+      "refersTo": "contact-pill",
+      "description": "Ink pill on peach contact field.",
+      "html": "<a class=\"text-link text-link--pill\" href=\"mailto:moinbinumair@gmail.com\">Email</a>",
+      "css": ".contact .text-link--pill { border-radius: 999px; background: #050a12; color: #ffedd5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Tungsten Stage",
+    "overview": "Warm cinematic portfolio on an ink stage lit by amber/orange practicals. Outfit display and DM Sans UI keep chrome quiet so films and photography lead. Contact inverts to peach paper. Motion stays short and respectful of reduced-motion; future engagement motion is site-wide, not photography-biased, and previews on mbu-eng only.",
+    "keyCharacteristics": [
+      "Ink + amber/orange tungsten stage glows",
+      "Outfit display / DM Sans UI",
+      "Full-bleed hero media, recessed chrome",
+      "1.35rem surface radius and pill chrome",
+      "EN/DE bilingual public site"
+    ],
+    "rules": [
+      {
+        "name": "Work Leads",
+        "body": "Experience surfaces let media and brand atmosphere dominate the first viewport; avoid dashboard chrome and carded hero media.",
+        "section": "layout"
+      },
+      {
+        "name": "Preserve Tungsten",
+        "body": "Extend existing CSS tokens; do not replace with purple-glow or cream-serif AI defaults.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do reuse tokens from src/styles/global.css",
+      "Do preview engagement motion on mbu-eng only",
+      "Do honor prefers-reduced-motion"
+    ],
+    "donts": [
+      "Don't invent a new brand system",
+      "Don't bias motion to photography alone",
+      "Don't deploy experimental motion to production mbu without approval"
+    ]
+  }
+}
