@@ -77,6 +77,7 @@ That builds once and publishes two Workers that share the `MEDIA` bucket:
 
 - `mbu` → https://mbu.wasi-workdesk.workers.dev
 - `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
+- Engagement preview: `npm run deploy:mbu-eng` → https://mbu-eng.wasi-workdesk.workers.dev (does **not** overwrite `mbu`)
 
 Merges to `main` run **Deploy Worker** and publish those production hosts.
 Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
