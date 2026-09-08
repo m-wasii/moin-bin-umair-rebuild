@@ -6,6 +6,7 @@
 	"preview_urls": false,
 	// Binding name is MEDIA (matches src/lib/store.ts), not the default moin_media.
 	// Public site: https://mbu.wasi-workdesk.workers.dev
+	// Engagement preview: npm run deploy:eng → https://mbu-eng.wasi-workdesk.workers.dev
 	// Dashboard:   npx wrangler deploy --name dashboard
 	//              → https://dashboard.wasi-workdesk.workers.dev
 	"r2_buckets": [

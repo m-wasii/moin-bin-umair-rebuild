@@ -489,7 +489,9 @@ reducedMotion.addEventListener("change", () => {
 	queueNavIndicatorUpdate();
 });
 
-const revealItems = document.querySelectorAll<HTMLElement>("[data-reveal]");
+const revealItems = document.querySelectorAll<HTMLElement>(
+	"[data-reveal]:not(.album-overlay [data-reveal])",
+);
 
 if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 	revealItems.forEach((item) => item.classList.add("is-visible"));
@@ -507,6 +509,63 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 
 	revealItems.forEach((item) => revealObserver.observe(item));
 }
+
+/* Photography scroll engagement: parallax + near-viewport "pop" */
+let photoEngageFrame = 0;
+
+function updatePhotoEngagement() {
+	photoEngageFrame = 0;
+
+	const section = document.querySelector<HTMLElement>("[data-photo-engage]");
+	if (!section) return;
+
+	if (reducedMotion.matches) {
+		section.classList.remove("is-photo-engaging");
+		section
+			.querySelectorAll<HTMLElement>("[data-photo-album]")
+			.forEach((album) => {
+				album.classList.remove("is-photo-near");
+				album.style.removeProperty("--photo-parallax");
+				album.style.removeProperty("--photo-pop");
+				album.style.removeProperty("--photo-drift");
+			});
+		return;
+	}
+
+	const albums = section.querySelectorAll<HTMLElement>("[data-photo-album]");
+	const vh = window.innerHeight || 1;
+	const sectionRect = section.getBoundingClientRect();
+	const inView = sectionRect.bottom > vh * 0.08 && sectionRect.top < vh * 0.92;
+
+	section.classList.toggle("is-photo-engaging", inView);
+
+	albums.forEach((album, index) => {
+		const rect = album.getBoundingClientRect();
+		const center = rect.top + rect.height * 0.5;
+		const fromCenter = (center - vh * 0.5) / vh;
+		const clamped = Math.max(-1, Math.min(1, fromCenter));
+		const direction = index % 2 === 0 ? 1 : -1;
+		const parallax = clamped * direction;
+		const pop = Math.max(0, 1 - Math.abs(clamped) * 1.55);
+		const drift = Math.sin(clamped * Math.PI) * direction;
+
+		album.style.setProperty("--photo-parallax", parallax.toFixed(3));
+		album.style.setProperty("--photo-pop", pop.toFixed(3));
+		album.style.setProperty("--photo-drift", drift.toFixed(3));
+		album.classList.toggle("is-photo-near", Math.abs(clamped) < 0.48);
+	});
+}
+
+function queuePhotoEngagement() {
+	if (!photoEngageFrame) {
+		photoEngageFrame = window.requestAnimationFrame(updatePhotoEngagement);
+	}
+}
+
+window.addEventListener("scroll", queuePhotoEngagement, { passive: true });
+window.addEventListener("resize", queuePhotoEngagement);
+reducedMotion.addEventListener("change", queuePhotoEngagement);
+queuePhotoEngagement();
 
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 
@@ -822,6 +881,9 @@ function closeAlbum() {
 	);
 	if (!panel) return;
 	panel.hidden = true;
+	panel
+		.querySelectorAll<HTMLElement>("[data-reveal]")
+		.forEach((item) => item.classList.remove("is-visible"));
 	unlockDocumentScroll();
 	albumFocus?.focus({ preventScroll: true });
 	albumFocus = null;
@@ -842,9 +904,17 @@ function openAlbum(category: string, trigger?: HTMLElement | null) {
 		lockDocumentScroll();
 		panel.hidden = false;
 	}
-	panel
-		.querySelectorAll<HTMLElement>("[data-reveal]")
-		.forEach((item) => item.classList.add("is-visible"));
+
+	const revealTargets = panel.querySelectorAll<HTMLElement>("[data-reveal]");
+	if (reducedMotion.matches) {
+		revealTargets.forEach((item) => item.classList.add("is-visible"));
+	} else {
+		revealTargets.forEach((item) => item.classList.remove("is-visible"));
+		requestAnimationFrame(() => {
+			revealTargets.forEach((item) => item.classList.add("is-visible"));
+		});
+	}
+
 	panel
 		.querySelector<HTMLButtonElement>("[data-album-close]")
 		?.focus({ preventScroll: true });

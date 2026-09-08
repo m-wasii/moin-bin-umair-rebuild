@@ -1039,6 +1039,139 @@ main {
 	transform: rotate(12deg);
 }
 
+/* Scroll engagement — parallax / pop while photography is in view */
+.photo-album[data-photo-album] {
+	--photo-parallax: 0;
+	--photo-pop: 0;
+	--photo-drift: 0;
+}
+
+.js .photo-section [data-reveal] {
+	transition-delay: calc(var(--album-index, 0) * 85ms);
+}
+
+.js .album-masonry__item[data-reveal] {
+	opacity: 0;
+	transform: translateY(1.35rem) scale(0.985);
+	transition:
+		opacity 520ms ease,
+		transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js .album-masonry__item[data-reveal].is-visible {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+.js .photo-section.is-photo-engaging .photo-album[data-photo-album] {
+	transform: translate3d(
+		calc(var(--photo-drift) * 0.35rem),
+		calc(var(--photo-parallax) * 1.1rem),
+		0
+	);
+	transition: transform 120ms linear;
+	will-change: transform;
+}
+
+.js .photo-section.is-photo-engaging .photo-album__frame img {
+	transform: scale(calc(1.015 + var(--photo-pop) * 0.04));
+	transition:
+		filter 500ms ease,
+		transform 160ms linear;
+}
+
+.js
+	.photo-section.is-photo-engaging
+	.photo-album__hit:hover
+	.photo-album__frame
+	img {
+	transform: scale(1.06);
+	transition:
+		filter 500ms ease,
+		transform 900ms cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+
+.js .photo-section.is-photo-engaging .photo-album.is-photo-near .photo-album__peek--1 {
+	transform: rotate(calc(-7deg + var(--photo-drift) * -2deg))
+		translate(
+			calc(-5% + var(--photo-parallax) * -3%),
+			calc(4% + var(--photo-pop) * 2%)
+		);
+}
+
+.js .photo-section.is-photo-engaging .photo-album.is-photo-near .photo-album__peek--2 {
+	transform: rotate(calc(6deg + var(--photo-drift) * 2deg))
+		translate(
+			calc(6% + var(--photo-parallax) * 3%),
+			calc(-5% + var(--photo-pop) * -2%)
+		);
+}
+
+.js
+	.photo-section.is-photo-engaging
+	.photo-album__hit:hover
+	.photo-album__peek--1 {
+	transform: rotate(-11deg) translate(-8%, 6%);
+}
+
+.js
+	.photo-section.is-photo-engaging
+	.photo-album__hit:hover
+	.photo-album__peek--2 {
+	transform: rotate(10deg) translate(9%, -7%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.js
+		.photo-section.is-photo-engaging
+		.photo-album.is-photo-near:not(:has(.photo-album__hit:hover))
+		.photo-album__peek--1 {
+		animation: photo-peek-float-a 6.2s ease-in-out infinite alternate;
+	}
+
+	.js
+		.photo-section.is-photo-engaging
+		.photo-album.is-photo-near:not(:has(.photo-album__hit:hover))
+		.photo-album__peek--2 {
+		animation: photo-peek-float-b 7.4s ease-in-out infinite alternate;
+	}
+}
+
+@keyframes photo-peek-float-a {
+	from {
+		transform: rotate(-8deg) translate(-5.5%, 3.5%);
+	}
+
+	to {
+		transform: rotate(-10deg) translate(-7.5%, 6%);
+	}
+}
+
+@keyframes photo-peek-float-b {
+	from {
+		transform: rotate(6.5deg) translate(5.5%, -4%);
+	}
+
+	to {
+		transform: rotate(9deg) translate(8%, -6.5%);
+	}
+}
+
+@media (min-width: 961px) {
+	.js .photo-section.is-photo-engaging .photo-album[data-photo-album] {
+		transform: translate3d(
+			calc(var(--photo-drift) * 0.55rem),
+			calc(var(--photo-parallax) * 1.65rem),
+			0
+		);
+	}
+
+	.js .photo-section.is-photo-engaging .photo-album__frame img {
+		transform: scale(calc(1.02 + var(--photo-pop) * 0.05));
+	}
+}
+
 .album-overlay {
 	position: fixed;
 	inset: 0;
@@ -2145,5 +2278,27 @@ html.video-open {
 	.js [data-reveal] {
 		opacity: 1;
 		transform: none;
+	}
+
+	.js .album-masonry__item[data-reveal],
+	.js .album-masonry__item[data-reveal].is-visible {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+
+	.js .photo-section.is-photo-engaging .photo-album[data-photo-album],
+	.js .photo-section.is-photo-engaging .photo-album__frame img,
+	.js
+		.photo-section.is-photo-engaging
+		.photo-album.is-photo-near
+		.photo-album__peek--1,
+	.js
+		.photo-section.is-photo-engaging
+		.photo-album.is-photo-near
+		.photo-album__peek--2 {
+		transform: none;
+		animation: none;
+		transition: none;
 	}
 }

@@ -40,6 +40,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6];
 			id="photography"
 			aria-labelledby="photography-title"
 			data-nav-section
+			data-photo-engage
 		>
 			<header class="section-heading" data-reveal>
 				<p class="section-heading__ghost" aria-hidden="true">
@@ -81,6 +82,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6];
 								class="photo-album"
 								style={`--album-span: ${albumSpans[albumIndex] ?? 6}; --album-index: ${albumIndex}`}
 								data-reveal
+								data-photo-album
 							>
 								<button
 									class="photo-album__hit"
@@ -181,6 +183,8 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6];
 									"album-masonry__item",
 									`album-masonry__item--${(index % 5) + 1}`,
 								]}
+								style={`--reveal-delay: ${Math.min(index, 12) * 45}ms`}
+								data-reveal
 							>
 								<button
 									class="photo-card"
