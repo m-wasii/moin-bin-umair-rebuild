@@ -1,5 +1,6 @@
 ---
 import Contact from "./Contact.astro";
+import ExploreBridge from "./ExploreBridge.astro";
 import Hero from "./Hero.astro";
 import PhotoDialog from "./PhotoDialog.astro";
 import PhotoSection from "./PhotoSection.astro";
@@ -46,6 +47,12 @@ const photos = await loadPhotos();
 			lang={lang}
 		/>
 
+		<ExploreBridge
+			lang={lang}
+			nextHref="#photography"
+			nextLabel={t("bridge.toPhotography")}
+		/>
+
 		<PhotoSection photos={photos} lang={lang} />
 
 		<WorkSection
@@ -59,6 +66,12 @@ const photos = await loadPhotos();
 
 		{/* Alyy’s vertical series titles TBD — do not invent placeholders. */}
 		<ShortsSection campaigns={campaigns} singles={singles} lang={lang} />
+
+		<ExploreBridge
+			lang={lang}
+			nextHref="#contact"
+			nextLabel={t("bridge.toContact")}
+		/>
 
 		<Contact lang={lang} />
 	</main>
