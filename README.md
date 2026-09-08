@@ -78,7 +78,7 @@ That builds once and publishes two Workers that share the `MEDIA` bucket:
 - `mbu` → https://mbu.wasi-workdesk.workers.dev
 - `dashboard` → https://dashboard.wasi-workdesk.workers.dev (`wrangler deploy --name dashboard`)
 
-Engagement / motion experiment Worker (does **not** touch production `mbu`):
+Site-wide engagement / motion preview Worker (does **not** touch production `mbu`):
 
 ```sh
 npm run deploy:eng

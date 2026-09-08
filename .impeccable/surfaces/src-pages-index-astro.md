@@ -22,5 +22,8 @@ Visitors browsing a filmmaker/photographer portfolio to experience Moin’s work
 - Preview Worker **`mbu-eng` only** (do not deploy motion experiments to production `mbu`)
 - Preserve incumbent Tungsten Stage visual language (DESIGN.md) — no purple-glow AI redesign
 
-## Planned next commands (not done in setup)
-`/impeccable animate`, `/impeccable optimize`, `/impeccable audit` against the public home Experience surface.
+## Motion
+Site-wide mid-viewport pop/drift on all work media (`data-engage`), equal intensity, preview on `mbu-eng` only. Contact uses `data-engage="calm"`.
+
+## Planned next commands
+`/impeccable audit` after each motion revision; `/impeccable live` only if visual steering is needed.

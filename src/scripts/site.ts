@@ -285,12 +285,11 @@ function updateScrollChrome() {
 	header?.classList.toggle("site-header--scrolled", window.scrollY > 24);
 	updateHeaderVisibility();
 	queueNavIndicatorUpdate();
-	scrollFrame = 0;
 }
 
-function queueScrollChromeUpdate() {
+function queueScrollFrame() {
 	if (!scrollFrame) {
-		scrollFrame = window.requestAnimationFrame(updateScrollChrome);
+		scrollFrame = window.requestAnimationFrame(updateScrollFrame);
 	}
 }
 
@@ -406,9 +405,9 @@ navIndicator?.addEventListener("transitionend", (event) => {
 	nav.classList.remove("is-nav-settling");
 });
 
-window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
+window.addEventListener("scroll", queueScrollFrame, { passive: true });
 window.addEventListener("resize", () => {
-	queueScrollChromeUpdate();
+	queueScrollFrame();
 	queueNavIndicatorUpdate();
 });
 navCompactMq.addEventListener("change", () => {
@@ -416,7 +415,7 @@ navCompactMq.addEventListener("change", () => {
 	measureLinkMetrics();
 	queueNavIndicatorUpdate();
 });
-updateScrollChrome();
+queueScrollFrame();
 measureLinkMetrics();
 queueNavIndicatorUpdate();
 
@@ -510,62 +509,149 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 	revealItems.forEach((item) => revealObserver.observe(item));
 }
 
-/* Photography scroll engagement: parallax + near-viewport "pop" */
-let photoEngageFrame = 0;
+/* Site-wide scroll engagement: one coordinator, equal intensity */
+const ENGAGE_POP = "--engage-pop";
+const ENGAGE_DRIFT = "--engage-drift";
+const FAST_SCROLL_PX_S = 2200;
+const DAMP_SCROLL_PX_S = 2400;
 
-function updatePhotoEngagement() {
-	photoEngageFrame = 0;
+type EngageTarget = {
+	el: HTMLElement;
+	sign: number;
+	calm: boolean;
+	active: boolean;
+};
 
-	const section = document.querySelector<HTMLElement>("[data-photo-engage]");
-	if (!section) return;
+const engageTargets: EngageTarget[] = Array.from(
+	document.querySelectorAll<HTMLElement>("[data-engage]"),
+).map((el, index) => ({
+	el,
+	sign: index % 2 === 0 ? 1 : -1,
+	calm: el.getAttribute("data-engage") === "calm",
+	active: false,
+}));
+const engageByElement = new Map(
+	engageTargets.map((target) => [target.el, target]),
+);
 
-	if (reducedMotion.matches) {
-		section.classList.remove("is-photo-engaging");
-		section
-			.querySelectorAll<HTMLElement>("[data-photo-album]")
-			.forEach((album) => {
-				album.classList.remove("is-photo-near");
-				album.style.removeProperty("--photo-parallax");
-				album.style.removeProperty("--photo-pop");
-				album.style.removeProperty("--photo-drift");
-			});
+let lastEngageY = window.scrollY;
+let lastEngageTime = performance.now();
+let skipEngageTick = false;
+
+function clearEngageTarget(target: EngageTarget) {
+	target.el.classList.remove("is-engage-near");
+	target.el.style.removeProperty(ENGAGE_POP);
+	target.el.style.removeProperty(ENGAGE_DRIFT);
+}
+
+function teardownEngagement() {
+	document.documentElement.classList.remove("is-engage-active");
+	for (const target of engageTargets) {
+		target.active = false;
+		clearEngageTarget(target);
+	}
+}
+
+function updateEngagement() {
+	if (reducedMotion.matches || document.hidden) {
+		teardownEngagement();
 		return;
 	}
 
-	const albums = section.querySelectorAll<HTMLElement>("[data-photo-album]");
+	const now = performance.now();
+	const y = window.scrollY;
+	const dt = Math.max(now - lastEngageTime, 1);
+	const speed = (Math.abs(y - lastEngageY) / dt) * 1000;
+	lastEngageY = y;
+	lastEngageTime = now;
+
+	if (speed > FAST_SCROLL_PX_S) {
+		skipEngageTick = !skipEngageTick;
+		if (skipEngageTick) return;
+	} else {
+		skipEngageTick = false;
+	}
+
+	const damp = Math.max(0.32, 1 - Math.min(speed / DAMP_SCROLL_PX_S, 0.68));
 	const vh = window.innerHeight || 1;
-	const sectionRect = section.getBoundingClientRect();
-	const inView = sectionRect.bottom > vh * 0.08 && sectionRect.top < vh * 0.92;
+	const mid = vh * 0.5;
+	const writes: Array<{
+		el: HTMLElement;
+		pop: string;
+		drift: string;
+		near: boolean;
+	}> = [];
 
-	section.classList.toggle("is-photo-engaging", inView);
+	for (const target of engageTargets) {
+		if (!target.active) continue;
 
-	albums.forEach((album, index) => {
-		const rect = album.getBoundingClientRect();
-		const center = rect.top + rect.height * 0.5;
-		const fromCenter = (center - vh * 0.5) / vh;
+		const rect = target.el.getBoundingClientRect();
+		const fromCenter = (rect.top + rect.height * 0.5 - mid) / vh;
 		const clamped = Math.max(-1, Math.min(1, fromCenter));
-		const direction = index % 2 === 0 ? 1 : -1;
-		const parallax = clamped * direction;
-		const pop = Math.max(0, 1 - Math.abs(clamped) * 1.55);
-		const drift = Math.sin(clamped * Math.PI) * direction;
+		const amp = target.calm ? 0.35 : 1;
+		const pop = Math.max(0, 1 - Math.abs(clamped) * 1.55) * damp * amp;
+		const drift = Math.sin(clamped * Math.PI) * target.sign * damp * amp;
 
-		album.style.setProperty("--photo-parallax", parallax.toFixed(3));
-		album.style.setProperty("--photo-pop", pop.toFixed(3));
-		album.style.setProperty("--photo-drift", drift.toFixed(3));
-		album.classList.toggle("is-photo-near", Math.abs(clamped) < 0.48);
-	});
-}
+		writes.push({
+			el: target.el,
+			pop: pop.toFixed(3),
+			drift: drift.toFixed(3),
+			near: Math.abs(clamped) < 0.48,
+		});
+	}
 
-function queuePhotoEngagement() {
-	if (!photoEngageFrame) {
-		photoEngageFrame = window.requestAnimationFrame(updatePhotoEngagement);
+	document.documentElement.classList.toggle(
+		"is-engage-active",
+		writes.length > 0,
+	);
+
+	for (const write of writes) {
+		write.el.style.setProperty(ENGAGE_POP, write.pop);
+		write.el.style.setProperty(ENGAGE_DRIFT, write.drift);
+		write.el.classList.toggle("is-engage-near", write.near);
 	}
 }
 
-window.addEventListener("scroll", queuePhotoEngagement, { passive: true });
-window.addEventListener("resize", queuePhotoEngagement);
-reducedMotion.addEventListener("change", queuePhotoEngagement);
-queuePhotoEngagement();
+function updateScrollFrame() {
+	scrollFrame = 0;
+	updateScrollChrome();
+	updateEngagement();
+}
+
+if ("IntersectionObserver" in window && engageTargets.length) {
+	const engageBand = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				const target = engageByElement.get(entry.target as HTMLElement);
+				if (!target) continue;
+				target.active = entry.isIntersecting;
+				if (!entry.isIntersecting) clearEngageTarget(target);
+			}
+			queueScrollFrame();
+		},
+		{ rootMargin: "18% 0px", threshold: 0 },
+	);
+
+	for (const target of engageTargets) {
+		engageBand.observe(target.el);
+	}
+}
+
+document.addEventListener("visibilitychange", () => {
+	if (document.hidden) {
+		teardownEngagement();
+		return;
+	}
+	queueScrollFrame();
+});
+
+reducedMotion.addEventListener("change", () => {
+	if (reducedMotion.matches) {
+		teardownEngagement();
+		return;
+	}
+	queueScrollFrame();
+});
 
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 
@@ -941,6 +1027,7 @@ document.addEventListener("click", (event) => {
 			card.hidden = !expanded;
 			if (expanded) card.classList.add("is-visible");
 		});
+		queueScrollFrame();
 
 		expandToggle.setAttribute("aria-expanded", expanded.toString());
 		if (label) {

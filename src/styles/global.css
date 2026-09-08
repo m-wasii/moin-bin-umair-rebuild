@@ -1039,11 +1039,10 @@ main {
 	transform: rotate(12deg);
 }
 
-/* Scroll engagement — parallax / pop while photography is in view */
-.photo-album[data-photo-album] {
-	--photo-parallax: 0;
-	--photo-pop: 0;
-	--photo-drift: 0;
+/* Site-wide scroll engagement — equal pop/drift on all work media */
+[data-engage] {
+	--engage-pop: 0;
+	--engage-drift: 0;
 }
 
 .js .photo-section [data-reveal] {
@@ -1064,111 +1063,93 @@ main {
 	transform: translateY(0) scale(1);
 }
 
-.js .photo-section.is-photo-engaging .photo-album[data-photo-album] {
+.js.is-engage-active [data-engage].is-visible .project-card__frame,
+.js.is-engage-active [data-engage].is-visible .photo-album__stack,
+.js.is-engage-active .short-card[data-engage].is-visible .shorts-tile,
+.js.is-engage-active .shorts-campaign[data-engage].is-visible .shorts-campaign__clips,
+.js.is-engage-active [data-engage="calm"].is-visible {
 	transform: translate3d(
-		calc(var(--photo-drift) * 0.35rem),
-		calc(var(--photo-parallax) * 1.1rem),
+		calc(var(--engage-drift) * 0.35rem),
+		calc(var(--engage-drift) * -0.85rem),
 		0
 	);
 	transition: transform 120ms linear;
+}
+
+.js.is-engage-active [data-engage].is-engage-near .project-card__frame,
+.js.is-engage-active [data-engage].is-engage-near .photo-album__stack,
+.js.is-engage-active .short-card[data-engage].is-engage-near .shorts-tile,
+.js.is-engage-active .shorts-campaign[data-engage].is-engage-near .shorts-campaign__clips,
+.js.is-engage-active [data-engage="calm"].is-engage-near {
 	will-change: transform;
 }
 
-.js .photo-section.is-photo-engaging .photo-album__frame img {
-	transform: scale(calc(1.015 + var(--photo-pop) * 0.04));
+.js.is-engage-active [data-engage].is-visible .project-card__frame img,
+.js.is-engage-active [data-engage].is-visible .photo-album__frame img,
+.js.is-engage-active [data-engage].is-visible .shorts-tile img {
+	transform: scale(calc(1.015 + var(--engage-pop) * 0.04));
 	transition:
 		filter 500ms ease,
 		transform 160ms linear;
 }
 
-.js
-	.photo-section.is-photo-engaging
-	.photo-album__hit:hover
-	.photo-album__frame
-	img {
+.js.is-engage-active [data-engage] .project-card__link:hover .project-card__frame img,
+.js.is-engage-active [data-engage] .shorts-tile:hover img {
+	transform: scale(1.04);
+	transition:
+		filter 500ms ease,
+		transform 800ms cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+
+.js.is-engage-active [data-engage] .photo-album__hit:hover .photo-album__frame img {
 	transform: scale(1.06);
 	transition:
 		filter 500ms ease,
 		transform 900ms cubic-bezier(0.2, 0.65, 0.2, 1);
 }
 
-.js .photo-section.is-photo-engaging .photo-album.is-photo-near .photo-album__peek--1 {
-	transform: rotate(calc(-7deg + var(--photo-drift) * -2deg))
+.js.is-engage-active [data-engage].is-engage-near .photo-album__peek--1 {
+	transform: rotate(calc(-7deg + var(--engage-drift) * -2deg))
 		translate(
-			calc(-5% + var(--photo-parallax) * -3%),
-			calc(4% + var(--photo-pop) * 2%)
+			calc(-5% + var(--engage-drift) * -3%),
+			calc(4% + var(--engage-pop) * 2%)
 		);
 }
 
-.js .photo-section.is-photo-engaging .photo-album.is-photo-near .photo-album__peek--2 {
-	transform: rotate(calc(6deg + var(--photo-drift) * 2deg))
+.js.is-engage-active [data-engage].is-engage-near .photo-album__peek--2 {
+	transform: rotate(calc(6deg + var(--engage-drift) * 2deg))
 		translate(
-			calc(6% + var(--photo-parallax) * 3%),
-			calc(-5% + var(--photo-pop) * -2%)
+			calc(6% + var(--engage-drift) * 3%),
+			calc(-5% + var(--engage-pop) * -2%)
 		);
-}
-
-.js
-	.photo-section.is-photo-engaging
-	.photo-album__hit:hover
-	.photo-album__peek--1 {
-	transform: rotate(-11deg) translate(-8%, 6%);
-}
-
-.js
-	.photo-section.is-photo-engaging
-	.photo-album__hit:hover
-	.photo-album__peek--2 {
-	transform: rotate(10deg) translate(9%, -7%);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	.js
-		.photo-section.is-photo-engaging
-		.photo-album.is-photo-near:not(:has(.photo-album__hit:hover))
-		.photo-album__peek--1 {
-		animation: photo-peek-float-a 6.2s ease-in-out infinite alternate;
-	}
-
-	.js
-		.photo-section.is-photo-engaging
-		.photo-album.is-photo-near:not(:has(.photo-album__hit:hover))
-		.photo-album__peek--2 {
-		animation: photo-peek-float-b 7.4s ease-in-out infinite alternate;
-	}
-}
-
-@keyframes photo-peek-float-a {
-	from {
-		transform: rotate(-8deg) translate(-5.5%, 3.5%);
-	}
-
-	to {
-		transform: rotate(-10deg) translate(-7.5%, 6%);
-	}
-}
-
-@keyframes photo-peek-float-b {
-	from {
-		transform: rotate(6.5deg) translate(5.5%, -4%);
-	}
-
-	to {
-		transform: rotate(9deg) translate(8%, -6.5%);
-	}
 }
 
 @media (min-width: 961px) {
-	.js .photo-section.is-photo-engaging .photo-album[data-photo-album] {
+	.js.is-engage-active [data-engage].is-visible .project-card__frame,
+	.js.is-engage-active [data-engage].is-visible .photo-album__stack,
+	.js.is-engage-active .short-card[data-engage].is-visible .shorts-tile,
+	.js.is-engage-active .shorts-campaign[data-engage].is-visible .shorts-campaign__clips,
+	.js.is-engage-active [data-engage="calm"].is-visible {
 		transform: translate3d(
-			calc(var(--photo-drift) * 0.55rem),
-			calc(var(--photo-parallax) * 1.65rem),
+			calc(var(--engage-drift) * 0.55rem),
+			calc(var(--engage-drift) * -1.25rem),
 			0
 		);
 	}
 
-	.js .photo-section.is-photo-engaging .photo-album__frame img {
-		transform: scale(calc(1.02 + var(--photo-pop) * 0.05));
+	.js.is-engage-active [data-engage].is-visible .project-card__frame img,
+	.js.is-engage-active [data-engage].is-visible .photo-album__frame img,
+	.js.is-engage-active [data-engage].is-visible .shorts-tile img {
+		transform: scale(calc(1.02 + var(--engage-pop) * 0.05));
+	}
+
+	.js.is-engage-active [data-engage] .project-card__link:hover .project-card__frame img,
+	.js.is-engage-active [data-engage] .shorts-tile:hover img {
+		transform: scale(1.04);
+	}
+
+	.js.is-engage-active [data-engage] .photo-album__hit:hover .photo-album__frame img {
+		transform: scale(1.06);
 	}
 }
 
@@ -2287,18 +2268,19 @@ html.video-open {
 		transition: none;
 	}
 
-	.js .photo-section.is-photo-engaging .photo-album[data-photo-album],
-	.js .photo-section.is-photo-engaging .photo-album__frame img,
-	.js
-		.photo-section.is-photo-engaging
-		.photo-album.is-photo-near
-		.photo-album__peek--1,
-	.js
-		.photo-section.is-photo-engaging
-		.photo-album.is-photo-near
-		.photo-album__peek--2 {
+	.js.is-engage-active [data-engage].is-visible .project-card__frame,
+	.js.is-engage-active [data-engage].is-visible .photo-album__stack,
+	.js.is-engage-active .short-card[data-engage].is-visible .shorts-tile,
+	.js.is-engage-active .shorts-campaign[data-engage].is-visible .shorts-campaign__clips,
+	.js.is-engage-active [data-engage="calm"].is-visible,
+	.js.is-engage-active [data-engage].is-visible .project-card__frame img,
+	.js.is-engage-active [data-engage].is-visible .photo-album__frame img,
+	.js.is-engage-active [data-engage].is-visible .shorts-tile img,
+	.js.is-engage-active [data-engage].is-engage-near .photo-album__peek--1,
+	.js.is-engage-active [data-engage].is-engage-near .photo-album__peek--2 {
 		transform: none;
 		animation: none;
 		transition: none;
+		will-change: auto;
 	}
 }

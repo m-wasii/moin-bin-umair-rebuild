@@ -149,10 +149,10 @@ Do not introduce Inter, Roboto, system-ui-as-primary, or serif “editorial broc
 ### Contact
 - Peach field, ink type, pill and row link treatments; clear enquiry hierarchy
 
-### Motion (incumbent)
+### Motion
 - Short UI transitions (~180–250ms ease)
 - Hero rise / orbit animations; global `prefers-reduced-motion` kill-switch in `global.css` + `site.ts`
-- Future site-wide engagement motion must stay performance-first, **not photography-biased**, and preview on `mbu-eng` only
+- Site-wide engagement: one scroll/`rAF` coordinator writes `--engage-pop` / `--engage-drift` on `[data-engage]` work media (films, albums, shorts at equal amplitude; contact `calm`). Transform/opacity only; viewport-culled; velocity-damped. Preview on `mbu-eng` only.
 
 ## Do's and Don'ts
 
