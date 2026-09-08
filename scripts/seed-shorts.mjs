@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
  * Convert the Shorts zip into web MP4 + WebP posters.
- * Writes src/data/shorts.seed.json, .data/media/shorts/, and public/shorts/.
+ * Writes src/data/shorts.seed.json and `.data/media/shorts/` (not public/).
+ * Upload binaries with `npm run seed:r2`.
  *
  *   SHORTS_INPUT_DIR="C:\\Users\\DELL\\Downloads\\Shorts" npm run seed:shorts
  */
 import { execFile } from "node:child_process";
 import {
-	copyFileSync,
 	existsSync,
 	mkdirSync,
 	statSync,
@@ -23,7 +23,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const inputRoot =
 	process.env.SHORTS_INPUT_DIR || join(root, ".data", "shorts-source", "Shorts");
 const mediaRoot = join(root, ".data", "media", "shorts");
-const publicRoot = join(root, "public", "shorts");
 const seedPath = join(root, "src", "data", "shorts.seed.json");
 const year = Number(process.env.SHORTS_YEAR || 2026);
 
@@ -210,9 +209,7 @@ const shorts = [];
 
 for (const [entryIndex, entry] of ENTRIES.entries()) {
 	const destDir = join(mediaRoot, entry.slug);
-	const publicDir = join(publicRoot, entry.slug);
 	mkdirSync(destDir, { recursive: true });
-	mkdirSync(publicDir, { recursive: true });
 	const clips = [];
 
 	for (const [clipIndex, filename] of entry.files.entries()) {
@@ -240,8 +237,6 @@ for (const [entryIndex, entry] of ENTRIES.entries()) {
 			}
 		}
 		const encoded = alreadyDone || existsSync(mp4) ? await probe(mp4) : info;
-		copyFileSync(mp4, join(publicDir, `${clipSlug}.mp4`));
-		copyFileSync(poster, join(publicDir, `${clipSlug}.webp`));
 
 		clips.push({
 			slug: clipSlug,

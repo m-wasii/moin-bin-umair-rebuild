@@ -56,12 +56,13 @@ Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
 3. The browser resizes to 1600px and encodes **WebP** before upload
 4. RAW, HEIC, and PDF are rejected
 
-Seed stills (Drive Top) live in `public/photography/` plus `src/data/photos.seed.json`.
-The Worker serves `/media/photos/...` from the `MEDIA` R2 bucket (`moin-media`)
-when the object exists, otherwise it falls back to those public files.
+Seed stills (Drive Top) live in `.data/media/photography/` plus
+`src/data/photos.seed.json`. The Worker serves `/media/photos/...` from the
+`MEDIA` R2 bucket (`moin-media`) only — nothing under `public/` is required.
 
 Site chrome: `src/data/site.ts`.  
-Hero reel: `public/media/hero-loop.mp4` + `public/media/hero-poster.webp`.  
+Hero reel: R2 keys `media/hero-loop.mp4` + `media/hero-poster.webp`
+(local seed copies under `.data/media/media/`).  
 German about-copy: `src/i18n/project-descriptions.ts`.
 
 ## Deploy to Cloudflare Workers
@@ -117,14 +118,15 @@ npx wrangler deploy --name mbu-pr-26
    and media objects:
 
 ```sh
-# Shorts MP4s are gitignored. Encode them locally, then seed R2:
+# Encode Shorts locally into .data/media/shorts/, then seed R2:
 #   SHORTS_INPUT_DIR=/path/to/Shorts npm run seed:shorts
+# Photos: PHOTO_INPUT_DIR=/path/to/Top npm run seed:photos
 npm run seed:r2
 ```
 
-`seed:r2` fails if any catalog Shorts MP4 is missing from
-`.data/media/shorts/` (or `public/shorts/`). Posters alone are not enough —
-HTML5 `<video>` loads `/media/shorts/.../*.mp4` from R2.
+`seed:r2` fails if any catalog Shorts MP4 (or the hero reel) is missing from
+`.data/media/`. Posters alone are not enough — HTML5 `<video>` loads
+`/media/shorts/.../*.mp4` and `/media/hero-loop.mp4` from R2.
 
 Dashboard saves write to the same bucket. The API token needs
 **Workers R2 Storage: Edit**.
@@ -158,8 +160,8 @@ their on-host `/dashboard` stays open for QA.
 
 Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
 Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not
-copy your R2; run `npm run seed:photos` there if they need the Drive Top stills
-re-encoded into `public/photography/`, then `npm run seed:r2` to fill the bucket.
+copy your R2; run `npm run seed:photos` / `npm run seed:shorts` there to fill
+`.data/media/`, then `npm run seed:r2` to fill the bucket.
 
 ## Structure
 
@@ -174,6 +176,7 @@ src/
   styles/       Global visual system
   middleware.ts Dashboard host + Access gate
 public/
-  media/        Hero reel
-  photography/  Seed stills (WebP)
+  favicon.svg   Site icon
+  icons/        Contact row PNGs
+  dashboard.css Dashboard-only stylesheet
 ```

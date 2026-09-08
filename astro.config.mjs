@@ -20,7 +20,7 @@ export default defineConfig({
 	vite: {
 		server: {
 			watch: {
-				ignored: ["**/.data/**", "**/public/shorts/**"],
+				ignored: ["**/.data/**"],
 			},
 		},
 	},

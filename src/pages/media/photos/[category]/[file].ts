@@ -13,19 +13,14 @@ export const GET: APIRoute = async ({ params }) => {
 
 	const slug = file.replace(/\.webp$/i, "");
 	const bytes = await getPhotoBytes(category, slug);
-	if (bytes) {
-		return new Response(bytes, {
-			headers: {
-				"content-type": "image/webp",
-				"cache-control": "public, max-age=86400",
-			},
-		});
+	if (!bytes) {
+		return new Response("Not found", { status: 404 });
 	}
 
-	return new Response(null, {
-		status: 302,
+	return new Response(bytes, {
 		headers: {
-			location: `/photography/${category}/${slug}.webp`,
+			"content-type": "image/webp",
+			"cache-control": "public, max-age=86400",
 		},
 	});
 };

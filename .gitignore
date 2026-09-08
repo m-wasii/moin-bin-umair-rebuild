@@ -21,11 +21,17 @@ pnpm-debug.log*
 # Cloudflare Wrangler
 .wrangler/
 
-# local R2/media fallback for astro dev
+# local R2/media fallback for astro dev (source of truth for seed:r2)
 .data/
 
-# Shorts MP4s stay local/R2-only (large); WebP posters are committed like photography
-public/shorts/**/*.mp4
+# Binary / large media never ships in Worker ASSETS — use R2 via /media
+public/photography/
+public/shorts/
+public/media/
+public/**/*.mp4
+public/**/*.webm
+public/**/*.mov
+_deploy_park*/
 
 # macOS-specific files
 .DS_Store

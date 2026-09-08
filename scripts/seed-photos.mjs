@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Convert ranked JPEGs from the local Top folder into public/photography WebP
- * and write src/data/photos.seed.json.
+ * Convert ranked JPEGs from the local Top folder into `.data/media/photography`
+ * WebP and write src/data/photos.seed.json. Binaries stay out of public/git;
+ * upload with `npm run seed:r2`.
  *
  *   PHOTO_INPUT_DIR="C:\\Users\\DELL\\Downloads\\New folder (7)\\Top" npm run seed:photos
  */
 import {
-	copyFileSync,
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -23,8 +23,8 @@ const manifest = JSON.parse(
 const inputRoot =
 	process.env.PHOTO_INPUT_DIR ||
 	join(root, "..", "Downloads", "New folder (7)", "Top");
-const outRoot = join(root, "public/photography");
 const localMediaRoot = join(root, ".data", "media");
+const outRoot = join(localMediaRoot, "photography");
 
 const foldersByCategory = {
 	architecture: ["Architecture", "architecture"],
@@ -80,10 +80,6 @@ for (const entry of manifest) {
 		})
 		.webp({ quality: 82 })
 		.toFile(dest);
-
-	const localDir = join(localMediaRoot, "photography", entry.category);
-	mkdirSync(localDir, { recursive: true });
-	copyFileSync(dest, join(localDir, `${entry.slug}.webp`));
 
 	photos.push({
 		slug: entry.slug,
