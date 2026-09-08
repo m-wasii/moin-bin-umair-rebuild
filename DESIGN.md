@@ -40,11 +40,11 @@ spacing:
 
 ## Overview
 
-Replacement visual world for the public Experience portfolio: a **photographic contact sheet / darkroom proof strip**. Near-black matte ground, thin paper-edge frames, condensed film-strip type, and locked amber `#f59e0b` as safelight / grease-pencil select. Tungsten Stage (multi-glow ink stage, frosted pill nav, Outfit/DM Sans, orbit widget, peach contact invert) is the anti-reference.
+Replacement visual world for the public Experience portfolio: a **photographic contact sheet / darkroom proof strip**, raised with **Enter portals** (Deep Dakshy–informed dual forks into Films and Photography — adapted, not copied). Near-black matte ground, thin paper-edge frames, condensed film-strip type, locked amber `#f59e0b`. Tungsten Stage is the anti-reference.
 
-Creative north star: **Contact Sheet** — work is a continuous strip of frames; enquiry is a print request.
+References studied (craft bar, not clones): deepdakshy.com (portal Enter paths, sparse chrome), Zusee template (media density — take caution, no awards), 11-76 Focus (fullscreen media hero).
 
-Seed: `cc8c0df9` · grounded list #5 · Experience mode.
+Creative north star: **Contact Sheet** — work is a continuous strip of frames; enquiry is a print request; first choice is which lane to enter.
 
 ## Colors
 
@@ -75,17 +75,18 @@ Seed: `cc8c0df9` · grounded list #5 · Experience mode.
 
 ## Components
 - **Header:** strip links + amber underline indicator; solid amber Get in touch
-- **Hero:** edge label “Proof sheet · Select a frame”; condensed brand; Explore / Get in touch
+- **Hero:** condensed brand; Explore / Get in touch (no kickers/eyebrows)
+- **Enter portals:** split Films / Photography lanes with Enter → (exploration fork)
 - **Frames:** project/album tiles with thin borders; play chip as amber select mark
 - **Contact:** paper ground print-order form; Email primary filled amber
 
 ## Motion
 - Focal: hero reel settle + stage rise
-- Supporting: capped frame stagger; frame lift on hover
+- Supporting: portal hover shift, capped frame stagger, frame lift on hover
 - Honor `prefers-reduced-motion`
 
 ## Engagement
-Primary goals: deeper project exploration + contact/CTA clicks. Paths: hero dual CTAs, header contact, bridges, Email primary.
+Primary goals: deeper project exploration + contact/CTA clicks. Paths: hero dual CTAs → Enter portals → section bridges → Email primary.
 
 ## Do's and Don'ts
 ### Do

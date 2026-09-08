@@ -1,0 +1,33 @@
+---
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="enter-portals" id="portals" aria-label={t("portals.aria")}>
+	<a class="enter-portal" href="#indie">
+		<span class="enter-portal__meta">{t("portals.films.meta")}</span>
+		<span class="enter-portal__title">{t("portals.films.title")}</span>
+		<span class="enter-portal__enter">
+			{t("portals.enter")}
+			<svg viewBox="0 0 18 18" aria-hidden="true">
+				<path d="M3 9h12M10 4l5 5-5 5"></path>
+			</svg>
+		</span>
+	</a>
+	<a class="enter-portal" href="#photography">
+		<span class="enter-portal__meta">{t("portals.photos.meta")}</span>
+		<span class="enter-portal__title">{t("portals.photos.title")}</span>
+		<span class="enter-portal__enter">
+			{t("portals.enter")}
+			<svg viewBox="0 0 18 18" aria-hidden="true">
+				<path d="M3 9h12M10 4l5 5-5 5"></path>
+			</svg>
+		</span>
+	</a>
+</section>

@@ -468,16 +468,6 @@ main {
 	animation: hero-stage 800ms cubic-bezier(0.16, 1, 0.3, 1) 80ms forwards;
 }
 
-.hero__edge {
-	margin: 0;
-	color: var(--amber);
-	font-family: var(--font-display);
-	font-size: 0.8rem;
-	font-weight: 600;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
-}
-
 .hero__title {
 	margin: 0;
 	max-width: 14ch;
@@ -580,6 +570,112 @@ main {
 	to {
 		opacity: 1;
 		transform: translateY(0);
+	}
+}
+
+.enter-portals {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	min-height: min(72svh, 40rem);
+	border-top: 1px solid var(--line);
+	border-bottom: 1px solid var(--line);
+}
+
+.enter-portal {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	gap: 0.85rem;
+	min-height: 100%;
+	padding: clamp(2rem, 4vw, 3.5rem) var(--gutter);
+	border-right: 1px solid var(--line);
+	color: var(--paper);
+	background: linear-gradient(
+		180deg,
+		rgba(10, 10, 10, 0.15) 0%,
+		rgba(10, 10, 10, 0.55) 100%
+	);
+	transition: background-color 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.enter-portal:last-child {
+	border-right: 0;
+}
+
+.enter-portal:hover,
+.enter-portal:focus-visible {
+	background: linear-gradient(
+		180deg,
+		rgba(245, 158, 11, 0.08) 0%,
+		rgba(10, 10, 10, 0.72) 100%
+	);
+}
+
+.enter-portal__meta {
+	color: var(--muted);
+	font-family: var(--font-display);
+	font-size: 0.85rem;
+	font-weight: 600;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.enter-portal__title {
+	font-family: var(--font-display);
+	font-size: clamp(2.6rem, 6vw, 5rem);
+	font-weight: 700;
+	line-height: 0.92;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.enter-portal__enter {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.65rem;
+	margin-top: 0.35rem;
+	color: var(--amber);
+	font-family: var(--font-display);
+	font-size: 1rem;
+	font-weight: 600;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}
+
+.enter-portal__enter svg {
+	width: 1.15rem;
+	height: 1.15rem;
+	overflow: visible;
+	transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.enter-portal__enter path {
+	fill: none;
+	stroke: currentColor;
+	stroke-linecap: square;
+	stroke-width: 2;
+}
+
+.enter-portal:hover .enter-portal__enter svg,
+.enter-portal:focus-visible .enter-portal__enter svg {
+	transform: translateX(4px);
+}
+
+@media (max-width: 760px) {
+	.enter-portals {
+		grid-template-columns: minmax(0, 1fr);
+		min-height: 0;
+	}
+
+	.enter-portal {
+		min-height: 42svh;
+		border-right: 0;
+		border-bottom: 1px solid var(--line);
+	}
+
+	.enter-portal:last-child {
+		border-bottom: 0;
 	}
 }
 
@@ -2311,7 +2407,6 @@ html.video-open {
 
 	.hero__stage,
 	.hero__title,
-	.hero__edge,
 	.hero__footer {
 		opacity: 1;
 		filter: none;

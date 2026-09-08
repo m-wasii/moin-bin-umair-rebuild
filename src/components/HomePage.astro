@@ -1,5 +1,6 @@
 ---
 import Contact from "./Contact.astro";
+import EnterPortals from "./EnterPortals.astro";
 import ExploreBridge from "./ExploreBridge.astro";
 import Hero from "./Hero.astro";
 import PhotoDialog from "./PhotoDialog.astro";
@@ -28,6 +29,8 @@ const photos = await loadPhotos();
 
 	<main id="main-content">
 		<Hero lang={lang} />
+
+		<EnterPortals lang={lang} />
 
 		<WorkSection
 			id="indie"
