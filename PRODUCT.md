@@ -32,7 +32,9 @@ A warm cinematic personal portfolio for a working filmmaker — real Vimeo/YouTu
 - **Stack:** Astro + Cloudflare Workers (`nodejs_compat`), Wrangler, R2 media, EN/DE i18n.
 - **Performance-first:** prefer CSS/scroll-driven or lightweight JS; avoid heavy animation libraries and photography-biased scroll hijacking.
 - **Planned engagement motion (locked):** site-wide engagement motion with **no photography bias**; preview only on Worker name **`mbu-eng`** (`wrangler deploy --name mbu-eng`). Do **not** deploy motion experiments to production `mbu` until explicitly approved.
-- **Preserve incumbent visual language:** warm cinematic portfolio (ink stage + amber/orange tungsten accents + Outfit/DM Sans). Reject purple-glow / generic AI-slop redesigns.
+- **Primary color locked:** amber `#f59e0b` remains the sole primary accent across worlds.
+- **Visual world (Experience):** **Contact Sheet** — darkroom proof-strip grammar (see `DESIGN.md`). Tungsten Stage is retired as anti-reference for the public site.
+- Reject purple-glow / generic AI-slop redesigns.
 - **Media:** films via Vimeo/YouTube embeds; stills and hero reel from R2 via `/media/...` routes — binaries are not shipped in Worker ASSETS.
 - **Do not invent** client logos, awards, testimonials, or case-study metrics that are not already in the repo.
 
