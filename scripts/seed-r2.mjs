@@ -38,7 +38,7 @@ function listFiles(dir, match) {
 	return out;
 }
 
-function putObject(key, file, contentType) {
+function putObjectOnce(key, file, contentType) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(
 			process.execPath,
@@ -67,6 +67,25 @@ function putObject(key, file, contentType) {
 			else reject(new Error(`Failed to put ${key}: ${stderr.trim()}`));
 		});
 	});
+}
+
+async function putObject(key, file, contentType, attempts = 4) {
+	let lastError;
+	for (let attempt = 1; attempt <= attempts; attempt += 1) {
+		try {
+			await putObjectOnce(key, file, contentType);
+			return;
+		} catch (error) {
+			lastError = error;
+			if (attempt === attempts) break;
+			const delayMs = 1000 * attempt;
+			console.warn(
+				`  retry ${attempt}/${attempts - 1} ${key} in ${delayMs}ms`,
+			);
+			await new Promise((resolve) => setTimeout(resolve, delayMs));
+		}
+	}
+	throw lastError;
 }
 
 async function runPool(items, limit, worker) {
@@ -182,6 +201,16 @@ if (missingHero.length) {
 	);
 }
 
+const photoCategoriesPath = join(mediaRoot, "catalog", "photo-categories.json");
+const photoCategoriesCatalog = existsSync(photoCategoriesPath)
+	? photoCategoriesPath
+	: null;
+if (!photoCategoriesCatalog) {
+	console.warn(
+		"seed-r2: catalog/photo-categories.json missing locally; R2 categories fall back to code defaults after photos seed.",
+	);
+}
+
 const objects = [
 	...stills,
 	...shortMedia,
@@ -201,6 +230,15 @@ const objects = [
 		file: shortsCatalog,
 		contentType: "application/json",
 	},
+	...(photoCategoriesCatalog
+		? [
+				{
+					key: "catalog/photo-categories.json",
+					file: photoCategoriesCatalog,
+					contentType: "application/json",
+				},
+			]
+		: []),
 ];
 
 console.log(`seed-r2: uploading ${objects.length} objects to ${bucket}`);

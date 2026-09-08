@@ -3,9 +3,11 @@ export const defaultPhotoCategories = [
 	{ slug: "architecture", label: "Architecture" },
 	{ slug: "behind-the-scenes", label: "Behind the scenes" },
 	{ slug: "portraits-fashion", label: "Portraits & fashion" },
-	{ slug: "fashion-lookbook", label: "Fashion lookbook" },
+	{ slug: "fashion-lookbook", label: "Fashion Editorial" },
 	{ slug: "events-wedding", label: "Events & wedding" },
 	{ slug: "street-photography", label: "Street" },
+	{ slug: "portfolio-spreads", label: "Portfolio Spreads" },
+	{ slug: "product-photography", label: "Product Photography" },
 ] as const;
 
 /** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */
