@@ -20,7 +20,7 @@
 		"seed:r2": "node scripts/seed-r2.mjs",
 		"verify:shorts-r2": "node scripts/verify-shorts-r2.mjs",
 		"deploy": "astro build && wrangler deploy && wrangler deploy --name dashboard",
-		"deploy:eng": "astro build && wrangler deploy -c wrangler.mbu-eng.jsonc",
+		"deploy:eng": "astro build && wrangler deploy --name mbu-eng",
 		"deploy:mbu": "astro build && wrangler deploy"
 	},
 	"dependencies": {

@@ -85,7 +85,7 @@ npm run deploy:eng
 ```
 
 - `mbu-eng` → https://mbu-eng.wasi-workdesk.workers.dev  
-  Config: `wrangler.mbu-eng.jsonc` (same `MEDIA` / `moin-media` binding)
+  Same bindings as prod; only the Worker name is overridden (`wrangler deploy --name mbu-eng`), matching the PR-preview pattern.
 
 Production-only site deploy (no dashboard):
 
