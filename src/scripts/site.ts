@@ -435,7 +435,7 @@ function revealContentThrough(section: HTMLElement) {
 	const limit =
 		getSectionScrollTop(section) + section.offsetHeight + window.innerHeight;
 
-	revealItems.forEach((item) => {
+	document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((item) => {
 		const top = item.getBoundingClientRect().top + window.scrollY;
 		if (top <= limit) item.classList.add("is-visible");
 	});
