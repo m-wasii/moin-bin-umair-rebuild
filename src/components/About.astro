@@ -27,16 +27,12 @@ const t = useTranslations(lang);
 		<p class="section-heading__description">{t("about.intro")}</p>
 	</header>
 
-	<div class="about__intro" data-reveal>
-		<p class="about__eyebrow">{t("about.eyebrow")}</p>
-	</div>
-
 	<div class="about__bento">
 		<article class="about__cell about__cell--stats" data-reveal>
+			<p class="about__stat-label">{t("about.stats.label")}</p>
 			<p class="about__stat-value">
 				<span class="about__stat-number">{t("about.stats.value")}</span>
 			</p>
-			<p class="about__stat-label">{t("about.stats.label")}</p>
 			<p class="about__cell-body">{t("about.stats.body")}</p>
 		</article>
 
