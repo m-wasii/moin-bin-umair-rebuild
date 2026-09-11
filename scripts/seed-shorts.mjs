@@ -5,6 +5,7 @@
  * Upload binaries with `npm run seed:r2`.
  *
  *   SHORTS_INPUT_DIR="C:\\Users\\DELL\\Downloads\\Shorts" npm run seed:shorts
+ *   SHORTS_FORCE_POSTER=1 …  # rebuild WebP posters even when MP4 already exists
  */
 import { execFile } from "node:child_process";
 import {
@@ -224,19 +225,24 @@ for (const [entryIndex, entry] of ENTRIES.entries()) {
 		console.log(`seed-shorts: ${entry.title} / ${clipSlug} ← ${filename}`);
 
 		const info = await probe(input);
-		const alreadyDone =
+		const mp4Ready =
 			existsSync(mp4) &&
-			existsSync(poster) &&
-			statSync(mp4).size > 1024 &&
-			statSync(poster).size > 1024;
-		if (!alreadyDone) {
+			statSync(mp4).size > 1024;
+		const forcePoster = process.env.SHORTS_FORCE_POSTER === "1";
+		if (!mp4Ready) {
 			await encodeMp4(input, mp4, info);
-			if (!existsSync(poster) || statSync(poster).size < 1024) {
-				const encoded = await probe(mp4);
-				await posterWebp(mp4, poster, encoded.duration || info.duration);
-			}
 		}
-		const encoded = alreadyDone || existsSync(mp4) ? await probe(mp4) : info;
+		// Always (re)generate posters when missing/tiny, when MP4 was just
+		// encoded, or when SHORTS_FORCE_POSTER=1 — avoids keeping a stale
+		// WebP after the source clip was replaced (Erum Surani mix-up).
+		const posterReady =
+			existsSync(poster) &&
+			statSync(poster).size > 1024;
+		if (forcePoster || !posterReady || !mp4Ready) {
+			const encoded = await probe(mp4);
+			await posterWebp(mp4, poster, encoded.duration || info.duration);
+		}
+		const encoded = existsSync(mp4) ? await probe(mp4) : info;
 
 		clips.push({
 			slug: clipSlug,
