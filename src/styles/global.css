@@ -414,7 +414,6 @@ main {
 	inset: 0;
 	z-index: 0;
 	width: 100%;
-	max-width: 100vw;
 	height: 100%;
 	height: 100svh;
 	height: 100dvh;
@@ -431,24 +430,6 @@ main {
 	pointer-events: none;
 	filter: saturate(0.78) contrast(1.08) brightness(0.68);
 	transform: scale(1.01);
-	transition: filter 480ms ease;
-}
-
-/* Peach wash for Contact stage — toggled via html.is-contact-stage (IntersectionObserver). */
-.site-video__wash {
-	position: absolute;
-	inset: 0;
-	background: color-mix(in srgb, var(--peach) 58%, transparent);
-	opacity: 0;
-	transition: opacity 480ms ease;
-}
-
-html.is-contact-stage .site-video video {
-	filter: blur(18px) saturate(1.05) contrast(1.06) brightness(0.82);
-}
-
-html.is-contact-stage .site-video__wash {
-	opacity: 1;
 }
 
 .hero__veil,
@@ -581,6 +562,11 @@ html.is-contact-stage .site-video__wash {
 	z-index: 1;
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
 	border-top: 2px solid var(--line);
+	/* Opaque so mid-page content covers the fixed hero video. */
+	background-color: var(--stage-base);
+	background-image: var(--stage);
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
 }
 
 .about {
@@ -589,6 +575,11 @@ html.is-contact-stage .site-video__wash {
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) max(var(--gutter), 2rem)
 		clamp(3.5rem, 5.5vw, 5.5rem);
 	border-top: 2px solid var(--line);
+	/* Opaque so mid-page content covers the fixed hero video. */
+	background-color: var(--stage-base);
+	background-image: var(--stage);
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
 }
 
 .about .section-heading {
@@ -1562,8 +1553,7 @@ html.is-contact-stage .site-video__wash {
 	min-height: 100dvh;
 	max-height: none;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
-	/* Transparent so the fixed hero video + Contact wash read through. */
-	background: transparent;
+	background: var(--peach);
 	color: var(--ink);
 	border-top: 2px solid rgba(5, 10, 18, 0.14);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
