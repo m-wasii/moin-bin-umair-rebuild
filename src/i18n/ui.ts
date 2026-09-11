@@ -18,6 +18,7 @@ const ui = {
 		"a11y.primaryNav": "Primary navigation",
 		"a11y.langSwitch": "Language",
 		"nav.home": "Home",
+		"nav.about": "About",
 		"nav.indie": "Indie / Art",
 		"nav.local": "Local Films",
 		"nav.photography": "Photography",
@@ -32,6 +33,29 @@ const ui = {
 		"bridge.toPhotography": "Continue to photography",
 		"bridge.toContact": "Start a conversation",
 		"bridge.contact": "Or get in touch",
+		"about.meta": "Profile",
+		"about.title": "About",
+		"about.eyebrow":
+			"Images that feel human — quiet moments, imperfect details, atmosphere between them.",
+		"about.intro":
+			"Filmmaker and photographer working between still and motion.",
+		"about.stats.value": "126+",
+		"about.stats.label": "Projects",
+		"about.stats.body":
+			"Quiet moments, imperfect details, and the atmosphere that holds them.",
+		"about.craft.eyebrow": "Craft",
+		"about.craft.title": "Still ↔ motion",
+		"about.craft.body":
+			"Work moves between filmmaking and photography — always looking for the detail, feeling, or perspective that makes an image stay with you.",
+		"about.place.eyebrow": "Place",
+		"about.place.title": "South Asia · Berlin",
+		"about.place.body":
+			"Shaped by a South Asian sensibility and three years living in Berlin.",
+		"about.thesis.eyebrow": "Thesis",
+		"about.thesis.title": "Leave something behind",
+		"about.thesis.body":
+			"I don’t just want an image to look good. I want it to leave something behind — the kind of work that stays with you after the screen goes dark.",
+		"about.portrait.alt": "Portrait of Moin Bin Umair",
 		"section.indie.title": "Indie / Art",
 		"section.indie.description":
 			"International films and personal narrative work.",
@@ -122,6 +146,7 @@ const ui = {
 		"a11y.primaryNav": "Hauptnavigation",
 		"a11y.langSwitch": "Sprache",
 		"nav.home": "Start",
+		"nav.about": "Über mich",
 		"nav.indie": "Indie / Kunst",
 		"nav.local": "Lokale Filme",
 		"nav.photography": "Fotografie",
@@ -136,6 +161,29 @@ const ui = {
 		"bridge.toPhotography": "Weiter zur Fotografie",
 		"bridge.toContact": "Gespräch beginnen",
 		"bridge.contact": "Oder Kontakt aufnehmen",
+		"about.meta": "Profil",
+		"about.title": "Über mich",
+		"about.eyebrow":
+			"Bilder, die menschlich wirken — ruhige Momente, unperfekte Details, die Atmosphäre dazwischen.",
+		"about.intro":
+			"Filmemacher und Fotograf zwischen Still und Bewegung.",
+		"about.stats.value": "126+",
+		"about.stats.label": "Projekte",
+		"about.stats.body":
+			"Ruhige Momente, unperfekte Details und die Atmosphäre, die sie trägt.",
+		"about.craft.eyebrow": "Handwerk",
+		"about.craft.title": "Still ↔ Bewegung",
+		"about.craft.body":
+			"Die Arbeit bewegt sich zwischen Film und Fotografie — immer auf der Suche nach dem Detail, dem Gefühl oder der Perspektive, die ein Bild bleiben lässt.",
+		"about.place.eyebrow": "Ort",
+		"about.place.title": "Südasien · Berlin",
+		"about.place.body":
+			"Geprägt von einer südasiatischen Sensibilität und drei Jahren in Berlin.",
+		"about.thesis.eyebrow": "These",
+		"about.thesis.title": "Etwas hinterlassen",
+		"about.thesis.body":
+			"Ein Bild soll nicht nur gut aussehen. Es soll etwas hinterlassen — die Art von Arbeit, die bleibt, wenn der Bildschirm dunkel wird.",
+		"about.portrait.alt": "Porträt von Moin Bin Umair",
 		"section.indie.title": "Indie / Kunst",
 		"section.indie.description":
 			"Internationale Filme und persönliche narrative Arbeiten.",
@@ -253,6 +301,7 @@ export function getNavigation(lang: Lang) {
 	const t = useTranslations(lang);
 	return [
 		{ label: t("nav.home"), href: "#home" },
+		{ label: t("nav.about"), href: "#about" },
 		{ label: t("nav.indie"), href: "#indie" },
 		{ label: t("nav.local"), href: "#local" },
 		{ label: t("nav.photography"), href: "#photography" },

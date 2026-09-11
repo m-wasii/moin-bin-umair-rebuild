@@ -1,0 +1,71 @@
+---
+import { Image } from "astro:assets";
+import portrait from "../assets/about-portrait.webp";
+import { useTranslations, type Lang } from "../i18n/ui";
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section
+	class="about"
+	id="about"
+	aria-labelledby="about-title"
+	data-nav-section
+>
+	<header class="section-heading" data-reveal>
+		<p class="section-heading__ghost" aria-hidden="true">01</p>
+		<div class="section-heading__meta">
+			<p>01</p>
+			<p>{t("about.meta")}</p>
+		</div>
+		<h2 id="about-title">{t("about.title")}</h2>
+		<p class="section-heading__description">{t("about.intro")}</p>
+	</header>
+
+	<div class="about__intro" data-reveal>
+		<p class="about__eyebrow">{t("about.eyebrow")}</p>
+	</div>
+
+	<div class="about__bento">
+		<article class="about__cell about__cell--stats" data-reveal>
+			<p class="about__stat-value">
+				<span class="about__stat-number">{t("about.stats.value")}</span>
+			</p>
+			<p class="about__stat-label">{t("about.stats.label")}</p>
+			<p class="about__cell-body">{t("about.stats.body")}</p>
+		</article>
+
+		<figure class="about__cell about__cell--portrait" data-reveal>
+			<Image
+				src={portrait}
+				alt={t("about.portrait.alt")}
+				widths={[480, 720, 960]}
+				sizes="(max-width: 991px) calc(100vw - 4rem), 32vw"
+				class="about__portrait-img"
+			/>
+		</figure>
+
+		<article class="about__cell about__cell--craft" data-reveal>
+			<p class="about__cell-eyebrow">{t("about.craft.eyebrow")}</p>
+			<h3 class="about__cell-title">{t("about.craft.title")}</h3>
+			<p class="about__cell-body">{t("about.craft.body")}</p>
+		</article>
+
+		<article class="about__cell about__cell--place" data-reveal>
+			<p class="about__cell-eyebrow">{t("about.place.eyebrow")}</p>
+			<h3 class="about__cell-title">{t("about.place.title")}</h3>
+			<p class="about__cell-body">{t("about.place.body")}</p>
+		</article>
+
+		<article class="about__cell about__cell--thesis" data-reveal>
+			<p class="about__cell-eyebrow">{t("about.thesis.eyebrow")}</p>
+			<h3 class="about__cell-title">{t("about.thesis.title")}</h3>
+			<p class="about__cell-body">{t("about.thesis.body")}</p>
+		</article>
+	</div>
+</section>
