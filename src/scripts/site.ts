@@ -1,3 +1,5 @@
+import { initTextReveal } from "./text-reveal";
+
 const header = document.querySelector<HTMLElement>("[data-header]");
 const nav = document.querySelector<HTMLElement>("[data-nav]");
 const navIndicator = document.querySelector<HTMLElement>(
@@ -507,6 +509,8 @@ if (reducedMotion.matches || !("IntersectionObserver" in window)) {
 
 	revealItems.forEach((item) => revealObserver.observe(item));
 }
+
+initTextReveal();
 
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 

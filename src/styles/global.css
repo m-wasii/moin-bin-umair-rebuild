@@ -2013,6 +2013,54 @@ html.video-open {
 	transform: translateY(0);
 }
 
+/* Text writing / reveal — see src/scripts/text-reveal.ts + text-reveal-config.ts */
+.js [data-text-reveal] {
+	--tr-duration: 550ms;
+	--tr-stagger: 42ms;
+	--tr-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hide until prepared/revealed so text does not flash fully visible before JS wraps/clips. */
+.js [data-text-reveal]:not(.is-text-reveal-prepared):not(.is-revealed) {
+	opacity: 0;
+}
+
+.js
+	[data-text-reveal][data-text-reveal-mode="mask"].is-text-reveal-prepared:not(
+		.is-revealed
+	)
+	.text-reveal__mask {
+	display: block;
+	clip-path: inset(0 100% 0 0);
+}
+
+.js [data-text-reveal][data-text-reveal-mode="mask"].is-revealed .text-reveal__mask {
+	display: block;
+	clip-path: inset(0 0 0 0);
+	transition: clip-path var(--tr-duration) var(--tr-ease);
+}
+
+.js [data-text-reveal] .text-reveal__word {
+	display: inline-block;
+	vertical-align: baseline;
+}
+
+.js
+	[data-text-reveal][data-text-reveal-mode="words"].is-text-reveal-prepared:not(
+		.is-revealed
+	)
+	.text-reveal__word-inner {
+	display: inline-block;
+	clip-path: inset(0 100% 0 0);
+}
+
+.js [data-text-reveal][data-text-reveal-mode="words"].is-revealed .text-reveal__word-inner {
+	display: inline-block;
+	clip-path: inset(0 0 0 0);
+	transition: clip-path var(--tr-duration) var(--tr-ease);
+	transition-delay: calc(var(--tr-i, 0) * var(--tr-stagger));
+}
+
 @media (max-width: 960px) {
 	.section-heading {
 		grid-template-columns: minmax(0, 1fr);
@@ -2419,5 +2467,13 @@ html.video-open {
 	.js [data-reveal] {
 		opacity: 1;
 		transform: none;
+	}
+
+	.js [data-text-reveal],
+	.js [data-text-reveal] .text-reveal__word-inner,
+	.js [data-text-reveal] .text-reveal__mask {
+		opacity: 1 !important;
+		clip-path: none !important;
+		transition: none !important;
 	}
 }

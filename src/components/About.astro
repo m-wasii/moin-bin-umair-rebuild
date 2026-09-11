@@ -17,23 +17,29 @@ const t = useTranslations(lang);
 	aria-labelledby="about-title"
 	data-nav-section
 >
-	<header class="section-heading" data-reveal>
+	<header class="section-heading">
 		<p class="section-heading__ghost" aria-hidden="true">01</p>
 		<div class="section-heading__meta">
 			<p>01</p>
 			<p>{t("about.meta")}</p>
 		</div>
-		<h2 id="about-title">{t("about.title")}</h2>
-		<p class="section-heading__description">{t("about.intro")}</p>
+		<h2 id="about-title" data-text-reveal="words">{t("about.title")}</h2>
+		<p class="section-heading__description" data-text-reveal>
+			{t("about.intro")}
+		</p>
 	</header>
 
 	<div class="about__bento">
-		<article class="about__cell about__cell--stats" data-reveal>
+		<article class="about__cell about__cell--stats">
 			<p class="about__stat-label">{t("about.stats.label")}</p>
 			<p class="about__stat-value">
-				<span class="about__stat-number">{t("about.stats.value")}</span>
+				<span class="about__stat-number" data-text-reveal="words"
+					>{t("about.stats.value")}</span
+				>
 			</p>
-			<p class="about__cell-body">{t("about.stats.body")}</p>
+			<p class="about__cell-body" data-text-reveal>
+				{t("about.stats.body")}
+			</p>
 		</article>
 
 		<figure class="about__cell about__cell--portrait" data-reveal>
@@ -46,22 +52,34 @@ const t = useTranslations(lang);
 			/>
 		</figure>
 
-		<article class="about__cell about__cell--craft" data-reveal>
+		<article class="about__cell about__cell--craft">
 			<p class="about__cell-eyebrow">{t("about.craft.eyebrow")}</p>
-			<h3 class="about__cell-title">{t("about.craft.title")}</h3>
-			<p class="about__cell-body">{t("about.craft.body")}</p>
+			<h3 class="about__cell-title" data-text-reveal="words">
+				{t("about.craft.title")}
+			</h3>
+			<p class="about__cell-body" data-text-reveal>
+				{t("about.craft.body")}
+			</p>
 		</article>
 
-		<article class="about__cell about__cell--place" data-reveal>
+		<article class="about__cell about__cell--place">
 			<p class="about__cell-eyebrow">{t("about.place.eyebrow")}</p>
-			<h3 class="about__cell-title">{t("about.place.title")}</h3>
-			<p class="about__cell-body">{t("about.place.body")}</p>
+			<h3 class="about__cell-title" data-text-reveal="words">
+				{t("about.place.title")}
+			</h3>
+			<p class="about__cell-body" data-text-reveal>
+				{t("about.place.body")}
+			</p>
 		</article>
 
-		<article class="about__cell about__cell--thesis" data-reveal>
+		<article class="about__cell about__cell--thesis">
 			<p class="about__cell-eyebrow">{t("about.thesis.eyebrow")}</p>
-			<h3 class="about__cell-title">{t("about.thesis.title")}</h3>
-			<p class="about__cell-body">{t("about.thesis.body")}</p>
+			<h3 class="about__cell-title" data-text-reveal="words">
+				{t("about.thesis.title")}
+			</h3>
+			<p class="about__cell-body" data-text-reveal>
+				{t("about.thesis.body")}
+			</p>
 		</article>
 	</div>
 </section>
