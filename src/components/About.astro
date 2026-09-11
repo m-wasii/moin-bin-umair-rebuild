@@ -30,7 +30,7 @@ const t = useTranslations(lang);
 	</header>
 
 	<div class="about__bento">
-		<article class="about__cell about__cell--stats">
+		<article class="about__cell about__cell--stats" data-reveal="left">
 			<p class="about__stat-label">{t("about.stats.label")}</p>
 			<p class="about__stat-value">
 				<span class="about__stat-number" data-text-reveal="words"
@@ -52,7 +52,7 @@ const t = useTranslations(lang);
 			/>
 		</figure>
 
-		<article class="about__cell about__cell--craft">
+		<article class="about__cell about__cell--craft" data-reveal="right">
 			<p class="about__cell-eyebrow">{t("about.craft.eyebrow")}</p>
 			<h3 class="about__cell-title" data-text-reveal="words">
 				{t("about.craft.title")}
@@ -62,7 +62,7 @@ const t = useTranslations(lang);
 			</p>
 		</article>
 
-		<article class="about__cell about__cell--place">
+		<article class="about__cell about__cell--place" data-reveal="left">
 			<p class="about__cell-eyebrow">{t("about.place.eyebrow")}</p>
 			<h3 class="about__cell-title" data-text-reveal="words">
 				{t("about.place.title")}
@@ -72,7 +72,7 @@ const t = useTranslations(lang);
 			</p>
 		</article>
 
-		<article class="about__cell about__cell--thesis">
+		<article class="about__cell about__cell--thesis" data-reveal="right">
 			<p class="about__cell-eyebrow">{t("about.thesis.eyebrow")}</p>
 			<h3 class="about__cell-title" data-text-reveal="words">
 				{t("about.thesis.title")}
