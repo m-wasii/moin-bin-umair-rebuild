@@ -397,6 +397,7 @@ main {
 
 .hero {
 	position: relative;
+	z-index: 1;
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
@@ -408,7 +409,7 @@ main {
 }
 
 /* Persistent full-viewport cinematic layer; stays fixed while page content scrolls over it. */
-.hero__media {
+.site-video {
 	position: fixed;
 	inset: 0;
 	z-index: 0;
@@ -422,20 +423,39 @@ main {
 	background: #050a12;
 }
 
+.site-video video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	pointer-events: none;
+	filter: saturate(0.78) contrast(1.08) brightness(0.68);
+	transform: scale(1.01);
+	transition: filter 480ms ease;
+}
+
+/* Peach wash for Contact stage — toggled via html.is-contact-stage (IntersectionObserver). */
+.site-video__wash {
+	position: absolute;
+	inset: 0;
+	background: color-mix(in srgb, var(--peach) 58%, transparent);
+	opacity: 0;
+	transition: opacity 480ms ease;
+}
+
+html.is-contact-stage .site-video video {
+	filter: blur(18px) saturate(1.05) contrast(1.06) brightness(0.82);
+}
+
+html.is-contact-stage .site-video__wash {
+	opacity: 1;
+}
+
 .hero__veil,
 .hero__grain {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
-}
-
-.hero__media video {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	object-position: center;
-	filter: saturate(0.78) contrast(1.08) brightness(0.68);
-	transform: scale(1.01);
 }
 
 .hero__veil {
@@ -1534,7 +1554,6 @@ main {
 .contact {
 	position: relative;
 	z-index: 1;
-	isolation: isolate;
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
@@ -1543,47 +1562,12 @@ main {
 	min-height: 100dvh;
 	max-height: none;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
-	/* Transparent so the fixed hero video reads through; peach lives on .contact__fx-peach. */
+	/* Transparent so the fixed hero video + Contact wash read through. */
 	background: transparent;
 	color: var(--ink);
 	border-top: 2px solid rgba(5, 10, 18, 0.14);
 	scroll-margin-top: calc((var(--header-height) + 1rem) * -1);
 	overflow: visible;
-}
-
-/* Blur + peach sit behind sharp contact UI; scoped to this section as it enters view. */
-.contact__fx {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	pointer-events: none;
-	overflow: hidden;
-}
-
-.contact__fx-blur,
-.contact__fx-peach {
-	position: absolute;
-	inset: 0;
-}
-
-.contact__fx-blur {
-	backdrop-filter: blur(18px) saturate(1.05);
-	-webkit-backdrop-filter: blur(18px) saturate(1.05);
-}
-
-.contact__fx-peach {
-	background: color-mix(in srgb, var(--peach) 72%, transparent);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	.contact__fx-peach {
-		background: color-mix(in srgb, var(--peach) 88%, transparent);
-	}
-}
-
-.contact > :not(.contact__fx) {
-	position: relative;
-	z-index: 1;
 }
 
 .contact .section-heading {
@@ -2175,7 +2159,7 @@ html.video-open {
 		padding-bottom: 1rem;
 	}
 
-	.hero__media video {
+	.site-video video {
 		transform: none;
 	}
 
@@ -2423,7 +2407,7 @@ html.video-open {
 		animation-iteration-count: 1 !important;
 	}
 
-	.hero__media video {
+	.site-video video {
 		display: none;
 	}
 

@@ -527,6 +527,27 @@ reducedMotion.addEventListener("change", syncHeroPlayback);
 document.addEventListener("visibilitychange", syncHeroPlayback);
 syncHeroPlayback();
 
+const contactStage = document.querySelector<HTMLElement>("[data-contact-stage]");
+if (contactStage) {
+	const syncContactStage = (inView: boolean) => {
+		document.documentElement.classList.toggle("is-contact-stage", inView);
+	};
+
+	if ("IntersectionObserver" in window) {
+		const contactStageObserver = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (!entry) return;
+				syncContactStage(entry.isIntersecting);
+			},
+			{ threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+		);
+		contactStageObserver.observe(contactStage);
+	} else {
+		syncContactStage(false);
+	}
+}
+
 const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
 const videoPanel = document.querySelector<HTMLElement>(".video-dialog__panel");
 const videoBackdrop = document.querySelector<HTMLElement>(
