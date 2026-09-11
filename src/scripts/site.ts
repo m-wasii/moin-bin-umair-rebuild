@@ -1,4 +1,4 @@
-import { initTextReveal } from "./text-reveal";
+import { forceTextRevealThrough, initTextReveal } from "./text-reveal";
 
 const header = document.querySelector<HTMLElement>("[data-header]");
 const brand = document.querySelector<HTMLElement>(".site-brand");
@@ -428,11 +428,72 @@ navToggle?.addEventListener("click", () => {
 	}
 });
 
+/** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
+const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
+
+function revealContentThrough(section: HTMLElement) {
+	const limit =
+		getSectionScrollTop(section) + section.offsetHeight + window.innerHeight;
+
+	revealItems.forEach((item) => {
+		const top = item.getBoundingClientRect().top + window.scrollY;
+		if (top <= limit) item.classList.add("is-visible");
+	});
+
+	forceTextRevealThrough(limit);
+}
+
+function beginNavScrollJump(section: HTMLElement) {
+	const distance = Math.abs(getSectionScrollTop(section) - window.scrollY);
+	if (reducedMotion.matches || distance < window.innerHeight * NAV_JUMP_REVEAL_VIEWPORTS) {
+		return;
+	}
+
+	const root = document.documentElement;
+	root.classList.add("is-nav-scrolling");
+	revealContentThrough(section);
+
+	const endJump = () => {
+		root.classList.remove("is-nav-scrolling");
+	};
+
+	if ("onscrollend" in window) {
+		window.addEventListener("scrollend", endJump, { once: true });
+		window.setTimeout(endJump, 2500);
+		return;
+	}
+
+	let lastY = window.scrollY;
+	let stableFrames = 0;
+	const waitForScrollEnd = () => {
+		if (!root.classList.contains("is-nav-scrolling")) return;
+
+		if (Math.abs(window.scrollY - lastY) < 1) {
+			stableFrames += 1;
+			if (stableFrames >= 4) {
+				endJump();
+				return;
+			}
+		} else {
+			stableFrames = 0;
+			lastY = window.scrollY;
+		}
+
+		requestAnimationFrame(waitForScrollEnd);
+	};
+
+	requestAnimationFrame(waitForScrollEnd);
+	window.setTimeout(endJump, 2500);
+}
+
 navLinks.forEach((link, index) => {
 	link.addEventListener("click", () => {
 		if (isPhotoOpen()) closePhotoDialog();
 		if (isAlbumOpen()) closeAlbum();
 		closeNavigation();
+
+		const section = document.getElementById(link.hash.slice(1));
+		if (section) beginNavScrollJump(section);
 
 		const finalizeSnap = () => snapIndicatorToIndex(index);
 
