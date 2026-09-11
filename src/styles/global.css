@@ -206,8 +206,8 @@ main {
 	width: auto;
 	height: calc(var(--header-height) - 1.4rem);
 	align-items: center;
-	column-gap: 1rem;
-	padding: 0.35rem 1.15rem;
+	column-gap: clamp(0.45rem, 0.8vw, 1rem);
+	padding: 0.35rem clamp(0.7rem, 1.2vw, 1.15rem);
 	border: 2px solid transparent;
 	border-radius: 999px;
 	transition:
@@ -236,9 +236,10 @@ main {
 	position: relative;
 	z-index: 102;
 	justify-self: start;
+	min-width: 0;
 	color: var(--paper);
 	font-family: var(--font-sans);
-	font-size: calc(0.875rem + 2pt + 2px);
+	font-size: clamp(0.8125rem, 0.72rem + 0.18vw, calc(0.875rem + 2pt + 2px));
 	font-weight: 600;
 	letter-spacing: -0.02em;
 	text-transform: uppercase;
@@ -289,7 +290,9 @@ main {
 	display: flex;
 	align-items: center;
 	justify-self: center;
-	gap: 0.15rem;
+	flex-wrap: nowrap;
+	gap: clamp(0.05rem, 0.2vw, 0.15rem);
+	max-width: 100%;
 	padding: 0.2rem;
 	border: 2px solid var(--line);
 	border-radius: 999px;
@@ -336,12 +339,14 @@ main {
 .site-nav__link {
 	position: relative;
 	z-index: 1;
-	padding: 0.55rem 0.95rem;
+	flex: 0 0 auto;
+	padding: 0.55rem clamp(0.65rem, 0.45rem + 0.35vw, 0.95rem);
 	border-radius: 999px;
 	color: var(--amber);
-	font-size: 0.875rem;
+	font-size: clamp(0.8125rem, 0.76rem + 0.08vw, 0.875rem);
 	font-weight: 600;
 	text-transform: uppercase;
+	white-space: nowrap;
 	transition: color 180ms ease;
 }
 
@@ -2065,110 +2070,136 @@ html.video-open {
 }
 
 /*
- * Compact header/nav (hamburger) must kick in before the centered pill
- * collides with the brand at mid-width windowed desktops.
- * Keep in sync with NAV_COMPACT_MQ in src/scripts/site.ts.
+ * Compact header/nav (hamburger). Toggled by content-fit detection in
+ * site.ts (html.nav-is-compact) so brand + pill + lang never collide —
+ * not a single viewport breakpoint guess.
+ * html.nav-is-measuring: brief desktop metrics probe without painting the pill.
  */
-@media (max-width: 1150px) {
-	:root {
+html.nav-is-compact {
+	--header-height: 4.6rem;
+}
+
+html.nav-is-measuring .site-nav {
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+html.nav-is-compact .site-header {
+	display: flex;
+	justify-content: space-between;
+	column-gap: 0;
+	padding-right: 0.35rem;
+}
+
+html.nav-is-compact .site-header__end {
+	gap: 0.2rem;
+}
+
+html.nav-is-compact .lang-switch {
+	padding-right: 0.15rem;
+}
+
+html.nav-is-compact .lang-switch__option {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+}
+
+html.nav-is-compact .nav-toggle {
+	display: inline-flex;
+}
+
+/* Full-viewport overlay: stretch overrides desktop justify-self:center
+   (which otherwise shrink-wraps fixed+inset:0 to content width). */
+html.nav-is-compact .site-nav {
+	position: fixed;
+	z-index: 101;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	align-self: stretch;
+	justify-content: center;
+	justify-self: stretch;
+	gap: 0.55rem;
+	width: auto;
+	height: auto;
+	max-width: none;
+	padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
+	border: 0;
+	border-radius: 0;
+	background: rgba(5, 10, 18, 0.96);
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(-1rem);
+	-webkit-backdrop-filter: blur(18px);
+	backdrop-filter: blur(18px);
+	transition:
+		opacity 220ms ease,
+		transform 220ms ease;
+}
+
+html.nav-is-compact .site-nav--open {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateY(0);
+}
+
+/* Header backdrop-filter/transform create a fixed containing block and
+   trap the overlay inside the pill — clear them while the menu is open. */
+html.nav-is-compact body.nav-open .site-header {
+	transform: none !important;
+	filter: none;
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+}
+
+html.nav-is-compact .site-nav__link {
+	display: block;
+	justify-content: space-between;
+	padding: 0.55rem 0.2rem;
+	border-radius: 0;
+	border-bottom: 0;
+	color: var(--amber);
+	font-size: clamp(2.1rem, 11vw, 3.6rem);
+	font-weight: 500;
+	line-height: 1.15;
+	letter-spacing: -0.03em;
+	text-transform: none;
+}
+
+html.nav-is-compact .site-nav__indicator {
+	transition: opacity 180ms ease;
+}
+
+html.nav-is-compact .site-nav__link[aria-current="page"] {
+	color: var(--peach);
+}
+
+/* No-JS floor: phones/tablets still get a usable header. */
+@media (max-width: 720px) {
+	html:not(.js) {
 		--header-height: 4.6rem;
 	}
 
-	.site-header {
+	html:not(.js) .site-header {
 		display: flex;
 		justify-content: space-between;
 		column-gap: 0;
 		padding-right: 0.35rem;
 	}
 
-	.site-header__end {
-		gap: 0.2rem;
-	}
-
-	.lang-switch {
-		padding-right: 0.15rem;
-	}
-
-	.lang-switch__option {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-width: 2.75rem;
-		min-height: 2.75rem;
-	}
-
-	.nav-toggle {
+	html:not(.js) .nav-toggle {
 		display: inline-flex;
 	}
 
-	/* Full-viewport overlay: stretch overrides desktop justify-self:center
-	   (which otherwise shrink-wraps fixed+inset:0 to content width). */
-	.site-nav {
-		position: fixed;
-		z-index: 101;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		align-self: stretch;
-		justify-content: center;
-		justify-self: stretch;
-		gap: 0.55rem;
-		width: auto;
-		height: auto;
-		max-width: none;
-		padding: calc(var(--header-height) + 2rem) var(--gutter) 2rem;
-		border: 0;
-		border-radius: 0;
-		background: rgba(5, 10, 18, 0.96);
-		opacity: 0;
-		pointer-events: none;
-		transform: translateY(-1rem);
-		-webkit-backdrop-filter: blur(18px);
-		backdrop-filter: blur(18px);
-		transition:
-			opacity 220ms ease,
-			transform 220ms ease;
-	}
-
-	.site-nav--open {
-		opacity: 1;
-		pointer-events: auto;
-		transform: translateY(0);
-	}
-
-	/* Header backdrop-filter/transform create a fixed containing block and
-	   trap the overlay inside the pill — clear them while the menu is open. */
-	body.nav-open .site-header {
-		transform: none !important;
-		filter: none;
-		-webkit-backdrop-filter: none;
-		backdrop-filter: none;
-		background: transparent;
-		border-color: transparent;
-		box-shadow: none;
-	}
-
-	.site-nav__link {
-		display: block;
-		justify-content: space-between;
-		padding: 0.55rem 0.2rem;
-		border-radius: 0;
-		border-bottom: 0;
-		color: var(--amber);
-		font-size: clamp(2.1rem, 11vw, 3.6rem);
-		font-weight: 500;
-		line-height: 1.15;
-		letter-spacing: -0.03em;
-		text-transform: none;
-	}
-
-	.site-nav__indicator {
-		transition: opacity 180ms ease;
-	}
-
-	.site-nav__link[aria-current="page"] {
-		color: var(--peach);
+	html:not(.js) .site-nav {
+		display: none;
 	}
 }
 

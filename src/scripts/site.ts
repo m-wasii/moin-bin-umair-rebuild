@@ -1,6 +1,8 @@
 import { initTextReveal } from "./text-reveal";
 
 const header = document.querySelector<HTMLElement>("[data-header]");
+const brand = document.querySelector<HTMLElement>(".site-brand");
+const headerEnd = document.querySelector<HTMLElement>(".site-header__end");
 const nav = document.querySelector<HTMLElement>("[data-nav]");
 const navIndicator = document.querySelector<HTMLElement>(
 	"[data-nav-indicator]",
@@ -11,19 +13,131 @@ const navLinks = Array.from(
 	document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
 );
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-/* Keep in sync with @media (max-width: 1150px) header rules in global.css */
-const NAV_COMPACT_MQ = "(max-width: 1150px)";
-const navCompactMq = window.matchMedia(NAV_COMPACT_MQ);
+/** Extra space required between brand/nav and nav/lang before collapsing. */
+const NAV_FIT_CLEARANCE = 32;
+/** Extra width needed before expanding back out of compact (anti-flicker). */
+const NAV_EXPAND_HYSTERESIS = 48;
 
 let scrollFrame = 0;
 let navIndicatorFrame = 0;
+let navFitFrame = 0;
 let wasNavTransitioning = false;
+/** Min header width (px) that fits the expanded pill layout; 0 = unknown. */
+let navExpandedFitWidth = 0;
 let cachedLinkMetrics: Array<{
 	x: number;
 	y: number;
 	w: number;
 	h: number;
 }> = [];
+
+function isNavCompact() {
+	return document.documentElement.classList.contains("nav-is-compact");
+}
+
+function setNavCompact(compact: boolean) {
+	const root = document.documentElement;
+	const wasCompact = root.classList.contains("nav-is-compact");
+
+	if (wasCompact === compact) return;
+
+	root.classList.toggle("nav-is-compact", compact);
+
+	if (wasCompact !== compact) {
+		closeNavigation();
+	}
+
+	measureLinkMetrics();
+	queueNavIndicatorUpdate();
+}
+
+function readExpandedFitMetrics() {
+	if (!header || !nav || !brand || !headerEnd) {
+		return { fitWidth: Number.POSITIVE_INFINITY, collides: true };
+	}
+
+	const headerStyles = getComputedStyle(header);
+	const gap = parseFloat(headerStyles.columnGap) || 0;
+	const padX =
+		(parseFloat(headerStyles.paddingLeft) || 0) +
+		(parseFloat(headerStyles.paddingRight) || 0);
+	const brandRect = brand.getBoundingClientRect();
+	const navRect = nav.getBoundingClientRect();
+	const endRect = headerEnd.getBoundingClientRect();
+
+	/* Equal 1fr side columns: each side must fit the wider of brand/end. */
+	const side = Math.max(brandRect.width, endRect.width);
+	const fitWidth = side * 2 + navRect.width + gap * 2 + padX + NAV_FIT_CLEARANCE;
+
+	const collides =
+		brandRect.right + NAV_FIT_CLEARANCE > navRect.left ||
+		navRect.right + NAV_FIT_CLEARANCE > endRect.left;
+
+	return { fitWidth, collides };
+}
+
+function withExpandedNavMetrics<T>(fn: () => T): T {
+	const root = document.documentElement;
+	const wasCompact = root.classList.contains("nav-is-compact");
+
+	if (wasCompact) {
+		root.classList.add("nav-is-measuring");
+		root.classList.remove("nav-is-compact");
+		void header?.offsetWidth;
+	}
+
+	try {
+		return fn();
+	} finally {
+		if (wasCompact) {
+			root.classList.add("nav-is-compact");
+			root.classList.remove("nav-is-measuring");
+			void header?.offsetWidth;
+		}
+	}
+}
+
+function syncNavCompactMode() {
+	if (!header || !nav || !brand || !headerEnd) return;
+
+	if (!isNavCompact()) {
+		const { fitWidth, collides } = readExpandedFitMetrics();
+		navExpandedFitWidth = fitWidth;
+
+		if (collides || header.offsetWidth < fitWidth) {
+			setNavCompact(true);
+		}
+
+		return;
+	}
+
+	if (navExpandedFitWidth <= 0) {
+		navExpandedFitWidth = withExpandedNavMetrics(
+			() => readExpandedFitMetrics().fitWidth,
+		);
+	}
+
+	if (header.offsetWidth >= navExpandedFitWidth + NAV_EXPAND_HYSTERESIS) {
+		setNavCompact(false);
+		requestAnimationFrame(() => {
+			const { fitWidth, collides } = readExpandedFitMetrics();
+			navExpandedFitWidth = fitWidth;
+
+			if (collides || header.offsetWidth < fitWidth) {
+				setNavCompact(true);
+			}
+		});
+	}
+}
+
+function queueNavCompactSync() {
+	if (navFitFrame) return;
+
+	navFitFrame = window.requestAnimationFrame(() => {
+		navFitFrame = 0;
+		syncNavCompactMode();
+	});
+}
 
 function measureLinkMetrics() {
 	if (!nav) return;
@@ -32,7 +146,7 @@ function measureLinkMetrics() {
 	const navStyles = getComputedStyle(nav);
 	const insetX = parseFloat(navStyles.borderLeftWidth) || 0;
 	const insetY = parseFloat(navStyles.borderTopWidth) || 0;
-	const isMobile = navCompactMq.matches;
+	const compact = isNavCompact();
 
 	cachedLinkMetrics = navLinks.map((link) => {
 		const rect = link.getBoundingClientRect();
@@ -40,7 +154,7 @@ function measureLinkMetrics() {
 		return {
 			x: rect.left - navRect.left - insetX,
 			y: rect.top - navRect.top - insetY,
-			w: isMobile ? 3 : rect.width,
+			w: compact ? 3 : rect.width,
 			h: rect.height,
 		};
 	});
@@ -410,17 +524,20 @@ navIndicator?.addEventListener("transitionend", (event) => {
 
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
 window.addEventListener("resize", () => {
+	queueNavCompactSync();
 	queueScrollChromeUpdate();
 	queueNavIndicatorUpdate();
 });
-navCompactMq.addEventListener("change", () => {
-	if (!navCompactMq.matches) closeNavigation();
-	measureLinkMetrics();
-	queueNavIndicatorUpdate();
-});
+syncNavCompactMode();
 updateScrollChrome();
 measureLinkMetrics();
 queueNavIndicatorUpdate();
+
+if (header && "ResizeObserver" in window) {
+	new ResizeObserver(() => {
+		queueNavCompactSync();
+	}).observe(header);
+}
 
 if (nav && "ResizeObserver" in window) {
 	new ResizeObserver(() => {
@@ -431,6 +548,8 @@ if (nav && "ResizeObserver" in window) {
 
 if (document.fonts?.ready) {
 	document.fonts.ready.then(() => {
+		navExpandedFitWidth = 0;
+		syncNavCompactMode();
 		measureLinkMetrics();
 		queueNavIndicatorUpdate();
 	});
