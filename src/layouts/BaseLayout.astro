@@ -3,6 +3,7 @@ import "../styles/global.css";
 import { site } from "../data/site";
 import {
 	defaultLang,
+	LANG_SCROLL_KEY,
 	localizedHomePath,
 	PREFERRED_LANG_KEY,
 	useTranslations,
@@ -83,7 +84,10 @@ const structuredData = {
 		/>
 
 		<title>{title}</title>
-		<script is:inline define:vars={{ PREFERRED_LANG_KEY, enPath, dePath, lang }}>
+		<script
+			is:inline
+			define:vars={{ PREFERRED_LANG_KEY, LANG_SCROLL_KEY, enPath, dePath, lang }}
+		>
 			document.documentElement.classList.add("js");
 			/* Pre-paint compact only where the pill almost never fits; site.ts
 			   refines with real brand/nav/lang measurements after layout. */
@@ -92,6 +96,53 @@ const structuredData = {
 					if (window.innerWidth < 1200) {
 						document.documentElement.classList.add("nav-is-compact");
 					}
+				} catch (e) {}
+			})();
+			/* Restore scroll after language switch without smooth top→section jump. */
+			(function () {
+				try {
+					var raw = sessionStorage.getItem(LANG_SCROLL_KEY);
+					if (raw == null) return;
+					sessionStorage.removeItem(LANG_SCROLL_KEY);
+
+					var y = 0;
+					var hash = "";
+					if (raw.charAt(0) === "{") {
+						var parsed = JSON.parse(raw);
+						y = parseInt(parsed && parsed.y, 10);
+						hash = (parsed && parsed.hash) || "";
+					} else {
+						y = parseInt(raw, 10);
+					}
+					if (!isFinite(y) || y < 0) y = 0;
+
+					document.documentElement.classList.add("scroll-instant");
+					if ("scrollRestoration" in history) {
+						history.scrollRestoration = "manual";
+					}
+
+					var restore = function () {
+						window.scrollTo(0, y);
+					};
+
+					restore();
+					document.addEventListener("DOMContentLoaded", restore);
+					window.addEventListener("load", function () {
+						restore();
+						if (hash && hash.charAt(0) === "#") {
+							try {
+								history.replaceState(
+									null,
+									"",
+									location.pathname + location.search + hash,
+								);
+							} catch (e) {}
+						}
+						requestAnimationFrame(function () {
+							restore();
+							document.documentElement.classList.remove("scroll-instant");
+						});
+					});
 				} catch (e) {}
 			})();
 			(function () {

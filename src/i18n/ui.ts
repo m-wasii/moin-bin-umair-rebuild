@@ -6,6 +6,9 @@ export const defaultLang: Lang = "en";
 
 export const PREFERRED_LANG_KEY = "preferred-lang";
 
+/** sessionStorage key: preserve scrollY across EN/DE navigation */
+export const LANG_SCROLL_KEY = "lang-switch-scroll-y";
+
 const ui = {
 	en: {
 		"meta.title": "Moin Bin Umair — Filmmaker",

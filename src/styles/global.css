@@ -96,6 +96,11 @@ html {
 	scroll-padding-top: calc(var(--header-height) + 1rem);
 }
 
+/* Instant positioning after language switch (avoids smooth jump from top → hash). */
+html.scroll-instant {
+	scroll-behavior: auto;
+}
+
 body {
 	margin: 0;
 	min-width: 0;

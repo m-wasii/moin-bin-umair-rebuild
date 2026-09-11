@@ -2,6 +2,7 @@
 import { site } from "../data/site";
 import {
 	getNavigation,
+	LANG_SCROLL_KEY,
 	localizedHomePath,
 	PREFERRED_LANG_KEY,
 	useTranslations,
@@ -95,11 +96,17 @@ const deHref = localizedHomePath("de");
 	</div>
 </header>
 
-<script is:inline define:vars={{ PREFERRED_LANG_KEY }}>
+<script is:inline define:vars={{ PREFERRED_LANG_KEY, LANG_SCROLL_KEY }}>
 	document.querySelectorAll("[data-lang-option]").forEach((node) => {
 		node.addEventListener("click", (event) => {
 			const link = event.currentTarget;
 			if (!(link instanceof HTMLAnchorElement)) return;
+
+			// Already on this language — don't reload (avoids a scroll jump).
+			if (link.getAttribute("aria-current") === "true") {
+				event.preventDefault();
+				return;
+			}
 
 			const nextLang = link.dataset.langOption;
 			const base = link.dataset.langHref || link.getAttribute("href") || "/";
@@ -110,7 +117,18 @@ const deHref = localizedHomePath("de");
 			}
 
 			event.preventDefault();
-			location.assign(base + location.search + location.hash);
+			try {
+				sessionStorage.setItem(
+					LANG_SCROLL_KEY,
+					JSON.stringify({
+						y: Math.max(0, Math.round(window.scrollY)),
+						hash: location.hash || "",
+					}),
+				);
+			} catch (e) {}
+			// Navigate without the hash so the browser doesn't smooth-scroll
+			// from the top to the fragment; BaseLayout restores scroll + hash.
+			location.assign(base + location.search);
 		});
 	});
 </script>
