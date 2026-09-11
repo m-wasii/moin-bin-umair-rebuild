@@ -1695,6 +1695,55 @@
 			"src": "/media/photos/street-photography/mg-0614.webp"
 		},
 		{
+			"slug": "street-1",
+			"category": "street-photography",
+			"title": "Street 1",
+			"alt": "Street 1",
+			"src": "/media/photos/street-photography/street-1.webp"
+		},
+		{
+			"slug": "street-2",
+			"category": "street-photography",
+			"title": "Street 2",
+			"alt": "Street 2",
+			"src": "/media/photos/street-photography/street-2.webp"
+		},
+		{
+			"slug": "street-3",
+			"category": "street-photography",
+			"title": "Street 3",
+			"alt": "Street 3",
+			"src": "/media/photos/street-photography/street-3.webp"
+		},
+		{
+			"slug": "street-4",
+			"category": "street-photography",
+			"title": "Street 4",
+			"alt": "Street 4",
+			"src": "/media/photos/street-photography/street-4.webp"
+		},
+		{
+			"slug": "street-5",
+			"category": "street-photography",
+			"title": "Street 5",
+			"alt": "Street 5",
+			"src": "/media/photos/street-photography/street-5.webp"
+		},
+		{
+			"slug": "street-6",
+			"category": "street-photography",
+			"title": "Street 6",
+			"alt": "Street 6",
+			"src": "/media/photos/street-photography/street-6.webp"
+		},
+		{
+			"slug": "street-7",
+			"category": "street-photography",
+			"title": "Street 7",
+			"alt": "Street 7",
+			"src": "/media/photos/street-photography/street-7.webp"
+		},
+		{
 			"slug": "10",
 			"category": "portfolio-spreads",
 			"title": "10",

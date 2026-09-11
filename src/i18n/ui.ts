@@ -27,6 +27,11 @@ const ui = {
 		"hero.tagline": "Filmmaker · Visual storyteller",
 		"hero.orbit": "Still · Motion · Story · Still · Motion · Story ·",
 		"hero.explore": "Explore the work",
+		"hero.contact": "Get in touch",
+		"bridge.aria": "Continue exploring",
+		"bridge.toPhotography": "Continue to photography",
+		"bridge.toContact": "Start a conversation",
+		"bridge.contact": "Or get in touch",
 		"section.indie.title": "Indie / Art",
 		"section.indie.description":
 			"International films and personal narrative work.",
@@ -126,6 +131,11 @@ const ui = {
 		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
 		"hero.orbit": "Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
 		"hero.explore": "Arbeit entdecken",
+		"hero.contact": "Kontakt aufnehmen",
+		"bridge.aria": "Weiter entdecken",
+		"bridge.toPhotography": "Weiter zur Fotografie",
+		"bridge.toContact": "Gespräch beginnen",
+		"bridge.contact": "Oder Kontakt aufnehmen",
 		"section.indie.title": "Indie / Kunst",
 		"section.indie.description":
 			"Internationale Filme und persönliche narrative Arbeiten.",
