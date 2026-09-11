@@ -145,6 +145,20 @@ function isAlreadyInView(el: HTMLElement): boolean {
 }
 
 /**
+ * Instantly finish text reveals whose top is at or above `scrollLimitY`.
+ * Used for long in-page nav jumps so smooth scrolling does not fly through
+ * clipped / opacity-0 copy (black flash over the dark page background).
+ */
+export function forceTextRevealThrough(scrollLimitY: number): void {
+	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
+		const top = el.getBoundingClientRect().top + window.scrollY;
+		if (top > scrollLimitY) return;
+		prepareElement(el);
+		el.classList.add(REVEALED);
+	});
+}
+
+/**
  * Initialize site-wide text writing/reveal for `[data-text-reveal]` targets.
  * Plays once on viewport entry; respects prefers-reduced-motion.
  */

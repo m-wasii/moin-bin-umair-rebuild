@@ -1997,6 +1997,26 @@ html.video-open {
 	transform: translate(0);
 }
 
+/*
+ * Long in-page nav jumps (e.g. Home → Shorts) smooth-scroll through many
+ * unrevealed blocks. Without this, opacity:0 cards leave only the dark
+ * page background mid-scroll — a black cutout. Instantly show path content
+ * for the duration of the jump (site.ts toggles html.is-nav-scrolling).
+ */
+html.is-nav-scrolling.js [data-reveal] {
+	opacity: 1;
+	transform: none;
+	transition: none;
+}
+
+html.is-nav-scrolling.js [data-text-reveal],
+html.is-nav-scrolling.js [data-text-reveal] .text-reveal__word-inner,
+html.is-nav-scrolling.js [data-text-reveal] .text-reveal__mask {
+	opacity: 1 !important;
+	clip-path: none !important;
+	transition: none !important;
+}
+
 /* Text writing / reveal — see src/scripts/text-reveal.ts + text-reveal-config.ts */
 .js [data-text-reveal] {
 	--tr-duration: 550ms;
