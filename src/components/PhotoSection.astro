@@ -41,7 +41,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 			aria-labelledby="photography-title"
 			data-nav-section
 		>
-			<header class="section-heading" data-reveal>
+			<header class="section-heading">
 				<p class="section-heading__ghost" aria-hidden="true">
 					04
 				</p>
@@ -57,14 +57,16 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 								}`}
 					</p>
 				</div>
-				<h2 id="photography-title">{t("section.photography.title")}</h2>
-				<p class="section-heading__description">
+				<h2 id="photography-title" data-text-reveal="words">
+					{t("section.photography.title")}
+				</h2>
+				<p class="section-heading__description" data-text-reveal>
 					{t("section.photography.description")}
 				</p>
 			</header>
 
 			{grouped.length === 0 ? (
-				<p class="work-section__empty" data-reveal>
+				<p class="work-section__empty" data-text-reveal>
 					{t("section.photography.empty")}
 				</p>
 			) : (

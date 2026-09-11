@@ -63,14 +63,16 @@ const visibleCount = canCollapse
 	data-nav-section
 	data-work-expandable={canCollapse ? true : undefined}
 >
-	<header class="section-heading" data-reveal>
+	<header class="section-heading">
 		<p class="section-heading__ghost" aria-hidden="true">{number}</p>
 		<div class="section-heading__meta">
 			<p>{number}</p>
 			<p>{metaLabel}</p>
 		</div>
-		<h2 id={`${id}-title`}>{title}</h2>
-		<p class="section-heading__description">{description}</p>
+		<h2 id={`${id}-title`} data-text-reveal="words">{title}</h2>
+		<p class="section-heading__description" data-text-reveal>
+			{description}
+		</p>
 	</header>
 
 	{
@@ -109,7 +111,7 @@ const visibleCount = canCollapse
 				)}
 			</>
 		) : (
-			<p class="work-section__empty" data-reveal>
+			<p class="work-section__empty" data-text-reveal>
 				{t(emptyKey)}
 			</p>
 		)

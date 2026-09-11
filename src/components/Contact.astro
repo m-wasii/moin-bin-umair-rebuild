@@ -54,7 +54,7 @@ const socialLinks = [
 	aria-labelledby="contact-title"
 	data-nav-section
 >
-	<header class="section-heading section-heading--contact" data-reveal>
+	<header class="section-heading section-heading--contact">
 		<p class="section-heading__ghost" aria-hidden="true">07</p>
 		<div class="section-heading__meta">
 			<p>07</p>
@@ -63,14 +63,17 @@ const socialLinks = [
 		<h2
 			id="contact-title"
 			aria-label={t("contact.title")}
+			data-text-reveal="words"
 			set:html={t("contact.titleHtml")}
 		/>
-		<p class="section-heading__description">{t("contact.description")}</p>
+		<p class="section-heading__description" data-text-reveal>
+			{t("contact.description")}
+		</p>
 	</header>
 
 	<div class="contact__body">
 		<div class="contact__lead">
-			<p class="contact__location">{site.location}</p>
+			<p class="contact__location" data-text-reveal="words">{site.location}</p>
 			<div class="contact__group">
 				<div class="contact__links">
 					{
