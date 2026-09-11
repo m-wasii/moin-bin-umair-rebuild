@@ -35,8 +35,6 @@ const ui = {
 		"bridge.contact": "Or get in touch",
 		"about.meta": "Profile",
 		"about.title": "About",
-		"about.eyebrow":
-			"Images that feel human — quiet moments, imperfect details, atmosphere between them.",
 		"about.intro":
 			"Filmmaker and photographer working between still and motion.",
 		"about.stats.value": "126+",
@@ -164,8 +162,6 @@ const ui = {
 		"bridge.contact": "Oder Kontakt aufnehmen",
 		"about.meta": "Profil",
 		"about.title": "Über mich",
-		"about.eyebrow":
-			"Bilder, die menschlich wirken — ruhige Momente, unperfekte Details, die Atmosphäre dazwischen.",
 		"about.intro":
 			"Filmemacher und Fotograf zwischen Still und Bewegung.",
 		"about.stats.value": "126+",
