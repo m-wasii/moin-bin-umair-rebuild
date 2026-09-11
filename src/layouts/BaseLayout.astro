@@ -85,6 +85,15 @@ const structuredData = {
 		<title>{title}</title>
 		<script is:inline define:vars={{ PREFERRED_LANG_KEY, enPath, dePath, lang }}>
 			document.documentElement.classList.add("js");
+			/* Pre-paint compact only where the pill almost never fits; site.ts
+			   refines with real brand/nav/lang measurements after layout. */
+			(function () {
+				try {
+					if (window.innerWidth < 1200) {
+						document.documentElement.classList.add("nav-is-compact");
+					}
+				} catch (e) {}
+			})();
 			(function () {
 				try {
 					var stored = localStorage.getItem(PREFERRED_LANG_KEY);
