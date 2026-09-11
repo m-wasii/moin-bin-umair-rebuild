@@ -28,6 +28,8 @@ const t = useTranslations(lang);
 		<div class="hero__grain"></div>
 	</div>
 
+	<h1 class="sr-only" id="hero-title">{site.name}</h1>
+
 	<div class="hero__orbit" aria-hidden="true">
 		<svg viewBox="0 0 200 200">
 			<defs>
@@ -42,17 +44,13 @@ const t = useTranslations(lang);
 		</svg>
 	</div>
 
-	<div class="hero__stage">
-		<p class="hero__title" id="hero-title">{site.name}</p>
+	<div class="hero__footer">
 		<p class="hero__tagline">{t("hero.tagline")}</p>
-		<div class="hero__actions">
-			<a class="hero__scroll" href="#indie">
-				<span>{t("hero.explore")}</span>
-				<svg viewBox="0 0 18 18" aria-hidden="true">
-					<path d="M9 2v13M4 10l5 5 5-5"></path>
-				</svg>
-			</a>
-			<a class="hero__contact" href="#contact">{t("hero.contact")}</a>
-		</div>
+		<a class="hero__scroll" href="#indie">
+			<span>{t("hero.explore")}</span>
+			<svg viewBox="0 0 18 18" aria-hidden="true">
+				<path d="M9 2v13M4 10l5 5 5-5"></path>
+			</svg>
+		</a>
 	</div>
 </section>

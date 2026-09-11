@@ -72,17 +72,13 @@ const socialLinks = [
 		<div class="contact__lead">
 			<p class="contact__location">{site.location}</p>
 			<div class="contact__group">
-				<p class="contact__group-label">{t("contact.getInTouch")}</p>
 				<div class="contact__links">
 					{
-						touchLinks.map((link, index) => (
+						touchLinks.map((link) => (
 							<a
-								class:list={[
-									"text-link",
-									index === 0 ? "text-link--primary" : "text-link--row",
-								]}
+								class="text-link text-link--row"
 								href={link.href}
-								{...( "external" in link && link.external
+								{...(link.external
 									? { target: "_blank", rel: "noreferrer" }
 									: {})}
 							>
