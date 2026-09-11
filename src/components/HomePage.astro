@@ -27,21 +27,6 @@ const photos = await loadPhotos();
 	<SiteHeader lang={lang} />
 
 	<main id="main-content">
-		<div class="site-video" aria-hidden="true">
-			<video
-				autoplay
-				muted
-				loop
-				playsinline
-				preload="metadata"
-				poster="/media/hero-poster.webp"
-				tabindex="-1"
-				data-hero-video
-			>
-				<source src="/media/hero-loop.mp4" type="video/mp4" />
-			</video>
-		</div>
-
 		<Hero lang={lang} />
 
 		<About lang={lang} />

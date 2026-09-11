@@ -402,51 +402,37 @@ main {
 
 .hero {
 	position: relative;
-	z-index: 1;
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
 	min-height: 100svh;
-	min-height: 100dvh;
 	overflow: hidden;
 	padding: calc(var(--header-height) + 1.25rem) var(--gutter) 1.6rem;
 	isolation: isolate;
 }
 
-/* Persistent full-viewport cinematic layer; stays fixed while page content scrolls over it. */
-.site-video {
-	position: fixed;
-	inset: 0;
-	z-index: 0;
-	width: 100%;
-	height: 100%;
-	height: 100svh;
-	height: 100dvh;
-	overflow: hidden;
-	pointer-events: none;
-	background: #050a12;
-}
-
-.site-video video {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	object-position: center;
-	pointer-events: none;
-	filter: saturate(0.78) contrast(1.08) brightness(0.68);
-	transform: scale(1.01);
-}
-
+.hero__media,
 .hero__veil,
 .hero__grain {
 	position: absolute;
 	inset: 0;
-	pointer-events: none;
+}
+
+.hero__media {
+	z-index: -2;
+	background: #050a12;
+}
+
+.hero__media video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	filter: saturate(0.78) contrast(1.08) brightness(0.68);
+	transform: scale(1.01);
 }
 
 .hero__veil {
-	/* Hero-only readability wash — does not travel with the fixed video. */
-	z-index: 1;
 	background: linear-gradient(
 		180deg,
 		rgba(0, 0, 0, 0.45) 0%,
@@ -457,15 +443,15 @@ main {
 }
 
 .hero__grain {
-	z-index: 1;
 	opacity: 0.13;
 	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
 	mix-blend-mode: soft-light;
+	pointer-events: none;
 }
 
 .hero__orbit {
 	position: absolute;
-	z-index: 2;
+	z-index: 1;
 	top: 26%;
 	right: clamp(0.75rem, 4vw, 3.5rem);
 	width: min(9.75rem, 28vw);
@@ -497,7 +483,6 @@ main {
 
 .hero__footer {
 	position: relative;
-	z-index: 2;
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
@@ -563,28 +548,14 @@ main {
 }
 
 .work-section {
-	position: relative;
-	z-index: 1;
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
 	border-top: 2px solid var(--line);
-	/* Opaque so mid-page content covers the fixed hero video. */
-	background-color: var(--stage-base);
-	background-image: var(--stage);
-	background-repeat: no-repeat;
-	background-size: 100% 100%;
 }
 
 .about {
-	position: relative;
-	z-index: 1;
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) max(var(--gutter), 2rem)
 		clamp(3.5rem, 5.5vw, 5.5rem);
 	border-top: 2px solid var(--line);
-	/* Opaque so mid-page content covers the fixed hero video. */
-	background-color: var(--stage-base);
-	background-image: var(--stage);
-	background-repeat: no-repeat;
-	background-size: 100% 100%;
 }
 
 .about .section-heading {
@@ -805,7 +776,8 @@ main {
 			transform 220ms ease;
 	}
 
-	.about__cell:not(.about__cell--portrait):hover {
+	.about__cell:not(.about__cell--portrait):hover,
+	.js .about__cell:not(.about__cell--portrait)[data-reveal].is-visible:hover {
 		border-color: var(--line-strong);
 		transform: translateY(-2px);
 	}
@@ -1548,14 +1520,11 @@ main {
 }
 
 .contact {
-	position: relative;
-	z-index: 1;
 	display: flex;
 	flex-direction: column;
 	box-sizing: border-box;
 	height: auto;
 	min-height: 100svh;
-	min-height: 100dvh;
 	max-height: none;
 	padding: clamp(3.5rem, 5vw, 5rem) var(--gutter) 1.5rem;
 	background: var(--peach);
@@ -1610,11 +1579,13 @@ main {
 	font-family: var(--font-display);
 	font-size: clamp(2.6rem, 5.4vw, 6.2rem);
 	font-weight: 700;
-	line-height: 0.88;
+	line-height: 1.28;
 	letter-spacing: -0.02em;
 	text-transform: none;
 	text-align: left;
 	color: var(--ink);
+	padding-block: 0.12em;
+	overflow: visible;
 }
 
 @media (min-width: 961px) {
@@ -2013,9 +1984,17 @@ html.video-open {
 		transform 750ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+.js [data-reveal="left"] {
+	transform: translateX(-2.5rem);
+}
+
+.js [data-reveal="right"] {
+	transform: translateX(2.5rem);
+}
+
 .js [data-reveal].is-visible {
 	opacity: 1;
-	transform: translateY(0);
+	transform: translate(0);
 }
 
 /* Text writing / reveal — see src/scripts/text-reveal.ts + text-reveal-config.ts */
@@ -2056,12 +2035,13 @@ html.video-open {
 	)
 	.text-reveal__word-inner {
 	display: inline-block;
-	clip-path: inset(0 100% 0 0);
+	clip-path: inset(-0.22em 100% -0.28em -0.08em);
 }
 
 .js [data-text-reveal][data-text-reveal-mode="words"].is-revealed .text-reveal__word-inner {
 	display: inline-block;
-	clip-path: inset(0 0 0 0);
+	/* Negative inset keeps the wipe transition but leaves room for glyph overhangs. */
+	clip-path: inset(-0.22em -0.08em -0.28em -0.08em);
 	transition: clip-path var(--tr-duration) var(--tr-ease);
 	transition-delay: calc(var(--tr-i, 0) * var(--tr-stagger));
 }
@@ -2228,7 +2208,7 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 		padding-bottom: 1rem;
 	}
 
-	.site-video video {
+	.hero__media video {
 		transform: none;
 	}
 
@@ -2476,7 +2456,7 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 		animation-iteration-count: 1 !important;
 	}
 
-	.site-video video {
+	.hero__media video {
 		display: none;
 	}
 
