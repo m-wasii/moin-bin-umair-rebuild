@@ -414,7 +414,6 @@ main {
 	inset: 0;
 	z-index: 0;
 	width: 100%;
-	max-width: 100vw;
 	height: 100%;
 	height: 100svh;
 	height: 100dvh;
@@ -564,7 +563,8 @@ main {
 	padding: clamp(3.5rem, 5.5vw, 5.5rem) var(--gutter) clamp(7rem, 11vw, 11rem);
 	border-top: 2px solid var(--line);
 	/* Opaque so mid-page content covers the fixed hero video. */
-	background: var(--stage);
+	background-color: var(--stage-base);
+	background-image: var(--stage);
 	background-repeat: no-repeat;
 	background-size: 100% 100%;
 }
@@ -576,7 +576,8 @@ main {
 		clamp(3.5rem, 5.5vw, 5.5rem);
 	border-top: 2px solid var(--line);
 	/* Opaque so mid-page content covers the fixed hero video. */
-	background: var(--stage);
+	background-color: var(--stage-base);
+	background-image: var(--stage);
 	background-repeat: no-repeat;
 	background-size: 100% 100%;
 }
