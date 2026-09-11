@@ -182,6 +182,7 @@ writeFileSync(
 				{ slug: "street-photography", label: "Street" },
 				{ slug: "portfolio-spreads", label: "Portfolio Spreads" },
 				{ slug: "product-photography", label: "Product Photography" },
+				{ slug: "powder-light", label: "Powder & light" },
 			],
 		},
 		null,

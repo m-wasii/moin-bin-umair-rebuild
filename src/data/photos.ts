@@ -8,6 +8,7 @@ export const defaultPhotoCategories = [
 	{ slug: "street-photography", label: "Street" },
 	{ slug: "portfolio-spreads", label: "Portfolio Spreads" },
 	{ slug: "product-photography", label: "Product Photography" },
+	{ slug: "powder-light", label: "Powder & light" },
 ] as const;
 
 /** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */
