@@ -1573,11 +1573,13 @@ main {
 	font-family: var(--font-display);
 	font-size: clamp(2.6rem, 5.4vw, 6.2rem);
 	font-weight: 700;
-	line-height: 0.88;
+	line-height: 1.28;
 	letter-spacing: -0.02em;
 	text-transform: none;
 	text-align: left;
 	color: var(--ink);
+	padding-block: 0.12em;
+	overflow: visible;
 }
 
 @media (min-width: 961px) {
@@ -2019,12 +2021,13 @@ html.video-open {
 	)
 	.text-reveal__word-inner {
 	display: inline-block;
-	clip-path: inset(0 100% 0 0);
+	clip-path: inset(-0.22em 100% -0.28em -0.08em);
 }
 
 .js [data-text-reveal][data-text-reveal-mode="words"].is-revealed .text-reveal__word-inner {
 	display: inline-block;
-	clip-path: inset(0 0 0 0);
+	/* Negative inset keeps the wipe transition but leaves room for glyph overhangs. */
+	clip-path: inset(-0.22em -0.08em -0.28em -0.08em);
 	transition: clip-path var(--tr-duration) var(--tr-ease);
 	transition-delay: calc(var(--tr-i, 0) * var(--tr-stagger));
 }
