@@ -126,7 +126,7 @@ for (const album of albums) {
 	const destDir = join(outRoot, album.category);
 	mkdirSync(destDir, { recursive: true });
 
-	let written = 0;
+	const albumEntries = [];
 	for (const input of sources) {
 		const base = slugifyPhotoName(basename(input));
 		const slug = uniqueSlug(base, used);
@@ -143,19 +143,31 @@ for (const album of albums) {
 			.toFile(dest);
 
 		const title = titleFromSlug(slug);
-		photos.push({
+		albumEntries.push({
 			slug,
 			category: album.category,
 			title,
 			alt: title,
 			src: `/media/photos/${album.category}/${slug}.webp`,
+			_source: input,
 		});
-		written += 1;
 		console.log(`  ✓ ${album.category}/${slug}`);
 	}
 
-	counts.push(`${album.category}: ${written}`);
-	if (written === 0) {
+	// Prefer Sorted filename order (leading NN- prefixes), then natural slug order.
+	albumEntries.sort((a, b) =>
+		a._source.localeCompare(b._source, undefined, {
+			sensitivity: "base",
+			numeric: true,
+		}),
+	);
+	for (const entry of albumEntries) {
+		const { _source, ...photo } = entry;
+		photos.push(photo);
+	}
+
+	counts.push(`${album.category}: ${albumEntries.length}`);
+	if (albumEntries.length === 0) {
 		console.warn(`seed-photos: no images for ${album.category}`);
 	}
 }
