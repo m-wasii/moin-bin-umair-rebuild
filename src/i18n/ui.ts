@@ -32,7 +32,7 @@ const ui = {
 		"about.title": "About",
 		"about.intro":
 			"Filmmaker and photographer working between still and motion.",
-		"about.stats.value": "126+",
+		"about.stats.value": "200+",
 		"about.stats.label": "Projects",
 		"about.stats.body":
 			"Quiet moments, imperfect details, and the atmosphere that holds them.",
@@ -153,7 +153,7 @@ const ui = {
 		"about.title": "Über mich",
 		"about.intro":
 			"Filmemacher und Fotograf zwischen Still und Bewegung.",
-		"about.stats.value": "126+",
+		"about.stats.value": "200+",
 		"about.stats.label": "Projekte",
 		"about.stats.body":
 			"Ruhige Momente, unperfekte Details und die Atmosphäre, die sie trägt.",
