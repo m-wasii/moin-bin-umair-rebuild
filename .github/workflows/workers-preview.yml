@@ -36,7 +36,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Build
+        env:
+          PUBLIC_BUILD_ID: ${{ github.sha }}
+        run: npm run build
       - name: Deploy preview Worker
         id: deploy
         run: |
@@ -51,6 +54,10 @@ jobs:
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
+      - name: Purge preview Workers cache
+        run: node scripts/purge-workers-cache.mjs --origin "${{ steps.deploy.outputs.url }}" --scope everything
+        # Preview: don't block the PR comment if purge races a brand-new Worker.
+        continue-on-error: true
       - name: Comment preview URL
         uses: actions/github-script@v7
         with:
