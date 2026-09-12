@@ -2,6 +2,10 @@ import type { APIRoute } from "astro";
 import { isProjectCategory } from "../../lib/video-metadata";
 import { enrichVideo } from "../../lib/video-metadata";
 import {
+	waitUntilFromLocals,
+	type SiteCacheRefreshOptions,
+} from "../../lib/site-cache";
+import {
 	hasWritableMedia,
 	listVideos,
 	saveVideos,
@@ -10,6 +14,16 @@ import {
 } from "../../lib/store";
 
 export const prerender = false;
+
+function cacheOpts(
+	request: Request,
+	locals: App.Locals,
+): SiteCacheRefreshOptions {
+	return {
+		requestUrl: new URL(request.url),
+		waitUntil: waitUntilFromLocals(locals),
+	};
+}
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -34,7 +48,7 @@ export const GET: APIRoute = async () => {
 	return json({ videos, writable: hasWritableMedia() });
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -93,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
 		}
 
 		videos.push(video);
-		await saveVideos(videos);
+		await saveVideos(videos, cacheOpts(request, locals));
 		return json({ video }, 201);
 	} catch (error) {
 		return json(
@@ -103,7 +117,7 @@ export const POST: APIRoute = async ({ request }) => {
 	}
 };
 
-export const PATCH: APIRoute = async ({ request }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -127,7 +141,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 			return json({ error: "One or more videos were not found." }, 404);
 		}
 
-		await saveVideos(rewriteSortOrders(videos, slugs));
+		await saveVideos(rewriteSortOrders(videos, slugs), cacheOpts(request, locals));
 		return json({ ok: true });
 	}
 
@@ -169,7 +183,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 			youtubeApiKey(),
 		);
 		videos[index] = video;
-		await saveVideos(videos);
+		await saveVideos(videos, cacheOpts(request, locals));
 		return json({ video });
 	} catch (error) {
 		return json(
@@ -179,7 +193,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 	}
 };
 
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -190,6 +204,6 @@ export const DELETE: APIRoute = async ({ request }) => {
 	const videos = await listVideos();
 	const next = videos.filter((item) => item.slug !== slug);
 	if (next.length === videos.length) return json({ error: "Video not found." }, 404);
-	await saveVideos(next);
+	await saveVideos(next, cacheOpts(request, locals));
 	return json({ ok: true });
 };

@@ -5,6 +5,11 @@ import {
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
+import { mediaVersionFromBytes } from "../../lib/media-url";
+import {
+	waitUntilFromLocals,
+	type SiteCacheRefreshOptions,
+} from "../../lib/site-cache";
 import {
 	deletePhotoBytes,
 	hasWritableMedia,
@@ -15,6 +20,16 @@ import {
 } from "../../lib/store";
 
 export const prerender = false;
+
+function cacheOpts(
+	request: Request,
+	locals: App.Locals,
+): SiteCacheRefreshOptions {
+	return {
+		requestUrl: new URL(request.url),
+		waitUntil: waitUntilFromLocals(locals),
+	};
+}
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -28,7 +43,7 @@ export const GET: APIRoute = async () => {
 	return json({ photos, writable: hasWritableMedia() });
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -88,19 +103,21 @@ export const POST: APIRoute = async ({ request }) => {
 
 	await putPhotoBytes(category, slug, bytes);
 
+	const v = mediaVersionFromBytes(bytes);
 	const photo = {
 		slug,
 		category,
 		title: title || titleFromSlug(slug),
 		alt: alt || title || titleFromSlug(slug),
-		src: photoMediaSrc(category, slug),
+		v,
+		src: photoMediaSrc(category, slug, v),
 	};
 	photos.push(photo);
-	await savePhotos(photos);
+	await savePhotos(photos, cacheOpts(request, locals));
 	return json({ photo }, 201);
 };
 
-export const PATCH: APIRoute = async ({ request }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -147,11 +164,11 @@ export const PATCH: APIRoute = async ({ request }) => {
 	}
 	if (!inserted) next.push(...reordered);
 
-	await savePhotos(next);
+	await savePhotos(next, cacheOpts(request, locals));
 	return json({ ok: true });
 };
 
-export const DELETE: APIRoute = async ({ request }) => {
+export const DELETE: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -171,6 +188,6 @@ export const DELETE: APIRoute = async ({ request }) => {
 		return json({ error: "Photo not found." }, 404);
 
 	await deletePhotoBytes(category, slug);
-	await savePhotos(next);
+	await savePhotos(next, cacheOpts(request, locals));
 	return json({ ok: true });
 };

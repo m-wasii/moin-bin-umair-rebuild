@@ -13,10 +13,14 @@ interface CloudflareEnv {
 			arrayBuffer(): Promise<ArrayBuffer>;
 			body?: ReadableStream<Uint8Array>;
 			size?: number;
+			etag?: string;
+			uploaded?: Date;
 			httpMetadata?: { contentType?: string };
 		} | null>;
 		head?(key: string): Promise<{
 			size: number;
+			etag?: string;
+			uploaded?: Date;
 			httpMetadata?: { contentType?: string };
 		} | null>;
 		put(
@@ -30,6 +34,20 @@ interface CloudflareEnv {
 	DASHBOARD_ENFORCE_CF_ACCESS?: string;
 }
 
+interface WorkersCachePurgeResult {
+	success: boolean;
+	errors?: Array<{ code: number; message: string }>;
+}
+
+interface WorkersCache {
+	purge(options: {
+		tags?: string[];
+		pathPrefixes?: string[];
+		purgeEverything?: boolean;
+	}): Promise<WorkersCachePurgeResult>;
+}
+
 declare module "cloudflare:workers" {
 	export const env: CloudflareEnv;
+	export const cache: WorkersCache;
 }

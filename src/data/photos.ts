@@ -27,10 +27,18 @@ export interface StoredPhoto {
 	title: string;
 	alt: string;
 	src: string;
+	/** Cache-bust fingerprint; embedded in `src` as `?v=`. */
+	v?: string;
 }
 
-export function photoMediaSrc(category: PhotoCategory, slug: string) {
-	return `/media/photos/${category}/${slug}.webp`;
+export function photoMediaSrc(
+	category: PhotoCategory,
+	slug: string,
+	version = "1",
+) {
+	const path = `/media/photos/${category}/${slug}.webp`;
+	const v = version.trim() || "1";
+	return `${path}?v=${encodeURIComponent(v)}`;
 }
 
 export function isPhotoCategorySlug(value: string): boolean {

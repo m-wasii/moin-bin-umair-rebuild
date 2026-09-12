@@ -8,6 +8,7 @@ import {
 	useTranslations,
 	type Lang,
 } from "../i18n/ui";
+import { heroMediaSrc, heroMediaVersion } from "../lib/store";
 
 interface Props {
 	lang?: Lang;
@@ -27,9 +28,11 @@ const canonicalUrl = Astro.site
 	: undefined;
 const enUrl = Astro.site ? new URL(enPath, Astro.site).href : enPath;
 const deUrl = Astro.site ? new URL(dePath, Astro.site).href : dePath;
+const heroVersion = await heroMediaVersion();
+const ogImagePath = heroMediaSrc("hero-poster.webp", heroVersion);
 const ogImage = Astro.site
-	? new URL("/media/hero-poster.webp", Astro.site).href
-	: "/media/hero-poster.webp";
+	? new URL(ogImagePath, Astro.site).href
+	: ogImagePath;
 
 const structuredData = {
 	"@context": "https://schema.org",

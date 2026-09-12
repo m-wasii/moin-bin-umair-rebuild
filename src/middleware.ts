@@ -64,6 +64,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	} else {
 		response.headers.set("x-mbu-surface", "site");
 		response.headers.set("x-mbu-site-origin", siteOrigin(url));
+		// Media routes set their own long-lived Cache-Control; do not override.
+		// Internal purge endpoint must stay uncached.
+		if (
+			!url.pathname.startsWith("/media/") &&
+			!url.pathname.startsWith("/__mbu/")
+		) {
+			response.headers.set(
+				"cache-control",
+				"public, s-maxage=86400, stale-while-revalidate=604800",
+			);
+			response.headers.set("cache-tag", "html");
+		} else if (url.pathname.startsWith("/__mbu/")) {
+			response.headers.set("cache-control", "no-store");
+		}
 	}
 
 	return response;

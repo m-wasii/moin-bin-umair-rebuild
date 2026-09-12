@@ -33,7 +33,7 @@ function asBody(body: ReadableStream<Uint8Array> | Uint8Array) {
 function assetHeaders(contentType: string, extra: Record<string, string> = {}) {
 	return {
 		"content-type": contentType,
-		"cache-control": "public, max-age=86400",
+		"cache-control": "public, max-age=31536000, immutable",
 		...extra,
 	};
 }

@@ -5,12 +5,26 @@ import {
 	titleFromSlug,
 } from "../../data/photos";
 import {
+	waitUntilFromLocals,
+	type SiteCacheRefreshOptions,
+} from "../../lib/site-cache";
+import {
 	hasWritableMedia,
 	listPhotoCategories,
 	savePhotoCategories,
 } from "../../lib/store";
 
 export const prerender = false;
+
+function cacheOpts(
+	request: Request,
+	locals: App.Locals,
+): SiteCacheRefreshOptions {
+	return {
+		requestUrl: new URL(request.url),
+		waitUntil: waitUntilFromLocals(locals),
+	};
+}
 
 function json(data: unknown, status = 200) {
 	return new Response(JSON.stringify(data), {
@@ -24,7 +38,7 @@ export const GET: APIRoute = async () => {
 	return json({ categories, writable: hasWritableMedia() });
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -65,11 +79,11 @@ export const POST: APIRoute = async ({ request }) => {
 		label: label || titleFromSlug(slug),
 	};
 	categories.push(category);
-	await savePhotoCategories(categories);
+	await savePhotoCategories(categories, cacheOpts(request, locals));
 	return json({ category }, 201);
 };
 
-export const PATCH: APIRoute = async ({ request }) => {
+export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -100,6 +114,6 @@ export const PATCH: APIRoute = async ({ request }) => {
 	}
 
 	const next = slugs.map((slug) => bySlug.get(slug)!);
-	await savePhotoCategories(next);
+	await savePhotoCategories(next, cacheOpts(request, locals));
 	return json({ ok: true });
 };
