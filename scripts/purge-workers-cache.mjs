@@ -31,7 +31,14 @@ async function purgeOnce(origin, scope) {
 	url.searchParams.set("scope", scope);
 	const response = await fetch(url, {
 		method: "POST",
-		headers: { accept: "application/json" },
+		headers: {
+			accept: "application/json",
+			// Avoid Cloudflare’s “Cross-site POST form submissions are forbidden”
+			// (triggered for form-like Content-Types / missing JSON type).
+			"content-type": "application/json",
+			origin: origin,
+		},
+		body: "{}",
 	});
 	const text = await response.text();
 	let body = text;
