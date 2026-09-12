@@ -32,7 +32,12 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 	// catalog saves on dashboard must ask the public Worker to purge its cache.
 	const response = await fetch(new URL("/__mbu/cache-purge", `${origin}/`), {
 		method: "POST",
-		headers: { accept: "application/json" },
+		headers: {
+			accept: "application/json",
+			"content-type": "application/json",
+			origin,
+		},
+		body: "{}",
 	});
 	if (!response.ok) {
 		const body = await response.text().catch(() => "");
