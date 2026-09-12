@@ -1,6 +1,8 @@
 import { siteOrigin } from "./hosts";
 
 const HTML_CACHE_TAG = "html";
+/** Public purge route on the site Worker (must not use Astro `_` private folders). */
+export const SITE_CACHE_PURGE_PATH = "/cdn-purge";
 const WARM_PATHS = ["/", "/de/"] as const;
 
 export { HTML_CACHE_TAG };
@@ -30,7 +32,7 @@ function resolvePublicOrigin(options: SiteCacheRefreshOptions): string | null {
 async function purgePublicHtmlOnSiteWorker(origin: string) {
 	// Dashboard and mbu are separate Workers; purge is entrypoint-scoped, so
 	// catalog saves on dashboard must ask the public Worker to purge its cache.
-	const response = await fetch(new URL("/__mbu/cache-purge", `${origin}/`), {
+	const response = await fetch(new URL(SITE_CACHE_PURGE_PATH, `${origin}/`), {
 		method: "POST",
 		headers: {
 			accept: "application/json",

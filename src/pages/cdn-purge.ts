@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { HTML_CACHE_TAG } from "../../lib/site-cache";
+import { HTML_CACHE_TAG, SITE_CACHE_PURGE_PATH } from "../lib/site-cache";
 
 export const prerender = false;
 
@@ -14,8 +14,10 @@ function parseScope(url: URL): PurgeScope {
  * Runs on the public `mbu` Worker so `cache.purge` hits the site cache
  * (dashboard Worker has a separate cache and only stores no-store responses).
  *
- * - `POST /__mbu/cache-purge` or `?scope=html` → purge Cache-Tag `html`
- * - `POST /__mbu/cache-purge?scope=everything` → purgeEverything (deploy)
+ * Path must NOT use a `_` / `__` prefix — Astro ignores those as private folders.
+ *
+ * - `POST /cdn-purge` or `?scope=html` → purge Cache-Tag `html`
+ * - `POST /cdn-purge?scope=everything` → purgeEverything (deploy)
  */
 export const POST: APIRoute = async ({ url }) => {
 	const scope = parseScope(url);
@@ -40,6 +42,7 @@ export const POST: APIRoute = async ({ url }) => {
 			JSON.stringify({
 				ok: true,
 				scope,
+				path: SITE_CACHE_PURGE_PATH,
 				...(scope === "html" ? { tags: [HTML_CACHE_TAG] } : { purgeEverything: true }),
 			}),
 			{
