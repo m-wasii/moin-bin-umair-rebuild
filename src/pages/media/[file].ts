@@ -5,6 +5,8 @@ export const prerender = false;
 
 const HERO_FILES = new Set(["hero-loop.mp4", "hero-poster.webp"]);
 
+const MEDIA_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 export const GET: APIRoute = async ({ params }) => {
 	const file = params.file ?? "";
 	if (!HERO_FILES.has(file)) {
@@ -20,7 +22,7 @@ export const GET: APIRoute = async ({ params }) => {
 		headers: {
 			"content-type": object.contentType,
 			"content-length": String(object.size),
-			"cache-control": "public, max-age=86400",
+			"cache-control": MEDIA_CACHE_CONTROL,
 			"accept-ranges": "bytes",
 		},
 	});

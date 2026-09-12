@@ -5,11 +5,17 @@ import seedShorts from "../data/shorts.seed.json";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
 import {
 	defaultPhotoCategories,
+	photoMediaSrc,
 	type PhotoCategory,
 	type StoredPhoto,
 	type StoredPhotoCategory,
 } from "../data/photos";
 import type { StoredShort } from "../data/shorts";
+import { withMediaVersion } from "./media-url";
+import {
+	refreshPublicHtmlCache,
+	type SiteCacheRefreshOptions,
+} from "./site-cache";
 
 export interface StoredVideo {
 	slug: string;
@@ -32,17 +38,32 @@ const VIDEOS_KEY = "catalog/videos.json";
 const PHOTOS_KEY = "catalog/photos.json";
 const PHOTO_CATEGORIES_KEY = "catalog/photo-categories.json";
 const SHORTS_KEY = "catalog/shorts.json";
+const HERO_META_KEY = "catalog/hero.json";
+
+interface ShortsCatalogPayload {
+	shorts: StoredShort[];
+	/** Catalog-wide media version applied to clip src/poster URLs. */
+	v?: string;
+}
+
+interface HeroCatalogPayload {
+	v?: string;
+}
 
 interface MediaObject {
 	json<T = unknown>(): Promise<T>;
 	arrayBuffer(): Promise<ArrayBuffer>;
 	body?: ReadableStream<Uint8Array>;
 	size?: number;
+	etag?: string;
+	uploaded?: Date;
 	httpMetadata?: { contentType?: string };
 }
 
 interface MediaHead {
 	size: number;
+	etag?: string;
+	uploaded?: Date;
 	httpMetadata?: { contentType?: string };
 }
 
@@ -183,16 +204,36 @@ function normalizeStoredVideo(video: StoredVideo): StoredVideo {
 	return { ...video, category };
 }
 
-export async function saveVideos(videos: StoredVideo[]) {
+export async function saveVideos(
+	videos: StoredVideo[],
+	cache?: SiteCacheRefreshOptions,
+) {
 	const payload = { videos };
 	const bucket = getBucket();
 	if (bucket) {
 		await bucket.put(VIDEOS_KEY, JSON.stringify(payload), {
 			httpMetadata: { contentType: "application/json" },
 		});
-		return;
+	} else {
+		await writeLocalJson(VIDEOS_KEY, payload);
 	}
-	await writeLocalJson(VIDEOS_KEY, payload);
+	refreshPublicHtmlCache(cache);
+}
+
+function photoVersion(photo: StoredPhoto) {
+	if (photo.v?.trim()) return photo.v.trim();
+	const match = /[?&]v=([^&]+)/.exec(photo.src);
+	if (match?.[1]) return decodeURIComponent(match[1]);
+	return "1";
+}
+
+function normalizeStoredPhoto(photo: StoredPhoto): StoredPhoto {
+	const v = photoVersion(photo);
+	return {
+		...photo,
+		v,
+		src: photoMediaSrc(photo.category, photo.slug, v),
+	};
 }
 
 export async function listPhotos(): Promise<StoredPhoto[]> {
@@ -201,25 +242,32 @@ export async function listPhotos(): Promise<StoredPhoto[]> {
 		const object = await bucket.get(PHOTOS_KEY);
 		if (object) {
 			const payload = (await object.json()) as { photos?: StoredPhoto[] };
-			if (Array.isArray(payload.photos)) return payload.photos;
+			if (Array.isArray(payload.photos)) {
+				return payload.photos.map(normalizeStoredPhoto);
+			}
 		}
-		return seedPhotoList();
+		return seedPhotoList().map(normalizeStoredPhoto);
 	}
 
 	const local = await readLocalJson<{ photos: StoredPhoto[] }>(PHOTOS_KEY);
-	return local?.photos ?? seedPhotoList();
+	return (local?.photos ?? seedPhotoList()).map(normalizeStoredPhoto);
 }
 
-export async function savePhotos(photos: StoredPhoto[]) {
-	const payload = { photos };
+export async function savePhotos(
+	photos: StoredPhoto[],
+	cache?: SiteCacheRefreshOptions,
+) {
+	const normalized = photos.map(normalizeStoredPhoto);
+	const payload = { photos: normalized };
 	const bucket = getBucket();
 	if (bucket) {
 		await bucket.put(PHOTOS_KEY, JSON.stringify(payload), {
 			httpMetadata: { contentType: "application/json" },
 		});
-		return;
+	} else {
+		await writeLocalJson(PHOTOS_KEY, payload);
 	}
-	await writeLocalJson(PHOTOS_KEY, payload);
+	refreshPublicHtmlCache(cache);
 }
 
 export async function listPhotoCategories(): Promise<StoredPhotoCategory[]> {
@@ -241,16 +289,20 @@ export async function listPhotoCategories(): Promise<StoredPhotoCategory[]> {
 	return local?.categories ?? seedPhotoCategoryList();
 }
 
-export async function savePhotoCategories(categories: StoredPhotoCategory[]) {
+export async function savePhotoCategories(
+	categories: StoredPhotoCategory[],
+	cache?: SiteCacheRefreshOptions,
+) {
 	const payload = { categories };
 	const bucket = getBucket();
 	if (bucket) {
 		await bucket.put(PHOTO_CATEGORIES_KEY, JSON.stringify(payload), {
 			httpMetadata: { contentType: "application/json" },
 		});
-		return;
+	} else {
+		await writeLocalJson(PHOTO_CATEGORIES_KEY, payload);
 	}
-	await writeLocalJson(PHOTO_CATEGORIES_KEY, payload);
+	refreshPublicHtmlCache(cache);
 }
 
 export function photoObjectKey(category: PhotoCategory, slug: string) {
@@ -284,6 +336,13 @@ export async function getPhotoBytes(category: PhotoCategory, slug: string) {
 	return local ? new Uint8Array(local) : null;
 }
 
+function guessMediaContentType(key: string) {
+	const lower = key.toLowerCase();
+	if (lower.endsWith(".webp")) return "image/webp";
+	if (lower.endsWith(".mp4")) return "video/mp4";
+	return "application/octet-stream";
+}
+
 /** R2 / local `.data/media` object (e.g. `media/hero-loop.mp4`). */
 export async function getMediaObject(key: string) {
 	const bucket = getBucket();
@@ -295,12 +354,7 @@ export async function getMediaObject(key: string) {
 				body: bytes,
 				size: bytes.byteLength,
 				contentType:
-					object.httpMetadata?.contentType ||
-					(key.toLowerCase().endsWith(".webp")
-						? "image/webp"
-						: key.toLowerCase().endsWith(".mp4")
-							? "video/mp4"
-							: "application/octet-stream"),
+					object.httpMetadata?.contentType || guessMediaContentType(key),
 			};
 		}
 	}
@@ -310,12 +364,96 @@ export async function getMediaObject(key: string) {
 	return {
 		body: new Uint8Array(local),
 		size: local.byteLength,
-		contentType: key.toLowerCase().endsWith(".webp")
-			? "image/webp"
-			: key.toLowerCase().endsWith(".mp4")
-				? "video/mp4"
-				: "application/octet-stream",
+		contentType: guessMediaContentType(key),
 	};
+}
+
+export async function getMediaHead(key: string): Promise<MediaHead | null> {
+	const bucket = getBucket();
+	if (bucket) {
+		if (bucket.head) {
+			const head = await bucket.head(key);
+			if (head) return head;
+		} else {
+			const object = await bucket.get(key);
+			if (object) {
+				const bytes = await object.arrayBuffer();
+				return {
+					size: object.size ?? bytes.byteLength,
+					etag: object.etag,
+					uploaded: object.uploaded,
+					httpMetadata: object.httpMetadata,
+				};
+			}
+		}
+	}
+
+	try {
+		const { stat } = await import("node:fs/promises");
+		const info = await stat(await localPath(key));
+		return {
+			size: info.size,
+			uploaded: info.mtime,
+			httpMetadata: { contentType: guessMediaContentType(key) },
+		};
+	} catch {
+		return null;
+	}
+}
+
+function versionFromMediaHead(head: MediaHead | null) {
+	if (!head) return "1";
+	if (head.etag) return head.etag.replace(/"/g, "");
+	if (head.uploaded) return String(head.uploaded.getTime());
+	return String(head.size || "1");
+}
+
+/** Cache-bust query for hero poster/loop from catalog or R2 object metadata. */
+export async function heroMediaVersion() {
+	const meta = await readHeroMeta();
+	if (meta?.v?.trim()) return meta.v.trim();
+
+	const [loop, poster] = await Promise.all([
+		getMediaHead("media/hero-loop.mp4"),
+		getMediaHead("media/hero-poster.webp"),
+	]);
+	return `${versionFromMediaHead(loop)}-${versionFromMediaHead(poster)}`;
+}
+
+export function heroMediaSrc(
+	file: "hero-loop.mp4" | "hero-poster.webp",
+	version: string,
+) {
+	return withMediaVersion(`/media/${file}`, version);
+}
+
+async function readHeroMeta(): Promise<HeroCatalogPayload | null> {
+	const bucket = getBucket();
+	if (bucket) {
+		const object = await bucket.get(HERO_META_KEY);
+		if (object) {
+			return (await object.json()) as HeroCatalogPayload;
+		}
+		return null;
+	}
+	return readLocalJson<HeroCatalogPayload>(HERO_META_KEY);
+}
+
+/** Persist hero version + purge/warm when hero bytes are replaced. */
+export async function touchHeroMedia(
+	version = Date.now().toString(36),
+	cache?: SiteCacheRefreshOptions,
+) {
+	const payload: HeroCatalogPayload = { v: version };
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(HERO_META_KEY, JSON.stringify(payload), {
+			httpMetadata: { contentType: "application/json" },
+		});
+	} else {
+		await writeLocalJson(HERO_META_KEY, payload);
+	}
+	refreshPublicHtmlCache(cache);
 }
 
 export async function deletePhotoBytes(category: PhotoCategory, slug: string) {
@@ -333,15 +471,36 @@ export async function listShorts(): Promise<StoredShort[]> {
 	if (bucket) {
 		const object = await bucket.get(SHORTS_KEY);
 		if (object) {
-			const payload = (await object.json()) as { shorts?: StoredShort[] };
+			const payload = (await object.json()) as ShortsCatalogPayload;
 			if (Array.isArray(payload.shorts) && payload.shorts.length) {
-				return normalizeShortMedia(payload.shorts);
+				return normalizeShortMedia(payload.shorts, payload.v ?? "1");
 			}
 		}
 	}
 
-	const local = await readLocalJson<{ shorts: StoredShort[] }>(SHORTS_KEY);
-	return normalizeShortMedia(local?.shorts ?? seedShortList());
+	const local = await readLocalJson<ShortsCatalogPayload>(SHORTS_KEY);
+	return normalizeShortMedia(
+		local?.shorts ?? seedShortList(),
+		local?.v ?? "1",
+	);
+}
+
+export async function saveShorts(
+	shorts: StoredShort[],
+	cache?: SiteCacheRefreshOptions,
+) {
+	const v = Date.now().toString(36);
+	const normalized = normalizeShortMedia(shorts, v);
+	const payload: ShortsCatalogPayload = { shorts: normalized, v };
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(SHORTS_KEY, JSON.stringify(payload), {
+			httpMetadata: { contentType: "application/json" },
+		});
+	} else {
+		await writeLocalJson(SHORTS_KEY, payload);
+	}
+	refreshPublicHtmlCache(cache);
 }
 
 function rewriteShortMediaPath(path: string) {
@@ -349,13 +508,16 @@ function rewriteShortMediaPath(path: string) {
 }
 
 /** Ensure clip src/poster URLs go through /media/shorts (R2), not bare /shorts. */
-function normalizeShortMedia(shorts: StoredShort[]): StoredShort[] {
+function normalizeShortMedia(
+	shorts: StoredShort[],
+	version = "1",
+): StoredShort[] {
 	return shorts.map((entry) => ({
 		...entry,
 		clips: entry.clips.map((clip) => ({
 			...clip,
-			src: rewriteShortMediaPath(clip.src),
-			poster: rewriteShortMediaPath(clip.poster),
+			src: withMediaVersion(rewriteShortMediaPath(clip.src), version),
+			poster: withMediaVersion(rewriteShortMediaPath(clip.poster), version),
 		})),
 	}));
 }

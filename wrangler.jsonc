@@ -4,6 +4,12 @@
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": true,
 	"preview_urls": false,
+	// Workers Caching: public GETs with Cache-Control hit without Worker compute.
+	// Dashboard Worker uses the same config via `wrangler deploy --name dashboard`
+	// but stays uncached via middleware `cache-control: no-store`.
+	"cache": {
+		"enabled": true,
+	},
 	// Binding name is MEDIA (matches src/lib/store.ts), not the default moin_media.
 	// Public site: https://mbu.wasi-workdesk.workers.dev
 	// Dashboard:   npx wrangler deploy --name dashboard
