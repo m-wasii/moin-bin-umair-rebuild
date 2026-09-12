@@ -68,7 +68,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		// Internal purge endpoint must stay uncached.
 		if (
 			!url.pathname.startsWith("/media/") &&
-			!url.pathname.startsWith("/__mbu/")
+			url.pathname !== "/cdn-purge"
 		) {
 			response.headers.set(
 				"cache-control",
@@ -81,7 +81,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			const tags = ["html"];
 			if (buildId) tags.push(`deploy-${buildId.slice(0, 12)}`);
 			response.headers.set("cache-tag", tags.join(","));
-		} else if (url.pathname.startsWith("/__mbu/")) {
+		} else if (url.pathname === "/cdn-purge") {
 			response.headers.set("cache-control", "no-store");
 		}
 	}

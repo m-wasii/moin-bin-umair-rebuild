@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Post-deploy Workers Caching purge for the public `mbu` Worker.
- * Calls the Worker’s own `/__mbu/cache-purge` so purge is entrypoint-scoped.
+ * Calls the Worker’s own `/cdn-purge` so purge is entrypoint-scoped.
  *
  * Usage:
  *   node scripts/purge-workers-cache.mjs
@@ -27,7 +27,7 @@ async function sleep(ms) {
 }
 
 async function purgeOnce(origin, scope) {
-	const url = new URL("/__mbu/cache-purge", `${origin}/`);
+	const url = new URL("/cdn-purge", `${origin}/`);
 	url.searchParams.set("scope", scope);
 	const response = await fetch(url, {
 		method: "POST",
