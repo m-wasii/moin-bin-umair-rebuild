@@ -74,7 +74,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 				"cache-control",
 				"public, s-maxage=86400, stale-while-revalidate=604800",
 			);
-			response.headers.set("cache-tag", "html");
+			const buildId =
+				typeof import.meta.env.PUBLIC_BUILD_ID === "string"
+					? import.meta.env.PUBLIC_BUILD_ID.trim()
+					: "";
+			const tags = ["html"];
+			if (buildId) tags.push(`deploy-${buildId.slice(0, 12)}`);
+			response.headers.set("cache-tag", tags.join(","));
 		} else if (url.pathname.startsWith("/__mbu/")) {
 			response.headers.set("cache-control", "no-store");
 		}

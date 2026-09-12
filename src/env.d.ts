@@ -32,6 +32,7 @@ interface CloudflareEnv {
 	};
 	YOUTUBE_API_KEY?: string;
 	DASHBOARD_ENFORCE_CF_ACCESS?: string;
+	CF_VERSION_METADATA?: { id: string; tag?: string };
 }
 
 interface WorkersCachePurgeResult {
