@@ -1,7 +1,9 @@
 ---
 import type { StoredPhoto } from "../data/photos";
 import { listPhotoCategories } from "../lib/store";
+import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
+import ResponsiveImage from "./ResponsiveImage.astro";
 
 interface Props {
 	photos: StoredPhoto[];
@@ -98,23 +100,27 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 												class={`photo-album__peek photo-album__peek--${peekIndex + 1}`}
 												aria-hidden="true"
 											>
-												<img
+												<ResponsiveImage
 													src={photo.src}
 													alt=""
-													width="800"
-													height="1000"
+													width={800}
+													height={1000}
+													widths={RESPONSIVE_WIDTHS.album}
+													sizes="(max-width: 760px) 45vw, 22vw"
 													loading="lazy"
 													decoding="async"
 												/>
 											</span>
 										))}
 										<figure class="photo-album__frame">
-											<img
+											<ResponsiveImage
 												src={cover.src}
 												alt=""
-												width="1600"
-												height="1200"
-												loading={albumIndex < 2 ? "eager" : "lazy"}
+												width={1600}
+												height={1200}
+												widths={RESPONSIVE_WIDTHS.album}
+												sizes="(max-width: 760px) 90vw, 42vw"
+												loading="lazy"
 												decoding="async"
 											/>
 											<span class="photo-album__mask" aria-hidden="true" />
@@ -196,11 +202,13 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 									data-photo-index={String(index)}
 									aria-label={photo.alt || group.title}
 								>
-									<img
+									<ResponsiveImage
 										src={photo.src}
 										alt={photo.alt || group.title}
-										width="1200"
-										height="1500"
+										width={1200}
+										height={1500}
+										widths={RESPONSIVE_WIDTHS.album}
+										sizes="(max-width: 760px) 90vw, 42vw"
 										loading="lazy"
 										decoding="async"
 									/>

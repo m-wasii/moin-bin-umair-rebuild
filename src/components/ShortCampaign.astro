@@ -1,6 +1,8 @@
 ---
 import type { StoredShort } from "../data/shorts";
+import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
 import { useTranslations, type Lang } from "../i18n/ui";
+import ResponsiveImage from "./ResponsiveImage.astro";
 
 interface Props {
 	entry: StoredShort;
@@ -52,12 +54,14 @@ const clipsJson = JSON.stringify(
 						{ current: clipIndex + 1, total: entry.clips.length },
 					)}`}
 				>
-					<img
+					<ResponsiveImage
 						src={clip.poster}
 						alt=""
 						width={clip.width || 1080}
 						height={clip.height || 1080}
-						loading={clipIndex < 2 ? "eager" : "lazy"}
+						widths={RESPONSIVE_WIDTHS.short}
+						sizes="(max-width: 760px) 45vw, 22vw"
+						loading="lazy"
 						decoding="async"
 					/>
 					<span class="shorts-tile__wash" aria-hidden="true"></span>

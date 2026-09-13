@@ -2,7 +2,10 @@
 import { defineConfig } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 
-const site = process.env.SITE || process.env.CF_PAGES_URL;
+// Canonical host for hreflang/OG. Prefer SITE / CF_PAGES_URL; fall back to
+// production domain from .env.example (Workers preview often leaves SITE unset).
+const site =
+	process.env.SITE || process.env.CF_PAGES_URL || "https://moinbinumair.com";
 
 export default defineConfig({
 	site,

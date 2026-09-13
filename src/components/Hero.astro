@@ -2,6 +2,8 @@
 import { site } from "../data/site";
 import { useTranslations, type Lang } from "../i18n/ui";
 import { heroMediaSrc, heroMediaVersion } from "../lib/store";
+import ResponsiveImage from "./ResponsiveImage.astro";
+import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
 
 interface Props {
 	lang: Lang;
@@ -15,18 +17,28 @@ const heroLoop = heroMediaSrc("hero-loop.mp4", heroVersion);
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
-	<div class="hero__media" aria-hidden="true">
+	<div class="hero__media" aria-hidden="true" data-hero-media>
+		{/* Poster is the LCP candidate; video loads after idle so it does not compete. */}
+		<ResponsiveImage
+			class="hero__media-poster"
+			src={heroPoster}
+			alt=""
+			width={1920}
+			height={1080}
+			widths={RESPONSIVE_WIDTHS.hero}
+			sizes="100vw"
+			decoding="async"
+			fetchpriority="high"
+		/>
 		<video
-			autoplay
 			muted
 			loop
 			playsinline
-			preload="metadata"
-			poster={heroPoster}
+			preload="none"
 			tabindex="-1"
 			data-hero-video
+			data-hero-src={heroLoop}
 		>
-			<source src={heroLoop} type="video/mp4" />
 		</video>
 		<div class="hero__veil"></div>
 		<div class="hero__grain"></div>

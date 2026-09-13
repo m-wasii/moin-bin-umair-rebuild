@@ -1,0 +1,39 @@
+---
+import {
+	buildResponsiveImageAttrs,
+	type ResponsiveImageAttrs,
+} from "../lib/responsive-image";
+
+interface Props extends ResponsiveImageAttrs {
+	widths: readonly number[];
+	sizes: string;
+}
+
+const {
+	widths,
+	sizes,
+	src,
+	width,
+	height,
+	loading,
+	decoding,
+	fetchpriority,
+	alt,
+	class: className,
+} = Astro.props;
+
+const attrs = buildResponsiveImageAttrs({
+	src,
+	widths,
+	sizes,
+	width,
+	height,
+	loading,
+	decoding,
+	fetchpriority,
+	alt,
+	class: className,
+});
+---
+
+<img {...attrs} />

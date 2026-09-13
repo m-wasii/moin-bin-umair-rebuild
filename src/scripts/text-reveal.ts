@@ -176,8 +176,8 @@ export function initTextReveal(
 		return null;
 	}
 
-	items.forEach(prepareElement);
-
+	/* Prepare lazily on viewport entry — wrapping every word site-wide on
+	   boot caused heavy main-thread / TBT cost on DE home. */
 	const observer = new IntersectionObserver(
 		(entries, obs) => {
 			entries.forEach((entry) => {

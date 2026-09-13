@@ -91,6 +91,41 @@ function stepFileClip(delta: number) {
 	renderFileClip();
 }
 
+/** Open a file-provider short tile. Used by deferred loaders for first-tap. */
+export function openFileShort(link: HTMLElement): boolean {
+	if (link.dataset.videoProvider !== "file") return false;
+	if (!videoDialog || !videoPlayer) return false;
+
+	let clips: FileClip[] = [];
+	try {
+		clips = JSON.parse(link.dataset.videoClips || "[]") as FileClip[];
+	} catch {
+		clips = [];
+	}
+	if (clips.length === 0) return false;
+
+	fileClips = clips;
+	const start = Number(link.dataset.videoIndex ?? 0);
+	fileClipIndex =
+		Number.isFinite(start) && start >= 0 && start < clips.length
+			? Math.floor(start)
+			: 0;
+	videoTitle?.replaceChildren(
+		document.createTextNode(link.dataset.videoTitle || "Short"),
+	);
+	if (aboutToggle) aboutToggle.hidden = true;
+	if (aboutPanel) aboutPanel.hidden = true;
+	videoBody?.classList.remove("video-dialog__body--about-open");
+	if (externalLink) externalLink.hidden = true;
+	if (videoPlaylist) videoPlaylist.hidden = clips.length < 2;
+	renderFileClip();
+	videoDialog.hidden = false;
+	videoDialog.dispatchEvent(
+		new CustomEvent("video-dialog:open", { detail: link }),
+	);
+	return true;
+}
+
 document.addEventListener(
 	"click",
 	(event) => {
@@ -98,40 +133,10 @@ document.addEventListener(
 		if (!(target instanceof Element)) return;
 		const link = target.closest<HTMLElement>("[data-video]");
 		if (!link || link.dataset.videoProvider !== "file") return;
-		if (!videoDialog || !videoPlayer) return;
-
-		let clips: FileClip[] = [];
-		try {
-			clips = JSON.parse(link.dataset.videoClips || "[]") as FileClip[];
-		} catch {
-			clips = [];
-		}
-		if (clips.length === 0) return;
+		if (!openFileShort(link)) return;
 
 		event.preventDefault();
 		event.stopImmediatePropagation();
-
-		fileClips = clips;
-		const start = Number(link.dataset.videoIndex ?? 0);
-		fileClipIndex =
-			Number.isFinite(start) && start >= 0 && start < clips.length
-				? Math.floor(start)
-				: 0;
-		videoTitle?.replaceChildren(
-			document.createTextNode(link.dataset.videoTitle || "Short"),
-		);
-		if (aboutToggle) aboutToggle.hidden = true;
-		if (aboutPanel) aboutPanel.hidden = true;
-		videoBody?.classList.remove("video-dialog__body--about-open");
-		if (externalLink) externalLink.hidden = true;
-		if (videoPlaylist) videoPlaylist.hidden = clips.length < 2;
-		renderFileClip();
-		if (videoDialog) {
-			videoDialog.hidden = false;
-			videoDialog.dispatchEvent(
-				new CustomEvent("video-dialog:open", { detail: link }),
-			);
-		}
 	},
 	true,
 );

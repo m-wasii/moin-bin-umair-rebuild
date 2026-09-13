@@ -1,3 +1,5 @@
+@import "./fonts.css";
+
 :root {
 	--ink: #050a12;
 	--ink-soft: #091120;
@@ -428,6 +430,7 @@ main {
 	background: #050a12;
 }
 
+.hero__media-poster,
 .hero__media video {
 	width: 100%;
 	height: 100%;
@@ -435,6 +438,23 @@ main {
 	object-position: center;
 	filter: saturate(0.78) contrast(1.08) brightness(0.68);
 	transform: scale(1.01);
+}
+
+.hero__media-poster {
+	display: block;
+	position: absolute;
+	inset: 0;
+}
+
+.hero__media.is-playing .hero__media-poster {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 480ms ease;
+}
+
+.hero__media video {
+	position: absolute;
+	inset: 0;
 }
 
 .hero__veil {
@@ -1544,8 +1564,9 @@ main {
 }
 
 .section-heading--contact .section-heading__ghost {
+	/* Opaque enough for WCAG AA large-text 3:1 on --peach (#ffedd5). */
 	color: var(--ink);
-	opacity: 0.08;
+	opacity: 0.45;
 }
 
 .section-heading--contact .section-heading__meta {
@@ -1623,7 +1644,8 @@ main {
 	font-weight: 600;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: rgba(5, 10, 18, 0.42);
+	/* ~4.7:1 on --peach; prior 0.42 opacity failed AA (~2.8:1). */
+	color: rgba(5, 10, 18, 0.58);
 }
 
 .contact__links {
@@ -1695,13 +1717,15 @@ main {
 
 .contact .text-link--row {
 	padding: 0.95rem 0;
-	border-bottom: 2px solid var(--amber-deep);
-	color: var(--amber-deep);
+	/* #92400e ≈ 6.2:1 on --peach; --amber-deep (#d97706) failed AA (~2.8:1). */
+	border-bottom: 2px solid #92400e;
+	color: #92400e;
 }
 
 .contact .text-link--row:hover {
-	color: var(--orange-deep);
-	border-color: var(--orange-deep);
+	/* Darker than default #92400e so hover stays AA on --peach. */
+	color: #78350f;
+	border-color: #78350f;
 }
 
 .contact .text-link--pill {
@@ -1715,8 +1739,8 @@ main {
 }
 
 .contact .text-link--pill:hover {
-	border-color: var(--amber-deep);
-	color: var(--amber-deep);
+	border-color: #92400e;
+	color: #92400e;
 	background: rgba(255, 255, 255, 0.5);
 }
 
@@ -1739,7 +1763,7 @@ main {
 }
 
 .contact .site-footer a:hover {
-	color: var(--amber-deep);
+	color: #92400e;
 }
 
 .contact .site-footer p {
@@ -2233,6 +2257,7 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 		padding-bottom: 1rem;
 	}
 
+	.hero__media-poster,
 	.hero__media video {
 		transform: none;
 	}
@@ -2479,6 +2504,10 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 		transition-duration: 0.01ms !important;
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
+	}
+
+	.hero__media-poster {
+		display: block;
 	}
 
 	.hero__media video {

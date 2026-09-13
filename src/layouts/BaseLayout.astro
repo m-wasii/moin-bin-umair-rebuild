@@ -24,16 +24,15 @@ const description = t("meta.description");
 const enPath = localizedHomePath("en");
 const dePath = localizedHomePath("de");
 const canonicalPath = localizedHomePath(lang);
-const canonicalUrl = Astro.site
-	? new URL(canonicalPath, Astro.site).href
-	: undefined;
-const enUrl = Astro.site ? new URL(enPath, Astro.site).href : enPath;
-const deUrl = Astro.site ? new URL(dePath, Astro.site).href : dePath;
+const siteOrigin =
+	Astro.site ?? new URL("https://moinbinumair.com");
+const canonicalUrl = new URL(canonicalPath, siteOrigin).href;
+const enUrl = new URL(enPath, siteOrigin).href;
+const deUrl = new URL(dePath, siteOrigin).href;
 const heroVersion = await heroMediaVersion();
 const ogImagePath = heroMediaSrc("hero-poster.webp", heroVersion);
-const ogImage = Astro.site
-	? new URL(ogImagePath, Astro.site).href
-	: ogImagePath;
+const ogImage = new URL(ogImagePath, siteOrigin).href;
+const heroPosterPreload = ogImagePath;
 
 const structuredData = {
 	"@context": "https://schema.org",
@@ -58,7 +57,7 @@ const structuredData = {
 		<meta name="theme-color" content="#050a12" />
 		<meta name="color-scheme" content="dark" />
 
-		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+		<link rel="canonical" href={canonicalUrl} />
 		<link rel="alternate" hreflang="en" href={enUrl} />
 		<link rel="alternate" hreflang="de" href={deUrl} />
 		<link rel="alternate" hreflang="x-default" href={enUrl} />
@@ -66,16 +65,17 @@ const structuredData = {
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:locale" content={lang === "de" ? "de_DE" : "en_US"} />
-		{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+		<meta property="og:url" content={canonicalUrl} />
 		<meta property="og:image" content={ogImage} />
 		<meta name="twitter:card" content="summary_large_image" />
 
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@500;600;700;800&display=swap"
-			rel="stylesheet"
+			rel="preload"
+			as="image"
+			href={heroPosterPreload}
+			type="image/webp"
+			fetchpriority="high"
 		/>
 		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
@@ -195,7 +195,71 @@ const structuredData = {
 	<body>
 		<a class="skip-link" href="#main-content">{t("a11y.skip")}</a>
 		<slot />
-		<script src="../scripts/site.ts"></script>
-		<script src="../scripts/shorts-player.ts"></script>
+		<script src="../scripts/site-bootstrap.ts"></script>
+		{/* Defer shorts player until idle / near viewport / interaction.
+		    First tap on a short awaits the chunk, then opens via openFileShort
+		    so the click cannot race the module's own capture listener. */}
+		<script>
+			type ShortsPlayerModule = typeof import("../scripts/shorts-player.ts");
+
+			let shortsPlayerPromise: Promise<ShortsPlayerModule> | null = null;
+			let shortsPlayerMod: ShortsPlayerModule | null = null;
+
+			function loadShortsPlayer() {
+				if (!shortsPlayerPromise) {
+					shortsPlayerPromise = import("../scripts/shorts-player.ts").then(
+						(mod) => {
+							shortsPlayerMod = mod;
+							return mod;
+						},
+					);
+				}
+				return shortsPlayerPromise;
+			}
+
+			const ric = window.requestIdleCallback?.bind(window);
+			if (ric) ric(() => loadShortsPlayer(), { timeout: 2500 });
+			else window.setTimeout(loadShortsPlayer, 1200);
+
+			window.addEventListener("pointerdown", loadShortsPlayer, {
+				once: true,
+				passive: true,
+				capture: true,
+			});
+			window.addEventListener("keydown", loadShortsPlayer, { once: true });
+
+			const shortsRoot = document.getElementById("shorts");
+			if (shortsRoot && "IntersectionObserver" in window) {
+				const obs = new IntersectionObserver(
+					(entries) => {
+						if (!entries.some((entry) => entry.isIntersecting)) return;
+						loadShortsPlayer();
+						obs.disconnect();
+					},
+					{ rootMargin: "240px 0px" },
+				);
+				obs.observe(shortsRoot);
+			}
+
+			/* Cold path: chunk not evaluated yet — hold the click, then open. */
+			document.addEventListener(
+				"click",
+				(event) => {
+					if (shortsPlayerMod) return;
+					const target = event.target;
+					if (!(target instanceof Element)) return;
+					const link = target.closest<HTMLElement>("[data-video]");
+					if (!link || link.dataset.videoProvider !== "file") return;
+
+					event.preventDefault();
+					event.stopImmediatePropagation();
+
+					void loadShortsPlayer().then((mod) => {
+						mod.openFileShort(link);
+					});
+				},
+				true,
+			);
+		</script>
 	</body>
 </html>
