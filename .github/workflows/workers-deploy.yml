@@ -14,35 +14,73 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy mbu and dashboard
+    name: Production deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    environment: production
     env:
+      # Cloudflare credentials — never echo these values.
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CDN_PURGE_SECRET: ${{ secrets.CDN_PURGE_SECRET }}
-      # Baked into HTML Cache-Tag at build time (belt-and-suspenders with purge).
+      # Non-secret build stamp baked into HTML Cache-Tag.
       PUBLIC_BUILD_ID: ${{ github.sha }}
       MBU_SITE_ORIGIN: https://mbu.wasi-workdesk.workers.dev
     steps:
-      - name: Require Cloudflare secrets
+      - name: "1. Require production secrets"
         run: |
-          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "::error::Add repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID at https://github.com/${GITHUB_REPOSITORY}/settings/secrets/actions then re-run this workflow."
-            exit 1
+          set -euo pipefail
+          missing=0
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::Missing repository/environment secret CLOUDFLARE_API_TOKEN"
+            missing=1
+          fi
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "::error::Missing repository/environment secret CLOUDFLARE_ACCOUNT_ID"
+            missing=1
           fi
           if [ -z "${CDN_PURGE_SECRET:-}" ]; then
-            echo "::error::Add repository secret CDN_PURGE_SECRET (same value as the mbu and dashboard Worker secrets) then re-run this workflow."
+            echo "::error::Missing repository/environment secret CDN_PURGE_SECRET (must match mbu + dashboard Worker secrets)"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Add secrets at https://github.com/${GITHUB_REPOSITORY}/settings/secrets/actions (and/or the production environment), then re-run."
             exit 1
           fi
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+          echo "Required production secrets are present (values not printed)."
+
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Setup Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - name: Build and deploy Workers
-        run: npm run deploy
-      - name: Purge public Workers HTML cache
-        run: node scripts/purge-workers-cache.mjs --scope everything --warm
-      # Fail hard: a successful deploy must not leave stale HTML behind long s-maxage.
+
+      - name: "2. Install"
+        run: npm ci
+
+      - name: "3. Validation (format slice + check + tests)"
+        run: |
+          set -euo pipefail
+          npm run validate:format
+          npm run check
+          npm run test
+
+      - name: "4. Build"
+        run: npm run build
+
+      - name: "5. Deploy public Worker (mbu)"
+        run: npm run deploy:public
+
+      - name: "6. Deploy dashboard Worker"
+        run: npm run deploy:dashboard
+
+      - name: "7. Purge and warm public Workers cache"
+        run: >
+          node scripts/purge-workers-cache.mjs
+          --target production
+          --i-know-this-is-production
+          --scope everything
+          --warm

@@ -1,4 +1,8 @@
-import { CatalogConflictError, parseCatalogRev } from "../catalog-integrity";
+import {
+	CatalogConflictError,
+	classifyCatalogList,
+	parseCatalogRev,
+} from "../catalog-integrity";
 import {
 	refreshPublicHtmlCache,
 	type SiteCacheRefreshOptions,
@@ -42,9 +46,7 @@ export async function readCatalogRecord(key: string): Promise<CatalogRecord> {
 	}
 
 	if (!import.meta.env.DEV) {
-		console.error(
-			`[store] MEDIA binding missing; cannot read catalog ${key}`,
-		);
+		console.error(`[store] MEDIA binding missing; cannot read catalog ${key}`);
 		return {
 			payload: {},
 			revision: { rev: 0, found: false },
@@ -142,6 +144,7 @@ export async function writeCatalogRecord(
  * - Object missing → seed (bootstrap; intended).
  * - Object present but malformed → throw in production / with R2;
  *   DEV-only local fallback may use seed with a warning.
+ * - Object present with `[]` → intentional empty (never fall back to seed).
  */
 export function resolveCatalogList<T>(options: {
 	key: string;
@@ -151,14 +154,14 @@ export function resolveCatalogList<T>(options: {
 	label: string;
 }): T[] {
 	const { key, found, list, seed, label } = options;
-	if (found) {
-		if (Array.isArray(list)) return list as T[];
-		const message = `Malformed ${label} catalog at ${key}: expected an array.`;
-		if (getBucket() || !import.meta.env.DEV) {
-			throw new Error(message);
-		}
-		console.warn(`[store] ${message} Using seed data for local DEV.`);
-		return seed();
+	const classified = classifyCatalogList(found, list);
+	if (classified.kind === "present") return classified.items as T[];
+	if (classified.kind === "missing") return seed();
+
+	const message = `Malformed ${label} catalog at ${key}: expected an array.`;
+	if (getBucket() || !import.meta.env.DEV) {
+		throw new Error(message);
 	}
+	console.warn(`[store] ${message} Using seed data for local DEV.`);
 	return seed();
 }

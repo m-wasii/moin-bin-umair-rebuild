@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 /**
- * Lightweight checks for catalog integrity helpers (no R2 / Workers runtime).
+ * Catalog integrity helpers — imports the real TypeScript modules.
  * Run: node --experimental-strip-types scripts/verify-catalog-integrity.mjs
- *
- * This file re-implements the critical contracts so it can run without Astro.
- * Keep in sync with src/lib/catalog-integrity.ts.
  */
+import {
+	assertCompleteSlugOrder,
+	assertExpectedRev,
+	CatalogConflictError,
+	classifyCatalogList,
+	isKebabSlug,
+	isSafeStorageSegment,
+	parseCatalogRev,
+	parseRequiredInt,
+} from "../src/lib/catalog-integrity.ts";
 
 function fail(message) {
 	console.error(`FAIL: ${message}`);
@@ -16,44 +23,6 @@ function ok(message) {
 	console.log(`ok: ${message}`);
 }
 
-function isSafeStorageSegment(value) {
-	if (!value || value.length > 80) return false;
-	if (value === "." || value === "..") return false;
-	if (/[\\/\0\r\n\t]/.test(value)) return false;
-	if (value.startsWith(".") || value.endsWith(".")) return false;
-	return /^[a-zA-Z0-9._-]+$/.test(value);
-}
-
-function parseRequiredInt(value, opts) {
-	let n;
-	if (typeof value === "number") n = value;
-	else if (typeof value === "string") {
-		const trimmed = value.trim();
-		if (!trimmed || !/^[+-]?\d+$/.test(trimmed)) return null;
-		n = Number(trimmed);
-	} else return null;
-	if (!Number.isFinite(n) || !Number.isInteger(n) || !Number.isSafeInteger(n)) {
-		return null;
-	}
-	if (n < opts.min || n > opts.max) return null;
-	return n;
-}
-
-function assertCompleteSlugOrder(currentSlugs, incoming) {
-	if (new Set(incoming).size !== incoming.length) {
-		throw new Error("duplicates");
-	}
-	if (incoming.length !== currentSlugs.length) {
-		throw new Error("omission");
-	}
-	const known = new Set(currentSlugs);
-	for (const slug of incoming) {
-		if (!known.has(slug)) throw new Error("unknown");
-	}
-	return incoming;
-}
-
-// Identifier safety
 if (!isSafeStorageSegment("by-chance")) fail("valid slug rejected");
 else ok("valid slug accepted");
 
@@ -69,48 +38,69 @@ else ok("slash rejected");
 if (isSafeStorageSegment("has space")) fail("space accepted");
 else ok("space rejected");
 
-// Numeric validation
-if (parseRequiredInt(NaN, { min: 0, max: 100 }) != null) fail("NaN accepted");
-else ok("NaN rejected");
+if (!isKebabSlug("film-portraits-trieste")) fail("kebab slug rejected");
+else ok("kebab slug accepted");
 
-if (parseRequiredInt(Infinity, { min: 0, max: 100 }) != null)
+if (isKebabSlug("Film_Portraits")) fail("non-kebab accepted");
+else ok("non-kebab rejected");
+
+try {
+	parseRequiredInt(NaN, "n", { min: 0, max: 100 });
+	fail("NaN accepted");
+} catch {
+	ok("NaN rejected");
+}
+
+try {
+	parseRequiredInt(Infinity, "n", { min: 0, max: 100 });
 	fail("Infinity accepted");
-else ok("Infinity rejected");
+} catch {
+	ok("Infinity rejected");
+}
 
-if (parseRequiredInt(12.5, { min: 0, max: 100 }) != null) fail("float accepted");
-else ok("float rejected");
+try {
+	parseRequiredInt(12.5, "n", { min: 0, max: 100 });
+	fail("float accepted");
+} catch {
+	ok("float rejected");
+}
 
-if (parseRequiredInt("2024", { min: 1900, max: 2100 }) !== 2024)
+if (parseRequiredInt("2024", "year", { min: 1900, max: 2100 }) !== 2024)
 	fail("year string failed");
 else ok("year string accepted");
 
-if (parseRequiredInt(-1, { min: 0, max: 100 }) != null) fail("negative accepted");
-else ok("negative rejected");
-
-if (parseRequiredInt(1800, { min: 1900, max: 2100 }) != null)
-	fail("unreasonable year accepted");
-else ok("unreasonable year rejected");
-
-// Empty catalog semantics
-function resolveList(payload, seed) {
-	if (payload && Array.isArray(payload.items)) return payload.items;
-	return seed;
+try {
+	parseRequiredInt(-1, "n", { min: 0, max: 100 });
+	fail("negative accepted");
+} catch {
+	ok("negative rejected");
 }
 
+try {
+	parseRequiredInt(1800, "year", { min: 1900, max: 2100 });
+	fail("unreasonable year accepted");
+} catch {
+	ok("unreasonable year rejected");
+}
+
+// Empty catalog semantics (present [] must not become seed)
 const seed = [{ slug: "seed" }];
-const emptyStored = resolveList({ items: [] }, seed);
-if (emptyStored.length !== 0) fail("empty array fell back to seed");
+const emptyPresent = classifyCatalogList(true, []);
+if (emptyPresent.kind !== "present" || emptyPresent.items.length !== 0)
+	fail("empty array fell back / misclassified");
 else ok("empty array kept as intentional empty");
 
-const missing = resolveList({}, seed);
-if (missing !== seed) fail("missing property did not fall back");
-else ok("missing property falls back to seed");
+const missing = classifyCatalogList(false, undefined);
+if (missing.kind !== "missing") fail("missing catalog misclassified");
+else ok("missing catalog classified for seed fallback");
 
-const absent = resolveList(null, seed);
-if (absent !== seed) fail("absent catalog did not fall back");
-else ok("absent catalog falls back to seed");
+const malformed = classifyCatalogList(true, {});
+if (malformed.kind !== "malformed") fail("malformed catalog misclassified");
+else ok("malformed catalog classified");
 
-// Reorder completeness
+// seed unused but documents contract used by callers
+void seed;
+
 try {
 	assertCompleteSlugOrder(["a", "b"], ["a", "a"]);
 	fail("duplicate reorder accepted");
@@ -132,13 +122,24 @@ try {
 	fail("complete reorder rejected");
 }
 
-// Revision monotonicity contract
-function nextRev(current) {
-	return (current ?? 0) + 1;
+if (parseCatalogRev(4) !== 4 || parseCatalogRev(undefined) !== 0)
+	fail("parseCatalogRev broken");
+else ok("parseCatalogRev");
+
+try {
+	assertExpectedRev(3, 2);
+	fail("rev conflict accepted");
+} catch (error) {
+	if (error instanceof CatalogConflictError) ok("rev conflict → 409");
+	else fail("rev conflict wrong error type");
 }
-if (nextRev(0) !== 1 || nextRev(undefined) !== 1 || nextRev(4) !== 5) {
-	fail("revision increment broken");
-} else ok("revision increments");
+
+try {
+	assertExpectedRev(3, 3);
+	ok("matching rev accepted");
+} catch {
+	fail("matching rev rejected");
+}
 
 if (process.exitCode) {
 	console.error("catalog integrity verification failed");

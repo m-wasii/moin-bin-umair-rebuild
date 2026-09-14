@@ -4,25 +4,27 @@
  * Writes src/data/shorts.seed.json and `.data/media/shorts/` (not public/).
  * Upload binaries with `npm run seed:r2`.
  *
- *   SHORTS_INPUT_DIR="C:\\Users\\DELL\\Downloads\\Shorts" npm run seed:shorts
+ *   SHORTS_INPUT_DIR="…" npm run seed:shorts -- --target development
  *   SHORTS_FORCE_POSTER=1 …  # rebuild WebP posters even when MP4 already exists
  */
 import { execFile } from "node:child_process";
-import {
-	existsSync,
-	mkdirSync,
-	statSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import sharp from "sharp";
+import { requireScriptTarget } from "./lib/target-guard.mjs";
+
+requireScriptTarget({
+	script: "seed-shorts",
+	allow: ["development"],
+});
 
 const execFileAsync = promisify(execFile);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const inputRoot =
-	process.env.SHORTS_INPUT_DIR || join(root, ".data", "shorts-source", "Shorts");
+	process.env.SHORTS_INPUT_DIR ||
+	join(root, ".data", "shorts-source", "Shorts");
 const mediaRoot = join(root, ".data", "media", "shorts");
 const seedPath = join(root, "src", "data", "shorts.seed.json");
 const year = Number(process.env.SHORTS_YEAR || 2026);
@@ -123,9 +125,7 @@ async function probe(file) {
 
 function isWebReady(info) {
 	return (
-		info.codec === "h264" &&
-		info.pixFmt === "yuv420p" &&
-		info.audio === "aac"
+		info.codec === "h264" && info.pixFmt === "yuv420p" && info.audio === "aac"
 	);
 }
 
@@ -171,7 +171,10 @@ async function encodeMp4(input, output, info) {
 }
 
 async function posterWebp(input, output, duration) {
-	const seek = Math.min(Math.max(1, duration * 0.2), Math.max(0.5, duration - 0.5));
+	const seek = Math.min(
+		Math.max(1, duration * 0.2),
+		Math.max(0.5, duration - 0.5),
+	);
 	const { stdout } = await execFileAsync(
 		ffmpegBin("ffmpeg"),
 		[
@@ -225,9 +228,7 @@ for (const [entryIndex, entry] of ENTRIES.entries()) {
 		console.log(`seed-shorts: ${entry.title} / ${clipSlug} ← ${filename}`);
 
 		const info = await probe(input);
-		const mp4Ready =
-			existsSync(mp4) &&
-			statSync(mp4).size > 1024;
+		const mp4Ready = existsSync(mp4) && statSync(mp4).size > 1024;
 		const forcePoster = process.env.SHORTS_FORCE_POSTER === "1";
 		if (!mp4Ready) {
 			await encodeMp4(input, mp4, info);
@@ -235,9 +236,7 @@ for (const [entryIndex, entry] of ENTRIES.entries()) {
 		// Always (re)generate posters when missing/tiny, when MP4 was just
 		// encoded, or when SHORTS_FORCE_POSTER=1 — avoids keeping a stale
 		// WebP after the source clip was replaced (Erum Surani mix-up).
-		const posterReady =
-			existsSync(poster) &&
-			statSync(poster).size > 1024;
+		const posterReady = existsSync(poster) && statSync(poster).size > 1024;
 		if (forcePoster || !posterReady || !mp4Ready) {
 			const encoded = await probe(mp4);
 			await posterWebp(mp4, poster, encoded.duration || info.duration);

@@ -1,51 +1,8 @@
 /**
- * Quick verification of byte-range parsing (run: node scripts/verify-http-range.mjs).
- * Mirrors src/lib/http-range.ts — keep in sync when changing range semantics.
+ * Byte-range parsing against the real src/lib/http-range.ts helper.
+ * Run via: node --experimental-strip-types scripts/verify-http-range.mjs
  */
-
-function parseByteRange(header, size) {
-	if (header == null) return { kind: "absent" };
-	const trimmed = header.trim();
-	if (!trimmed) return { kind: "absent" };
-	if (trimmed.includes(",")) return { kind: "invalid" };
-	const match = /^bytes=(\d*)-(\d*)$/i.exec(trimmed);
-	if (!match) return { kind: "invalid" };
-	const startRaw = match[1];
-	const endRaw = match[2];
-	const hasStart = startRaw !== "";
-	const hasEnd = endRaw !== "";
-	if (!hasStart && !hasEnd) return { kind: "invalid" };
-	if (size <= 0) return { kind: "unsatisfiable" };
-	if (!hasStart && hasEnd) {
-		if (!/^\d+$/.test(endRaw)) return { kind: "invalid" };
-		const suffix = Number(endRaw);
-		if (!Number.isSafeInteger(suffix) || suffix < 0) return { kind: "invalid" };
-		if (suffix === 0) return { kind: "unsatisfiable" };
-		const length = Math.min(suffix, size);
-		const start = size - length;
-		const end = size - 1;
-		return { kind: "range", start, end, length };
-	}
-	if (!/^\d+$/.test(startRaw)) return { kind: "invalid" };
-	const start = Number(startRaw);
-	if (!Number.isSafeInteger(start) || start < 0) return { kind: "invalid" };
-	if (start >= size) return { kind: "unsatisfiable" };
-	if (!hasEnd) {
-		const end = size - 1;
-		return { kind: "range", start, end, length: end - start + 1 };
-	}
-	if (!/^\d+$/.test(endRaw)) return { kind: "invalid" };
-	const end = Number(endRaw);
-	if (!Number.isSafeInteger(end) || end < 0) return { kind: "invalid" };
-	if (start > end) return { kind: "invalid" };
-	const clampedEnd = Math.min(end, size - 1);
-	return {
-		kind: "range",
-		start,
-		end: clampedEnd,
-		length: clampedEnd - start + 1,
-	};
-}
+import { parseByteRange } from "../src/lib/http-range.ts";
 
 const size = 1000;
 const cases = [
@@ -60,21 +17,23 @@ const cases = [
 	["bytes=abc-10", "invalid"],
 	["bytes=0-1,2-3", "invalid"],
 	["foobar", "invalid"],
+	["bytes=", "invalid"],
+	["bytes=-", "invalid"],
 ];
 
 let failed = 0;
 for (const [header, expected] of cases) {
 	const result = parseByteRange(header, size);
-	const ok = result.kind === expected;
-	if (!ok) {
+	if (result.kind !== expected) {
 		failed += 1;
-		console.error(`FAIL ${JSON.stringify(header)} → ${result.kind} (want ${expected})`);
+		console.error(
+			`FAIL ${JSON.stringify(header)} → ${result.kind} (want ${expected})`,
+		);
 	} else {
 		console.log(`ok  ${JSON.stringify(header)} → ${result.kind}`);
 	}
 }
 
-// suffix last 100 of 1000
 const suffix = parseByteRange("bytes=-100", size);
 if (
 	suffix.kind !== "range" ||
@@ -84,6 +43,16 @@ if (
 ) {
 	failed += 1;
 	console.error("FAIL suffix range values", suffix);
+} else {
+	console.log("ok  suffix last-100 values");
+}
+
+const empty = parseByteRange("bytes=0-0", 0);
+if (empty.kind !== "unsatisfiable") {
+	failed += 1;
+	console.error("FAIL size=0 should be unsatisfiable", empty);
+} else {
+	console.log("ok  size=0 unsatisfiable");
 }
 
 if (failed) {
