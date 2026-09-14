@@ -11,6 +11,14 @@ import {
 	type StoredPhotoCategory,
 } from "../data/photos";
 import type { StoredShort } from "../data/shorts";
+import {
+	assertStoredPhotoCategories,
+	assertStoredPhotos,
+	assertStoredShorts,
+	assertStoredVideos,
+	CatalogConflictError,
+	parseCatalogRev,
+} from "./catalog-integrity";
 import { withMediaVersion } from "./media-url";
 import {
 	refreshPublicHtmlCache,
@@ -44,10 +52,22 @@ interface ShortsCatalogPayload {
 	shorts: StoredShort[];
 	/** Catalog-wide media version applied to clip src/poster URLs. */
 	v?: string;
+	rev?: number;
 }
 
 interface HeroCatalogPayload {
 	v?: string;
+	rev?: number;
+}
+
+/** Snapshot used for optimistic concurrency on the next write. */
+export interface CatalogRevision {
+	/** Monotonic revision stored in catalog JSON (0 if never written / legacy). */
+	rev: number;
+	/** R2 object etag when available; used for conditional puts. */
+	etag?: string;
+	/** True when a catalog object already exists in storage. */
+	found: boolean;
 }
 
 interface MediaObject {
@@ -67,6 +87,11 @@ interface MediaHead {
 	httpMetadata?: { contentType?: string };
 }
 
+interface R2PutOptions {
+	httpMetadata?: { contentType?: string };
+	onlyIf?: { etagMatches?: string; etagDoesNotMatch?: string };
+}
+
 interface MediaBucket {
 	get(
 		key: string,
@@ -76,7 +101,7 @@ interface MediaBucket {
 	put(
 		key: string,
 		value: string | Uint8Array,
-		options?: { httpMetadata?: { contentType?: string } },
+		options?: R2PutOptions,
 	): Promise<unknown>;
 	delete(key: string): Promise<unknown>;
 }
@@ -173,28 +198,145 @@ async function deleteLocal(key: string) {
 	}
 }
 
-export function hasWritableMedia() {
-	return Boolean(getBucket()) || import.meta.env.DEV;
+/** Serialize local catalog mutations per key (dev / single-process). */
+const localCatalogLocks = new Map<string, Promise<void>>();
+
+async function withLocalCatalogLock<T>(
+	key: string,
+	fn: () => Promise<T>,
+): Promise<T> {
+	const previous = localCatalogLocks.get(key) ?? Promise.resolve();
+	let release!: () => void;
+	const done = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const chain = previous.then(() => done);
+	localCatalogLocks.set(key, chain);
+	await previous.catch(() => undefined);
+	try {
+		return await fn();
+	} finally {
+		release();
+		if (localCatalogLocks.get(key) === chain) {
+			localCatalogLocks.delete(key);
+		}
+	}
 }
 
-export async function listVideos(): Promise<StoredVideo[]> {
-	const raw = await readVideoCatalog();
-	return raw.map(normalizeStoredVideo);
+interface CatalogRecord {
+	payload: Record<string, unknown>;
+	revision: CatalogRevision;
 }
 
-async function readVideoCatalog(): Promise<StoredVideo[]> {
+async function readCatalogRecord(key: string): Promise<CatalogRecord> {
 	const bucket = getBucket();
 	if (bucket) {
-		const object = await bucket.get(VIDEOS_KEY);
-		if (object) {
-			const payload = (await object.json()) as { videos?: StoredVideo[] };
-			if (Array.isArray(payload.videos)) return payload.videos;
+		const object = await bucket.get(key);
+		if (!object) {
+			return {
+				payload: {},
+				revision: { rev: 0, found: false },
+			};
 		}
-		return seedVideoList();
+		const payload = (await object.json()) as Record<string, unknown>;
+		return {
+			payload,
+			revision: {
+				rev: parseCatalogRev(payload.rev),
+				etag: object.etag,
+				found: true,
+			},
+		};
 	}
 
-	const local = await readLocalJson<{ videos: StoredVideo[] }>(VIDEOS_KEY);
-	return local?.videos ?? seedVideoList();
+	const local = await readLocalJson<Record<string, unknown>>(key);
+	if (!local) {
+		return {
+			payload: {},
+			revision: { rev: 0, found: false },
+		};
+	}
+	return {
+		payload: local,
+		revision: {
+			rev: parseCatalogRev(local.rev),
+			found: true,
+		},
+	};
+}
+
+async function withResolvedEtag(
+	key: string,
+	revision: CatalogRevision,
+): Promise<CatalogRevision> {
+	if (!revision.found || revision.etag) return revision;
+	const bucket = getBucket();
+	if (!bucket?.head) return revision;
+	const head = await bucket.head(key);
+	if (head?.etag) return { ...revision, etag: head.etag };
+	return revision;
+}
+
+/**
+ * Atomic (from the app's perspective) catalog replace using R2 conditional
+ * puts when available, and revision checks under a local lock in DEV.
+ */
+async function writeCatalogRecord(
+	key: string,
+	payload: Record<string, unknown>,
+	expectedInput: CatalogRevision,
+	cache?: SiteCacheRefreshOptions,
+): Promise<CatalogRevision> {
+	const expected = await withResolvedEtag(key, expectedInput);
+	const nextRev = expected.rev + 1;
+	const body = { ...payload, rev: nextRev };
+	const serialized = JSON.stringify(body);
+
+	const bucket = getBucket();
+	if (bucket) {
+		const onlyIf = expected.found
+			? expected.etag
+				? { etagMatches: expected.etag }
+				: undefined
+			: { etagDoesNotMatch: "*" };
+
+		const result = await bucket.put(key, serialized, {
+			httpMetadata: { contentType: "application/json" },
+			...(onlyIf ? { onlyIf } : {}),
+		});
+
+		if (onlyIf && result === null) {
+			throw new CatalogConflictError();
+		}
+
+		const etag =
+			result && typeof result === "object" && "etag" in result
+				? String((result as { etag?: string }).etag ?? "")
+				: undefined;
+
+		refreshPublicHtmlCache(cache);
+		return { rev: nextRev, etag: etag || undefined, found: true };
+	}
+
+	await withLocalCatalogLock(key, async () => {
+		const current = await readLocalJson<Record<string, unknown>>(key);
+		const currentRev = current ? parseCatalogRev(current.rev) : 0;
+		if (expected.found) {
+			if (!current || currentRev !== expected.rev) {
+				throw new CatalogConflictError();
+			}
+		} else if (current) {
+			throw new CatalogConflictError();
+		}
+		await writeLocalJson(key, body);
+	});
+
+	refreshPublicHtmlCache(cache);
+	return { rev: nextRev, found: true };
+}
+
+export function hasWritableMedia() {
+	return Boolean(getBucket()) || import.meta.env.DEV;
 }
 
 function normalizeStoredVideo(video: StoredVideo): StoredVideo {
@@ -205,20 +347,34 @@ function normalizeStoredVideo(video: StoredVideo): StoredVideo {
 	return { ...video, category };
 }
 
+export async function readVideosCatalog(): Promise<{
+	videos: StoredVideo[];
+	revision: CatalogRevision;
+}> {
+	const { payload, revision } = await readCatalogRecord(VIDEOS_KEY);
+	if (revision.found && Array.isArray(payload.videos)) {
+		return {
+			videos: (payload.videos as StoredVideo[]).map(normalizeStoredVideo),
+			revision,
+		};
+	}
+	return {
+		videos: seedVideoList().map(normalizeStoredVideo),
+		revision,
+	};
+}
+
+export async function listVideos(): Promise<StoredVideo[]> {
+	return (await readVideosCatalog()).videos;
+}
+
 export async function saveVideos(
 	videos: StoredVideo[],
+	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-) {
-	const payload = { videos };
-	const bucket = getBucket();
-	if (bucket) {
-		await bucket.put(VIDEOS_KEY, JSON.stringify(payload), {
-			httpMetadata: { contentType: "application/json" },
-		});
-	} else {
-		await writeLocalJson(VIDEOS_KEY, payload);
-	}
-	refreshPublicHtmlCache(cache);
+): Promise<CatalogRevision> {
+	const validated = assertStoredVideos(videos).map(normalizeStoredVideo);
+	return writeCatalogRecord(VIDEOS_KEY, { videos: validated }, revision, cache);
 }
 
 function photoVersion(photo: StoredPhoto) {
@@ -237,73 +393,74 @@ function normalizeStoredPhoto(photo: StoredPhoto): StoredPhoto {
 	};
 }
 
-export async function listPhotos(): Promise<StoredPhoto[]> {
-	const bucket = getBucket();
-	if (bucket) {
-		const object = await bucket.get(PHOTOS_KEY);
-		if (object) {
-			const payload = (await object.json()) as { photos?: StoredPhoto[] };
-			if (Array.isArray(payload.photos)) {
-				return payload.photos.map(normalizeStoredPhoto);
-			}
-		}
-		return seedPhotoList().map(normalizeStoredPhoto);
+export async function readPhotosCatalog(): Promise<{
+	photos: StoredPhoto[];
+	revision: CatalogRevision;
+}> {
+	const { payload, revision } = await readCatalogRecord(PHOTOS_KEY);
+	if (revision.found && Array.isArray(payload.photos)) {
+		return {
+			photos: (payload.photos as StoredPhoto[]).map(normalizeStoredPhoto),
+			revision,
+		};
 	}
+	return {
+		photos: seedPhotoList().map(normalizeStoredPhoto),
+		revision,
+	};
+}
 
-	const local = await readLocalJson<{ photos: StoredPhoto[] }>(PHOTOS_KEY);
-	return (local?.photos ?? seedPhotoList()).map(normalizeStoredPhoto);
+export async function listPhotos(): Promise<StoredPhoto[]> {
+	return (await readPhotosCatalog()).photos;
 }
 
 export async function savePhotos(
 	photos: StoredPhoto[],
+	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-) {
-	const normalized = photos.map(normalizeStoredPhoto);
-	const payload = { photos: normalized };
-	const bucket = getBucket();
-	if (bucket) {
-		await bucket.put(PHOTOS_KEY, JSON.stringify(payload), {
-			httpMetadata: { contentType: "application/json" },
-		});
-	} else {
-		await writeLocalJson(PHOTOS_KEY, payload);
+): Promise<CatalogRevision> {
+	const normalized = assertStoredPhotos(photos).map(normalizeStoredPhoto);
+	return writeCatalogRecord(
+		PHOTOS_KEY,
+		{ photos: normalized },
+		revision,
+		cache,
+	);
+}
+
+export async function readPhotoCategoriesCatalog(): Promise<{
+	categories: StoredPhotoCategory[];
+	revision: CatalogRevision;
+}> {
+	const { payload, revision } = await readCatalogRecord(PHOTO_CATEGORIES_KEY);
+	if (revision.found && Array.isArray(payload.categories)) {
+		return {
+			categories: payload.categories as StoredPhotoCategory[],
+			revision,
+		};
 	}
-	refreshPublicHtmlCache(cache);
+	return {
+		categories: seedPhotoCategoryList(),
+		revision,
+	};
 }
 
 export async function listPhotoCategories(): Promise<StoredPhotoCategory[]> {
-	const bucket = getBucket();
-	if (bucket) {
-		const object = await bucket.get(PHOTO_CATEGORIES_KEY);
-		if (object) {
-			const payload = (await object.json()) as {
-				categories?: StoredPhotoCategory[];
-			};
-			if (Array.isArray(payload.categories)) return payload.categories;
-		}
-		return seedPhotoCategoryList();
-	}
-
-	const local = await readLocalJson<{ categories: StoredPhotoCategory[] }>(
-		PHOTO_CATEGORIES_KEY,
-	);
-	return local?.categories ?? seedPhotoCategoryList();
+	return (await readPhotoCategoriesCatalog()).categories;
 }
 
 export async function savePhotoCategories(
 	categories: StoredPhotoCategory[],
+	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-) {
-	const payload = { categories };
-	const bucket = getBucket();
-	if (bucket) {
-		await bucket.put(PHOTO_CATEGORIES_KEY, JSON.stringify(payload), {
-			httpMetadata: { contentType: "application/json" },
-		});
-	} else {
-		await writeLocalJson(PHOTO_CATEGORIES_KEY, payload);
-	}
-	refreshPublicHtmlCache(cache);
+): Promise<CatalogRevision> {
+	const validated = assertStoredPhotoCategories(categories);
+	return writeCatalogRecord(
+		PHOTO_CATEGORIES_KEY,
+		{ categories: validated },
+		revision,
+		cache,
+	);
 }
 
 export function photoObjectKey(category: PhotoCategory, slug: string) {
@@ -412,7 +569,7 @@ function versionFromMediaHead(head: MediaHead | null) {
 /** Cache-bust query for hero poster/loop from catalog or R2 object metadata. */
 export async function heroMediaVersion() {
 	const meta = await readHeroMeta();
-	if (meta?.v?.trim()) return meta.v.trim();
+	if (meta?.payload.v?.trim()) return meta.payload.v.trim();
 
 	const [loop, poster] = await Promise.all([
 		getMediaHead("media/hero-loop.mp4"),
@@ -428,16 +585,16 @@ export function heroMediaSrc(
 	return withMediaVersion(`/media/${file}`, version);
 }
 
-async function readHeroMeta(): Promise<HeroCatalogPayload | null> {
-	const bucket = getBucket();
-	if (bucket) {
-		const object = await bucket.get(HERO_META_KEY);
-		if (object) {
-			return (await object.json()) as HeroCatalogPayload;
-		}
-		return null;
-	}
-	return readLocalJson<HeroCatalogPayload>(HERO_META_KEY);
+async function readHeroMeta(): Promise<{
+	payload: HeroCatalogPayload;
+	revision: CatalogRevision;
+} | null> {
+	const { payload, revision } = await readCatalogRecord(HERO_META_KEY);
+	if (!revision.found) return null;
+	return {
+		payload: payload as HeroCatalogPayload,
+		revision,
+	};
 }
 
 /** Persist hero version + purge/warm when hero bytes are replaced. */
@@ -445,16 +602,15 @@ export async function touchHeroMedia(
 	version = Date.now().toString(36),
 	cache?: SiteCacheRefreshOptions,
 ) {
+	const current = await readHeroMeta();
+	const revision = current?.revision ?? { rev: 0, found: false };
 	const payload: HeroCatalogPayload = { v: version };
-	const bucket = getBucket();
-	if (bucket) {
-		await bucket.put(HERO_META_KEY, JSON.stringify(payload), {
-			httpMetadata: { contentType: "application/json" },
-		});
-	} else {
-		await writeLocalJson(HERO_META_KEY, payload);
-	}
-	refreshPublicHtmlCache(cache);
+	await writeCatalogRecord(
+		HERO_META_KEY,
+		payload as Record<string, unknown>,
+		revision,
+		cache,
+	);
 }
 
 export async function deletePhotoBytes(category: PhotoCategory, slug: string) {
@@ -467,41 +623,51 @@ export async function deletePhotoBytes(category: PhotoCategory, slug: string) {
 	await deleteLocal(key);
 }
 
-export async function listShorts(): Promise<StoredShort[]> {
-	const bucket = getBucket();
-	if (bucket) {
-		const object = await bucket.get(SHORTS_KEY);
-		if (object) {
-			const payload = (await object.json()) as ShortsCatalogPayload;
-			if (Array.isArray(payload.shorts) && payload.shorts.length) {
-				return normalizeShortMedia(payload.shorts, payload.v ?? "1");
-			}
-		}
+export async function readShortsCatalog(): Promise<{
+	shorts: StoredShort[];
+	revision: CatalogRevision;
+	mediaVersion: string;
+}> {
+	const { payload, revision } = await readCatalogRecord(SHORTS_KEY);
+	if (revision.found && Array.isArray(payload.shorts)) {
+		const mediaVersion =
+			typeof payload.v === "string" && payload.v.trim()
+				? payload.v.trim()
+				: "1";
+		return {
+			shorts: normalizeShortMedia(
+				payload.shorts as StoredShort[],
+				mediaVersion,
+			),
+			revision,
+			mediaVersion,
+		};
 	}
+	return {
+		shorts: normalizeShortMedia(seedShortList(), "1"),
+		revision,
+		mediaVersion: "1",
+	};
+}
 
-	const local = await readLocalJson<ShortsCatalogPayload>(SHORTS_KEY);
-	return normalizeShortMedia(
-		local?.shorts ?? seedShortList(),
-		local?.v ?? "1",
-	);
+export async function listShorts(): Promise<StoredShort[]> {
+	return (await readShortsCatalog()).shorts;
 }
 
 export async function saveShorts(
 	shorts: StoredShort[],
+	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-) {
+): Promise<CatalogRevision> {
 	const v = Date.now().toString(36);
-	const normalized = normalizeShortMedia(shorts, v);
+	const normalized = normalizeShortMedia(assertStoredShorts(shorts), v);
 	const payload: ShortsCatalogPayload = { shorts: normalized, v };
-	const bucket = getBucket();
-	if (bucket) {
-		await bucket.put(SHORTS_KEY, JSON.stringify(payload), {
-			httpMetadata: { contentType: "application/json" },
-		});
-	} else {
-		await writeLocalJson(SHORTS_KEY, payload);
-	}
-	refreshPublicHtmlCache(cache);
+	return writeCatalogRecord(
+		SHORTS_KEY,
+		payload as unknown as Record<string, unknown>,
+		revision,
+		cache,
+	);
 }
 
 function rewriteShortMediaPath(path: string) {

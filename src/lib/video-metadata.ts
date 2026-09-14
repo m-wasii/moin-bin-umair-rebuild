@@ -1,5 +1,11 @@
 import type { Project, ProjectCategory, VideoProvider } from "../data/projects";
 import { ClientError } from "./api-errors";
+import {
+	assertPositiveDuration,
+	assertSafeStorageSegment,
+	assertSortOrder,
+	assertYear,
+} from "./catalog-integrity";
 import type { StoredVideo } from "./store";
 
 const CATEGORIES = new Set<ProjectCategory>(["indie", "local", "bts"]);
@@ -27,11 +33,14 @@ export function isProjectCategory(value: string): value is ProjectCategory {
 	return CATEGORIES.has(value as ProjectCategory);
 }
 
-function coerceYear(value: unknown, fallback: number): number {
-	const n = typeof value === "number" ? value : Number(value);
-	return Number.isFinite(n) && n >= 1900 && n <= 2100
-		? Math.trunc(n)
-		: fallback;
+function yearFromRemoteDate(value: unknown, fallback: number): number {
+	const yearText = String(value ?? "").slice(0, 4);
+	if (!/^\d{4}$/.test(yearText)) return fallback;
+	try {
+		return assertYear(Number(yearText));
+	} catch {
+		return fallback;
+	}
 }
 
 function assertYoutubeId(id: string) {
@@ -177,7 +186,8 @@ export function slugifyVideo(title: string, id: string) {
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "")
 		.slice(0, 60);
-	return base || id.toLowerCase();
+	const fallback = assertSafeStorageSegment(id.toLowerCase(), "video id");
+	return base || fallback;
 }
 
 export interface VideoInput {
@@ -210,13 +220,13 @@ export async function enrichVideo(
 
 		const title =
 			input.title?.trim() || String(video.title ?? "").trim() || `Vimeo ${id}`;
-		const year =
+		const year = assertYear(
 			input.year ??
-			coerceYear(
-				String(video.upload_date ?? "").slice(0, 4),
-				new Date().getFullYear(),
-			);
-		const duration = input.duration ?? Number(video.duration ?? 0);
+				yearFromRemoteDate(video.upload_date, new Date().getFullYear()),
+		);
+		const duration = assertPositiveDuration(
+			input.duration ?? Number(video.duration ?? 0),
+		);
 		const thumbnailRaw = String(
 			video.thumbnail_large ||
 				video.thumbnail_medium ||
@@ -235,8 +245,13 @@ export async function enrichVideo(
 			}
 		}
 
+		const slug = assertSafeStorageSegment(
+			input.slug?.trim() || slugifyVideo(title, id),
+			"video slug",
+		);
+
 		return {
-			slug: input.slug || slugifyVideo(title, id),
+			slug,
 			url,
 			id,
 			title,
@@ -245,7 +260,7 @@ export async function enrichVideo(
 			duration,
 			thumbnail,
 			provider: "vimeo",
-			sortOrder: input.sortOrder ?? 100,
+			sortOrder: assertSortOrder(input.sortOrder ?? 100),
 			...(input.description?.trim()
 				? { description: input.description.trim() }
 				: {}),
@@ -279,18 +294,22 @@ export async function enrichVideo(
 	}
 
 	const title = input.title?.trim() || String(oembed.title ?? "").trim() || id;
+	const slug = assertSafeStorageSegment(
+		input.slug?.trim() || slugifyVideo(title, id),
+		"video slug",
+	);
 
 	return {
-		slug: input.slug || slugifyVideo(title, id),
+		slug,
 		url,
 		id,
 		title,
 		category: input.category,
-		year: input.year,
-		duration,
+		year: assertYear(input.year),
+		duration: assertPositiveDuration(duration),
 		thumbnail: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
 		provider: "youtube",
-		sortOrder: input.sortOrder ?? 100,
+		sortOrder: assertSortOrder(input.sortOrder ?? 100),
 		...(input.description?.trim()
 			? { description: input.description.trim() }
 			: {}),

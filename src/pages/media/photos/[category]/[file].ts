@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { isPhotoCategory } from "../../../../data/photos";
+import { assertSafeStorageSegment } from "../../../../lib/catalog-integrity";
 import { getPhotoBytes } from "../../../../lib/store";
 
 export const prerender = false;
@@ -12,6 +13,13 @@ export const GET: APIRoute = async ({ params }) => {
 	}
 
 	const slug = file.replace(/\.webp$/i, "");
+	try {
+		assertSafeStorageSegment(slug, "photo slug");
+		assertSafeStorageSegment(category, "photo category");
+	} catch {
+		return new Response("Not found", { status: 404 });
+	}
+
 	const bytes = await getPhotoBytes(category, slug);
 	if (!bytes) {
 		return new Response("Not found", { status: 404 });
