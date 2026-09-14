@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { authorizeCdnPurgeBearer } from "./bearer-token";
 
 function workerPurgeSecret() {
 	return (env as { CDN_PURGE_SECRET?: string }).CDN_PURGE_SECRET;
@@ -12,24 +13,6 @@ export function cdnPurgeSecret(): string | undefined {
 	return trimmed || undefined;
 }
 
-function timingSafeEqual(a: string, b: string) {
-	const encoder = new TextEncoder();
-	const left = encoder.encode(a);
-	const right = encoder.encode(b);
-	const length = Math.max(left.byteLength, right.byteLength);
-	let mismatch = left.byteLength === right.byteLength ? 0 : 1;
-	for (let i = 0; i < length; i++) {
-		mismatch |= (left[i] ?? 0) ^ (right[i] ?? 0);
-	}
-	return mismatch === 0;
-}
-
-function bearerToken(header: string | null) {
-	if (!header) return null;
-	const match = /^Bearer\s+(\S+)$/i.exec(header.trim());
-	return match?.[1] ?? null;
-}
-
 /**
  * Fail closed: missing secret or wrong bearer token → deny purge.
  * Returns a Response to send, or null when authorized.
@@ -37,8 +20,13 @@ function bearerToken(header: string | null) {
 export function unauthorizedCdnPurgeResponse(
 	request: Request,
 ): Response | null {
-	const secret = cdnPurgeSecret();
-	if (!secret) {
+	const decision = authorizeCdnPurgeBearer(
+		cdnPurgeSecret(),
+		request.headers.get("authorization"),
+	);
+	if (decision.ok) return null;
+
+	if (decision.status === 503) {
 		console.error("[cdn-purge] CDN_PURGE_SECRET is not configured");
 		return new Response(
 			JSON.stringify({ ok: false, error: "Service unavailable" }),
@@ -52,16 +40,11 @@ export function unauthorizedCdnPurgeResponse(
 		);
 	}
 
-	const token = bearerToken(request.headers.get("authorization"));
-	if (!token || !timingSafeEqual(token, secret)) {
-		return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-			status: 401,
-			headers: {
-				"content-type": "application/json; charset=utf-8",
-				"cache-control": "no-store",
-			},
-		});
-	}
-
-	return null;
+	return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+		status: 401,
+		headers: {
+			"content-type": "application/json; charset=utf-8",
+			"cache-control": "no-store",
+		},
+	});
 }

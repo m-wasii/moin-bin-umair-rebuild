@@ -5,7 +5,8 @@
  *
  * Requires CLOUDFLARE_API_TOKEN (and usually CLOUDFLARE_ACCOUNT_ID).
  *
- *   npm run seed:r2
+ *   npm run seed:r2 -- --target production --i-know-this-is-production
+ *   npm run seed:r2 -- --target preview
  */
 import { spawn } from "node:child_process";
 import {
@@ -17,9 +18,17 @@ import {
 } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { requireScriptTarget } from "./lib/target-guard.mjs";
+
+const { target } = requireScriptTarget({
+	script: "seed-r2",
+	allow: ["preview", "production"],
+	remote: true,
+});
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const bucket = "moin-media";
+console.log(`seed-r2: target=${target} bucket=${bucket} (remote)`);
 const mediaRoot = join(root, ".data", "media");
 const photographyRoot = join(mediaRoot, "photography");
 const shortsRoot = join(mediaRoot, "shorts");
@@ -79,9 +88,7 @@ async function putObject(key, file, contentType, attempts = 4) {
 			lastError = error;
 			if (attempt === attempts) break;
 			const delayMs = 1000 * attempt;
-			console.warn(
-				`  retry ${attempt}/${attempts - 1} ${key} in ${delayMs}ms`,
-			);
+			console.warn(`  retry ${attempt}/${attempts - 1} ${key} in ${delayMs}ms`);
 			await new Promise((resolve) => setTimeout(resolve, delayMs));
 		}
 	}

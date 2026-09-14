@@ -1,5 +1,6 @@
 import { accessJwtConfig, verifyAccessJwt } from "./access-jwt";
 import { isDashboardHost } from "./hosts";
+import { decideMutationAuth } from "./mutation-auth-policy";
 import { dashboardAccessEnforced } from "./store";
 
 function json(data: unknown, status: number) {
@@ -27,28 +28,40 @@ function json(data: unknown, status: number) {
 export async function unauthorizedMutationResponse(
 	request: Request,
 ): Promise<Response | null> {
-	if (import.meta.env.DEV) return null;
-
-	if (!dashboardAccessEnforced()) return null;
+	const isDev = import.meta.env.DEV;
+	const accessEnforced = dashboardAccessEnforced();
+	if (isDev || !accessEnforced) return null;
 
 	const host = new URL(request.url).host;
-	if (!isDashboardHost(host)) {
-		console.warn("[api-auth] mutation blocked — not a dashboard host");
-		return json({ error: "Unauthorized" }, 401);
-	}
+	const onDashboard = isDashboardHost(host);
+	const jwtConfig = accessJwtConfig();
+	const identity =
+		onDashboard && jwtConfig ? await verifyAccessJwt(request) : null;
 
-	if (!accessJwtConfig()) {
+	const decision = decideMutationAuth({
+		isDev: false,
+		accessEnforced: true,
+		isDashboardHost: onDashboard,
+		hasJwtConfig: Boolean(jwtConfig),
+		hasValidIdentity: Boolean(identity),
+	});
+
+	if (decision.allow) return null;
+
+	if (decision.reason === "not-dashboard-host") {
+		console.warn("[api-auth] mutation blocked — not a dashboard host");
+	} else if (decision.reason === "missing-access-config") {
 		console.error(
 			"[api-auth] CF_ACCESS_TEAM_DOMAIN / CF_ACCESS_AUD not configured",
 		);
-		return json({ error: "Service unavailable" }, 503);
-	}
-
-	const identity = await verifyAccessJwt(request);
-	if (!identity) {
+	} else if (decision.reason === "invalid-access-jwt") {
 		console.warn("[api-auth] mutation blocked — Access JWT invalid or missing");
-		return json({ error: "Unauthorized" }, 401);
 	}
 
-	return null;
+	return json(
+		{
+			error: decision.status === 503 ? "Service unavailable" : "Unauthorized",
+		},
+		decision.status,
+	);
 }

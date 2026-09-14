@@ -2,13 +2,23 @@
 /**
  * Confirm every Shorts MP4 from the seed catalog exists in remote R2.
  *
- *   npm run verify:shorts-r2
+ *   npm run verify:shorts-r2 -- --target production --i-know-this-is-production
+ *   npm run verify:shorts-r2 -- --target preview
  *
  * Requires CLOUDFLARE_API_TOKEN (+ CLOUDFLARE_ACCOUNT_ID).
+ * Read-only against R2, but still target-gated to avoid surprise prod reads
+ * in scripts that operators may extend later.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { requireScriptTarget } from "./lib/target-guard.mjs";
+
+const { target } = requireScriptTarget({
+	script: "verify-shorts-r2",
+	allow: ["preview", "production"],
+	remote: true,
+});
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -20,6 +30,7 @@ if (!accountId || !token) {
 		"verify-shorts-r2: set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID",
 	);
 }
+console.log(`verify-shorts-r2: target=${target} bucket=${bucket}`);
 
 const seed = JSON.parse(
 	readFileSync(join(root, "src/data/shorts.seed.json"), "utf8"),

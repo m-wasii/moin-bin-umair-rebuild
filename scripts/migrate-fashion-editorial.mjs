@@ -4,7 +4,7 @@
  * portraits-fashion → random-experimentations, rewrite seed + live R2 catalogs,
  * and copy/move media object keys under photography/{category}/.
  *
- *   node scripts/migrate-fashion-editorial.mjs
+ *   node scripts/migrate-fashion-editorial.mjs --target production --i-know-this-is-production
  */
 import { spawn } from "node:child_process";
 import {
@@ -20,9 +20,19 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { requireScriptTarget } from "./lib/target-guard.mjs";
+
+const { target } = requireScriptTarget({
+	script: "migrate-fashion-editorial",
+	allow: ["production"],
+	remote: true,
+});
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const bucket = "moin-media";
+console.log(
+	`migrate-fashion-editorial: target=${target} bucket=${bucket} (remote destructive)`,
+);
 const wranglerCli = join(root, "node_modules/wrangler/bin/wrangler.js");
 const mediaRoot = join(root, ".data", "media");
 const photographyRoot = join(mediaRoot, "photography");
@@ -227,14 +237,7 @@ function deleteObjectOnce(key) {
 	return new Promise((resolve, reject) => {
 		const child = spawn(
 			process.execPath,
-			[
-				wranglerCli,
-				"r2",
-				"object",
-				"delete",
-				`${bucket}/${key}`,
-				"--remote",
-			],
+			[wranglerCli, "r2", "object", "delete", `${bucket}/${key}`, "--remote"],
 			{ cwd: root, stdio: ["ignore", "pipe", "pipe"] },
 		);
 		let stderr = "";
@@ -315,10 +318,7 @@ if (existsSync(localLookbook)) {
 		const slug = name.replace(/\.webp$/, "");
 		if (DROP_SLUGS.has(slug)) continue;
 		const destCat = mapLookbookCategory(slug);
-		renameSync(
-			join(localLookbook, name),
-			join(photographyRoot, destCat, name),
-		);
+		renameSync(join(localLookbook, name), join(photographyRoot, destCat, name));
 	}
 	rmSync(localLookbook, { recursive: true, force: true });
 	console.log("migrated local fashion-lookbook/");
@@ -471,8 +471,5 @@ await runPool(deletes, 4, async (key, i) => {
 });
 
 console.log("migrate-fashion-editorial: done");
-console.log(
-	"categories:",
-	TARGET_CATEGORIES.map((c) => c.slug).join(" → "),
-);
+console.log("categories:", TARGET_CATEGORIES.map((c) => c.slug).join(" → "));
 console.log("counts:", countsByCategory(remappedLive));

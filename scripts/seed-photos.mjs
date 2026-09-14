@@ -4,7 +4,7 @@
  * src/data/photos.seed.json. Replaces each album's contents (does not keep old
  * stills). Binaries stay out of public/git; upload with `npm run seed:r2`.
  *
- *   PHOTO_INPUT_DIR="C:\\Users\\DELL\\Downloads\\New folder (7)\\Sorted" npm run seed:photos
+ *   PHOTO_INPUT_DIR="…" npm run seed:photos -- --target development
  */
 import {
 	existsSync,
@@ -16,6 +16,12 @@ import {
 import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { requireScriptTarget } from "./lib/target-guard.mjs";
+
+requireScriptTarget({
+	script: "seed-photos",
+	allow: ["development"],
+});
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const inputRoot =
@@ -44,14 +50,7 @@ const albums = [
 	},
 ];
 
-const IMAGE_EXT = new Set([
-	".jpg",
-	".jpeg",
-	".png",
-	".webp",
-	".tif",
-	".tiff",
-]);
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff"]);
 
 function slugifyPhotoName(value) {
 	return value
@@ -121,7 +120,9 @@ for (const album of albums) {
 	for (const folder of album.folders) {
 		sources.push(...listImages(join(inputRoot, folder)));
 	}
-	sources.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+	sources.sort((a, b) =>
+		a.localeCompare(b, undefined, { sensitivity: "base" }),
+	);
 
 	const destDir = join(outRoot, album.category);
 	mkdirSync(destDir, { recursive: true });

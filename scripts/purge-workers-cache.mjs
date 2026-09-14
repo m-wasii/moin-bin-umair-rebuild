@@ -1,26 +1,17 @@
 #!/usr/bin/env node
 /**
- * Post-deploy Workers Caching purge for the public `mbu` Worker.
+ * Post-deploy Workers Caching purge for the public site Worker.
  * Calls the Worker’s own `/cdn-purge` so purge is entrypoint-scoped.
  *
  * Usage:
- *   node scripts/purge-workers-cache.mjs
- *   node scripts/purge-workers-cache.mjs --origin https://mbu.example.workers.dev
- *   node scripts/purge-workers-cache.mjs --scope html
- *   node scripts/purge-workers-cache.mjs --warm
+ *   node scripts/purge-workers-cache.mjs --target production --i-know-this-is-production --scope everything --warm
+ *   node scripts/purge-workers-cache.mjs --target preview --origin https://mbu-pr-12.example.workers.dev
+ *   node scripts/purge-workers-cache.mjs --target production --i-know-this-is-production --origin https://mbu.example.workers.dev
  */
-const DEFAULT_ORIGIN = "https://mbu.wasi-workdesk.workers.dev";
+import { argValue, hasFlag, requireScriptTarget } from "./lib/target-guard.mjs";
+
+const DEFAULT_PRODUCTION_ORIGIN = "https://mbu.wasi-workdesk.workers.dev";
 const WARM_PATHS = ["/", "/de/"];
-
-function argValue(flag) {
-	const index = process.argv.indexOf(flag);
-	if (index === -1) return null;
-	return process.argv[index + 1] ?? null;
-}
-
-function hasFlag(flag) {
-	return process.argv.includes(flag);
-}
 
 async function sleep(ms) {
 	await new Promise((resolve) => setTimeout(resolve, ms));
@@ -74,17 +65,62 @@ async function warm(origin) {
 }
 
 async function main() {
-	const origin = (
-		argValue("--origin") ||
+	const { target, origin: originFlag } = requireScriptTarget({
+		script: "purge-workers-cache",
+		allow: ["preview", "production"],
+		requireOrigin: false,
+	});
+
+	let origin = (
+		originFlag ||
 		process.env.MBU_SITE_ORIGIN ||
 		process.env.SITE_ORIGIN ||
-		DEFAULT_ORIGIN
+		""
 	).replace(/\/$/, "");
-	const scope = (argValue("--scope") || "everything").toLowerCase();
-	const shouldWarm = hasFlag("--warm");
+
+	if (!origin) {
+		if (target === "production") {
+			origin = DEFAULT_PRODUCTION_ORIGIN;
+		} else {
+			console.error(
+				"purge-workers-cache: --origin is required for --target preview",
+			);
+			process.exit(1);
+		}
+	}
+
+	if (target === "preview") {
+		try {
+			const host = new URL(origin).hostname.toLowerCase();
+			if (
+				host === "mbu.wasi-workdesk.workers.dev" ||
+				host.startsWith("dashboard.")
+			) {
+				console.error(
+					`purge-workers-cache: refusing production-like origin under --target preview: ${origin}`,
+				);
+				process.exit(1);
+			}
+			if (!host.includes("-pr-") && !host.includes("pages.dev")) {
+				console.warn(
+					`purge-workers-cache: preview origin does not look like a PR Worker (${origin})`,
+				);
+			}
+		} catch {
+			console.error(`purge-workers-cache: invalid --origin ${origin}`);
+			process.exit(1);
+		}
+	}
+
+	const scope = (
+		argValue(process.argv, "--scope") || "everything"
+	).toLowerCase();
+	const shouldWarm = hasFlag(process.argv, "--warm");
 	const attempts = Number(process.env.PURGE_ATTEMPTS || 5);
 
-	console.log(`Purging Workers cache at ${origin} (scope=${scope})`);
+	console.log(
+		`Purging Workers cache at ${origin} (target=${target}, scope=${scope})`,
+	);
 
 	let lastError = null;
 	for (let attempt = 1; attempt <= attempts; attempt++) {

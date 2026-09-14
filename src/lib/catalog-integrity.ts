@@ -1,4 +1,4 @@
-import { ClientError } from "./api-errors";
+import { ClientError } from "./api-errors.ts";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
 import type { StoredPhoto, StoredPhotoCategory } from "../data/photos";
 import type { StoredShort, StoredShortClip } from "../data/shorts";
@@ -6,9 +6,7 @@ import type { StoredVideo } from "./store/types";
 
 /** Concurrent catalog write lost the race (etag/rev mismatch). */
 export class CatalogConflictError extends ClientError {
-	constructor(
-		message = "Catalog was updated concurrently. Please retry.",
-	) {
+	constructor(message = "Catalog was updated concurrently. Please retry.") {
 		super(message, 409);
 		this.name = "CatalogConflictError";
 	}
@@ -42,9 +40,7 @@ export function assertSafeStorageSegment(
 
 /** Prefer kebab slugs for new photo/category entries. */
 export function isKebabSlug(value: string): boolean {
-	return (
-		/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= SLUG_MAX
-	);
+	return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value.length <= SLUG_MAX;
 }
 
 export function assertKebabSlug(value: string, label = "slug"): string {
@@ -189,6 +185,18 @@ export function assertExpectedRev(actual: number, expected?: number) {
 }
 
 /**
+ * Pure empty-state contract for catalog lists (no R2 / DEV branching).
+ * - found=false → use seed (bootstrap)
+ * - found=true + array (incl. []) → intentional stored list
+ * - found=true + non-array → malformed
+ */
+export function classifyCatalogList(found: boolean, list: unknown) {
+	if (!found) return { kind: "missing" as const };
+	if (Array.isArray(list)) return { kind: "present" as const, items: list };
+	return { kind: "malformed" as const };
+}
+
+/**
  * Complete deterministic reorder: no duplicates, no omissions, every id known.
  */
 export function assertCompleteSlugOrder(
@@ -212,9 +220,7 @@ export function assertCompleteSlugOrder(
 	}
 
 	if (normalized.length !== currentSlugs.length) {
-		throw new ClientError(
-			`Reorder must include every ${label} exactly once.`,
-		);
+		throw new ClientError(`Reorder must include every ${label} exactly once.`);
 	}
 
 	const known = new Set(currentSlugs);

@@ -1,23 +1,8 @@
 /**
- * Logic check for dashboard Access gating (mirrors src/middleware.ts + hosts).
- * Run: node scripts/verify-dashboard-auth.mjs
+ * Dashboard host / Access gating decisions.
+ * Run: node --experimental-strip-types scripts/verify-dashboard-auth.mjs
  */
-
-function isPreviewHost(host) {
-	const normalized = host.split(":")[0]?.toLowerCase() ?? "";
-	return (
-		normalized.endsWith(".workers.dev") || normalized.endsWith(".pages.dev")
-	);
-}
-
-function isDashboardHost(host) {
-	const normalized = host.split(":")[0]?.toLowerCase() ?? "";
-	return (
-		normalized.startsWith("dashboard.") ||
-		normalized === "dashboard.localhost" ||
-		normalized.startsWith("dashboard.127.0.0.1")
-	);
-}
+import { isDashboardHost, isPreviewHost } from "../src/lib/hosts.ts";
 
 /** Same decision as middleware: gate only dashboard hosts in production. */
 function shouldRequireAccess({ host, prod, enforce = true }) {

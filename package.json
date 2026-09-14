@@ -13,14 +13,19 @@
 		"check": "astro check",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
+		"test": "node scripts/run-verify.mjs",
+		"validate": "npm run validate:format && npm run check && npm run test && npm run build",
+		"validate:format": "prettier --check \"scripts/**/*.{mjs,js}\" \"src/lib/bearer-token.ts\" \"src/lib/mutation-auth-policy.ts\" \"src/lib/purge-auth.ts\" \"src/lib/api-auth.ts\" \"src/lib/catalog-integrity.ts\" \"src/lib/store/catalog.ts\" \".github/workflows/*.yml\" \"package.json\"",
 		"preview": "astro preview",
 		"astro": "astro",
 		"seed:photos": "node scripts/seed-photos.mjs",
 		"seed:shorts": "node scripts/seed-shorts.mjs",
 		"seed:r2": "node scripts/seed-r2.mjs",
 		"verify:shorts-r2": "node scripts/verify-shorts-r2.mjs",
-		"deploy": "astro build && wrangler deploy && wrangler deploy --name dashboard",
-		"purge:cache": "node scripts/purge-workers-cache.mjs --scope everything --warm"
+		"deploy:public": "wrangler deploy",
+		"deploy:dashboard": "wrangler deploy --name dashboard",
+		"deploy": "npm run build && npm run deploy:public && npm run deploy:dashboard",
+		"purge:cache": "node scripts/purge-workers-cache.mjs --target production --i-know-this-is-production --scope everything --warm"
 	},
 	"dependencies": {
 		"@astrojs/cloudflare": "^14.2.5",
