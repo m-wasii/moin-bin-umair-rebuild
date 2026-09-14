@@ -7,6 +7,9 @@ const REVEALED = "is-revealed";
 
 type RevealMode = "words" | "mask";
 
+const initializedRoots = new WeakSet<ParentNode>();
+let documentObserver: IntersectionObserver | null = null;
+
 function prefersReducedMotion(): boolean {
 	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -44,6 +47,8 @@ function staggerFor(wordCount: number, durationMs: number): number {
 }
 
 function wrapTextNode(textNode: Text): void {
+	if (textNode.parentElement?.closest(`.${WORD_OUTER}`)) return;
+
 	const raw = textNode.nodeValue ?? "";
 	if (!raw) return;
 
@@ -179,15 +184,21 @@ export function forceTextRevealThroughMain(section: HTMLElement): void {
 /**
  * Initialize site-wide text writing/reveal for `[data-text-reveal]` targets.
  * Plays once on viewport entry; respects prefers-reduced-motion.
+ * Safe to call more than once for the same root (no double-wrap / dual observers).
  */
 export function initTextReveal(
 	root: ParentNode = document,
 ): IntersectionObserver | null {
+	if (initializedRoots.has(root)) {
+		return root === document ? documentObserver : null;
+	}
+	initializedRoots.add(root);
+
 	const items = Array.from(
 		root.querySelectorAll<HTMLElement>("[data-text-reveal]"),
-	);
+	).filter((el) => !el.classList.contains(PREPARED));
 
-	if (items.length === 0) return null;
+	if (items.length === 0) return root === document ? documentObserver : null;
 
 	if (prefersReducedMotion() || !("IntersectionObserver" in window)) {
 		items.forEach(showImmediately);
@@ -221,5 +232,6 @@ export function initTextReveal(
 		observer.observe(item);
 	});
 
+	if (root === document) documentObserver = observer;
 	return observer;
 }

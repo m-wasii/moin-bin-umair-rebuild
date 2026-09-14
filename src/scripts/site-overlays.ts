@@ -3,6 +3,11 @@ import {
 	cfImageSrc,
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
+import {
+	blurIfInside,
+	createFocusTrap,
+	type FocusTrap,
+} from "./focus-trap";
 import { lockDocumentScroll, unlockDocumentScroll } from "./site-scroll-lock";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -34,9 +39,41 @@ const externalLink = document.querySelector<HTMLAnchorElement>(
 const externalLinkLabel = document.querySelector<HTMLElement>(
 	"[data-video-external-label]",
 );
+
+const photoDialog = document.querySelector<HTMLElement>("[data-photo-dialog]");
+const photoPanel = document.querySelector<HTMLElement>(".photo-dialog");
+const photoBackdrop = document.querySelector<HTMLElement>(
+	"[data-photo-backdrop]",
+);
+const photoClose =
+	document.querySelector<HTMLButtonElement>("[data-photo-close]");
+const photoImage = document.querySelector<HTMLImageElement>(
+	"[data-photo-dialog-image]",
+);
+const photoPrev =
+	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
+const photoNext =
+	document.querySelector<HTMLButtonElement>("[data-photo-next]");
+
 let previousFocus: HTMLElement | null = null;
 let aboutPanelOpen = true;
 let albumFocus: HTMLElement | null = null;
+let photoFocus: HTMLElement | null = null;
+let photoGroup: AlbumPhoto[] = [];
+let photoIndex = 0;
+
+let videoScrollLocked = false;
+let photoScrollLocked = false;
+let albumScrollLocked = false;
+
+let videoTrap: FocusTrap | null = videoPanel
+	? createFocusTrap(videoPanel)
+	: null;
+let photoTrap: FocusTrap | null = photoPanel
+	? createFocusTrap(photoPanel)
+	: null;
+let albumTrap: FocusTrap | null = null;
+let albumTrapRoot: HTMLElement | null = null;
 
 function cfImagesEnabled() {
 	return document.documentElement.dataset.cfImages !== "0";
@@ -45,6 +82,46 @@ function cfImagesEnabled() {
 interface AlbumPhoto {
 	src: string;
 	alt: string;
+}
+
+function closeNavigationOverlay() {
+	document.dispatchEvent(new CustomEvent("site:close-nav"));
+}
+
+function acquireScrollLock(flag: "video" | "photo" | "album") {
+	if (flag === "video") {
+		if (videoScrollLocked) return;
+		lockDocumentScroll();
+		videoScrollLocked = true;
+		return;
+	}
+	if (flag === "photo") {
+		if (photoScrollLocked) return;
+		lockDocumentScroll();
+		photoScrollLocked = true;
+		return;
+	}
+	if (albumScrollLocked) return;
+	lockDocumentScroll();
+	albumScrollLocked = true;
+}
+
+function releaseScrollLock(flag: "video" | "photo" | "album") {
+	if (flag === "video") {
+		if (!videoScrollLocked) return;
+		unlockDocumentScroll();
+		videoScrollLocked = false;
+		return;
+	}
+	if (flag === "photo") {
+		if (!photoScrollLocked) return;
+		unlockDocumentScroll();
+		photoScrollLocked = false;
+		return;
+	}
+	if (!albumScrollLocked) return;
+	unlockDocumentScroll();
+	albumScrollLocked = false;
 }
 
 function setAboutPanelOpen(open: boolean) {
@@ -58,9 +135,58 @@ function isVideoOpen() {
 	return Boolean(videoDialog && !videoDialog.hidden);
 }
 
+function isPhotoOpen() {
+	return Boolean(photoDialog && !photoDialog.hidden);
+}
+
+function getOpenAlbumPanel() {
+	return document.querySelector<HTMLElement>(
+		"[data-album-panel]:not([hidden])",
+	);
+}
+
+function isAlbumOpen() {
+	return Boolean(getOpenAlbumPanel());
+}
+
+function getAlbumDialog(panel: HTMLElement) {
+	return panel.querySelector<HTMLElement>('[role="dialog"]');
+}
+
+function activateAlbumTrap(
+	panel: HTMLElement,
+	initialFocus?: HTMLElement | null,
+) {
+	const dialog = getAlbumDialog(panel);
+	if (!dialog) return;
+
+	if (albumTrapRoot !== dialog) {
+		albumTrap?.deactivate();
+		albumTrap = createFocusTrap(dialog);
+		albumTrapRoot = dialog;
+	}
+	albumTrap?.activate(initialFocus ?? null);
+}
+
+function suspendAlbumForNestedPhoto() {
+	const panel = getOpenAlbumPanel();
+	if (!panel) return;
+	albumTrap?.deactivate();
+	panel.setAttribute("inert", "");
+}
+
+function resumeAlbumAfterNestedPhoto(restoreFocus?: HTMLElement | null) {
+	const panel = getOpenAlbumPanel();
+	if (!panel) return;
+	panel.removeAttribute("inert");
+	activateAlbumTrap(panel, restoreFocus ?? null);
+}
+
 function closeVideoDialog() {
 	if (!isVideoOpen()) return;
 
+	videoTrap?.deactivate();
+	blurIfInside(videoDialog);
 	videoPlayer?.replaceChildren();
 	if (videoDescription) videoDescription.textContent = "";
 	videoPanel?.classList.remove(
@@ -74,16 +200,80 @@ function closeVideoDialog() {
 	if (externalLink) externalLink.hidden = false;
 	setAboutPanelOpen(true);
 	if (videoDialog) videoDialog.hidden = true;
-	unlockDocumentScroll();
+	releaseScrollLock("video");
 	previousFocus?.focus({ preventScroll: true });
 	previousFocus = null;
 }
 
-function openVideoOverlay() {
+function openVideoOverlay(initialFocus?: HTMLElement | null) {
 	if (!videoDialog) return;
 
+	closeNavigationOverlay();
+	if (isPhotoOpen()) closePhotoDialog({ resumeAlbum: false });
+	if (isAlbumOpen()) closeAlbum({ clearHash: true });
+
 	videoDialog.hidden = false;
-	videoClose?.focus({ preventScroll: true });
+	acquireScrollLock("video");
+	videoTrap?.activate(initialFocus ?? videoClose ?? null);
+}
+
+function closePhotoDialog(options?: { resumeAlbum?: boolean }) {
+	if (!isPhotoOpen()) return;
+
+	const shouldResumeAlbum = options?.resumeAlbum !== false;
+
+	photoTrap?.deactivate();
+	blurIfInside(photoDialog);
+	if (photoDialog) photoDialog.hidden = true;
+	if (photoImage) {
+		photoImage.removeAttribute("src");
+		photoImage.alt = "";
+	}
+	photoGroup = [];
+	photoIndex = 0;
+	releaseScrollLock("photo");
+
+	const restore = photoFocus;
+	photoFocus = null;
+
+	if (shouldResumeAlbum && isAlbumOpen()) {
+		resumeAlbumAfterNestedPhoto(restore);
+		restore?.focus({ preventScroll: true });
+		return;
+	}
+
+	restore?.focus({ preventScroll: true });
+}
+
+function closeAlbum(options?: { clearHash?: boolean }) {
+	const panel = getOpenAlbumPanel();
+	if (!panel) return;
+
+	if (isPhotoOpen()) closePhotoDialog({ resumeAlbum: false });
+
+	albumTrap?.deactivate();
+	albumTrap = null;
+	albumTrapRoot = null;
+	blurIfInside(panel);
+	panel.removeAttribute("inert");
+	panel.hidden = true;
+	releaseScrollLock("album");
+	albumFocus?.focus({ preventScroll: true });
+	albumFocus = null;
+
+	if (options?.clearHash && location.hash.startsWith("#album-")) {
+		try {
+			history.replaceState(null, "", `${location.pathname}${location.search}`);
+		} catch {
+			/* ignore */
+		}
+	}
+}
+
+function closeAllOverlays() {
+	if (isVideoOpen()) closeVideoDialog();
+	if (isPhotoOpen()) closePhotoDialog({ resumeAlbum: false });
+	if (isAlbumOpen()) closeAlbum({ clearHash: true });
 }
 
 document.addEventListener("click", (event) => {
@@ -109,7 +299,7 @@ document.addEventListener("click", (event) => {
 	if (link.dataset.videoProvider === "file") return;
 
 	const videoId = link.dataset.videoId;
-	const fallbackTitle = videoDialog?.dataset.labelProjectFilm ?? "Project film";
+	const fallbackTitle = videoDialog.dataset.labelProjectFilm ?? "Project film";
 	const title = link.dataset.videoTitle ?? fallbackTitle;
 	const description = link.dataset.videoDescription?.trim() ?? "";
 	const provider =
@@ -117,7 +307,6 @@ document.addEventListener("click", (event) => {
 	if (!videoId) return;
 
 	event.preventDefault();
-	lockDocumentScroll();
 	previousFocus = link;
 
 	const iframe = document.createElement("iframe");
@@ -140,7 +329,7 @@ document.addEventListener("click", (event) => {
 	if (videoDescription) {
 		videoDescription.textContent =
 			description ||
-			videoDialog?.dataset.labelNoDescription ||
+			videoDialog.dataset.labelNoDescription ||
 			"No description available for this film yet.";
 	}
 	if (externalLink) {
@@ -152,14 +341,14 @@ document.addEventListener("click", (event) => {
 	externalLinkLabel?.replaceChildren(
 		document.createTextNode(
 			provider === "youtube"
-				? (videoDialog?.dataset.labelOpenYoutube ?? "Open on YouTube")
-				: (videoDialog?.dataset.labelOpenVimeo ?? "Open on Vimeo"),
+				? (videoDialog.dataset.labelOpenYoutube ?? "Open on YouTube")
+				: (videoDialog.dataset.labelOpenVimeo ?? "Open on Vimeo"),
 		),
 	);
 	if (aboutToggle) aboutToggle.hidden = !description;
 	setAboutPanelOpen(Boolean(description));
 	videoPlayer.replaceChildren(iframe);
-	openVideoOverlay();
+	openVideoOverlay(videoClose);
 });
 
 aboutToggle?.addEventListener("click", (event) => {
@@ -173,33 +362,11 @@ videoDialog?.addEventListener("video-dialog:open", (event) => {
 			? event.detail
 			: null;
 	previousFocus = source;
-	lockDocumentScroll();
-	videoClose?.focus({ preventScroll: true });
+	openVideoOverlay(videoClose);
 });
 
 videoClose?.addEventListener("click", closeVideoDialog);
 videoBackdrop?.addEventListener("click", closeVideoDialog);
-
-const photoDialog = document.querySelector<HTMLElement>("[data-photo-dialog]");
-const photoBackdrop = document.querySelector<HTMLElement>(
-	"[data-photo-backdrop]",
-);
-const photoClose =
-	document.querySelector<HTMLButtonElement>("[data-photo-close]");
-const photoImage = document.querySelector<HTMLImageElement>(
-	"[data-photo-dialog-image]",
-);
-const photoPrev =
-	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
-const photoNext =
-	document.querySelector<HTMLButtonElement>("[data-photo-next]");
-let photoGroup: AlbumPhoto[] = [];
-let photoIndex = 0;
-let photoFocus: HTMLElement | null = null;
-
-function isPhotoOpen() {
-	return Boolean(photoDialog && !photoDialog.hidden);
-}
 
 function lightboxSrc(src: string) {
 	return cfImageSrc(src, 1600, { enabled: cfImagesEnabled() });
@@ -219,15 +386,6 @@ function stepPhoto(delta: number) {
 	if (!isPhotoOpen() || photoGroup.length === 0) return;
 	photoIndex = (photoIndex + delta + photoGroup.length) % photoGroup.length;
 	renderPhoto();
-}
-
-function closePhotoDialog() {
-	if (!isPhotoOpen()) return;
-	if (photoDialog) photoDialog.hidden = true;
-	if (photoImage) photoImage.src = "";
-	unlockDocumentScroll();
-	photoFocus?.focus({ preventScroll: true });
-	photoFocus = null;
 }
 
 function readAlbumPhotos(panel: HTMLElement): AlbumPhoto[] {
@@ -253,13 +411,27 @@ function albumPhotoGroup(panel: HTMLElement): AlbumPhoto[] {
 	const cached = panel.dataset.albumPhotosCache;
 	if (cached) {
 		try {
-			return JSON.parse(cached) as AlbumPhoto[];
+			const parsed = JSON.parse(cached) as unknown;
+			if (Array.isArray(parsed)) {
+				return parsed.filter(
+					(item): item is AlbumPhoto =>
+						Boolean(
+							item &&
+								typeof item === "object" &&
+								typeof (item as AlbumPhoto).src === "string",
+						),
+				);
+			}
 		} catch {
 			/* rebuild */
 		}
 	}
 	const photos = readAlbumPhotos(panel);
-	panel.dataset.albumPhotosCache = JSON.stringify(photos);
+	try {
+		panel.dataset.albumPhotosCache = JSON.stringify(photos);
+	} catch {
+		/* ignore quota / serialization issues */
+	}
 	return photos;
 }
 
@@ -282,7 +454,7 @@ function ensureAlbumMasonry(panel: HTMLElement) {
 		button.dataset.photoSrc = photo.src;
 		button.dataset.photoAlt = photo.alt;
 		button.dataset.photoIndex = String(index);
-		button.setAttribute("aria-label", photo.alt);
+		button.setAttribute("aria-label", photo.alt || "Photo");
 
 		const attrs = buildResponsiveImageAttrs({
 			src: photo.src,
@@ -317,31 +489,60 @@ function ensureAlbumMasonry(panel: HTMLElement) {
 
 function openPhotoDialog(button: HTMLElement) {
 	const src = button.dataset.photoSrc;
+	if (!src || !photoDialog) return;
+
 	const panel = button.closest<HTMLElement>("[data-album-panel]");
-	const group =
-		panel != null
-			? albumPhotoGroup(panel)
-			: (button.dataset.photoGroup ?? "")
-					.split("|")
-					.filter(Boolean)
-					.map((itemSrc) => {
-						const match = document.querySelector<HTMLElement>(
-							`[data-photo][data-photo-src="${CSS.escape(itemSrc)}"]`,
-						);
-						return {
-							src: itemSrc,
-							alt: match?.dataset.photoAlt ?? "",
-						};
-					});
-	if (!src || !photoDialog || group.length === 0) return;
+	let group: AlbumPhoto[] = [];
+
+	if (panel) {
+		group = albumPhotoGroup(panel);
+	} else {
+		const groupSrcs = (button.dataset.photoGroup ?? "")
+			.split("|")
+			.filter(Boolean);
+		group = groupSrcs.map((itemSrc) => {
+			let match: HTMLElement | null = null;
+			try {
+				match = document.querySelector<HTMLElement>(
+					`[data-photo][data-photo-src="${CSS.escape(itemSrc)}"]`,
+				);
+			} catch {
+				match = null;
+			}
+			return {
+				src: itemSrc,
+				alt: match?.dataset.photoAlt ?? "",
+			};
+		});
+	}
+
+	if (group.length === 0) return;
+
+	closeNavigationOverlay();
+	if (isVideoOpen()) closeVideoDialog();
+
+	const nestedInAlbum = Boolean(panel && !panel.hidden);
+	if (!nestedInAlbum && isAlbumOpen()) {
+		closeAlbum({ clearHash: true });
+	}
 
 	photoGroup = group;
-	photoIndex = Number(button.dataset.photoIndex ?? 0) || 0;
+	const rawIndex = Number(button.dataset.photoIndex ?? 0);
+	photoIndex =
+		Number.isFinite(rawIndex) && rawIndex >= 0 && rawIndex < group.length
+			? Math.floor(rawIndex)
+			: Math.max(
+					0,
+					group.findIndex((item) => item.src === src),
+				);
 	photoFocus = button;
-	lockDocumentScroll();
+
+	if (nestedInAlbum) suspendAlbumForNestedPhoto();
+
+	acquireScrollLock("photo");
 	renderPhoto();
 	photoDialog.hidden = false;
-	photoClose?.focus({ preventScroll: true });
+	photoTrap?.activate(photoClose);
 }
 
 document.addEventListener("click", (event) => {
@@ -353,8 +554,8 @@ document.addEventListener("click", (event) => {
 	openPhotoDialog(button);
 });
 
-photoClose?.addEventListener("click", closePhotoDialog);
-photoBackdrop?.addEventListener("click", closePhotoDialog);
+photoClose?.addEventListener("click", () => closePhotoDialog());
+photoBackdrop?.addEventListener("click", () => closePhotoDialog());
 photoPrev?.addEventListener("click", () => {
 	stepPhoto(-1);
 });
@@ -362,43 +563,47 @@ photoNext?.addEventListener("click", () => {
 	stepPhoto(1);
 });
 
-function isAlbumOpen() {
-	return Boolean(document.querySelector("[data-album-panel]:not([hidden])"));
-}
-
-function closeAlbum() {
-	const panel = document.querySelector<HTMLElement>(
-		"[data-album-panel]:not([hidden])",
-	);
-	if (!panel) return;
-	panel.hidden = true;
-	unlockDocumentScroll();
-	albumFocus?.focus({ preventScroll: true });
-	albumFocus = null;
-}
-
 function openAlbum(category: string, trigger?: HTMLElement | null) {
-	const panel = document.querySelector<HTMLElement>(
-		`[data-album-panel="${CSS.escape(category)}"]`,
-	);
+	if (!category) return;
+
+	let panel: HTMLElement | null = null;
+	try {
+		panel = document.querySelector<HTMLElement>(
+			`[data-album-panel="${CSS.escape(category)}"]`,
+		);
+	} catch {
+		return;
+	}
 	if (!panel) return;
 
-	if (isAlbumOpen() && panel.hidden) {
-		closeAlbum();
+	closeNavigationOverlay();
+	if (isVideoOpen()) closeVideoDialog();
+	if (isPhotoOpen()) closePhotoDialog({ resumeAlbum: false });
+
+	const existing = getOpenAlbumPanel();
+	if (existing && existing !== panel) {
+		albumTrap?.deactivate();
+		albumTrap = null;
+		albumTrapRoot = null;
+		blurIfInside(existing);
+		existing.removeAttribute("inert");
+		existing.hidden = true;
+		/* keep albumScrollLocked — same overlay layer */
 	}
 
 	albumFocus = trigger ?? albumFocus;
 	ensureAlbumMasonry(panel);
 	if (panel.hidden) {
-		lockDocumentScroll();
+		acquireScrollLock("album");
 		panel.hidden = false;
 	}
+
 	panel
 		.querySelectorAll<HTMLElement>("[data-reveal]")
 		.forEach((item) => item.classList.add("is-visible"));
-	panel
-		.querySelector<HTMLButtonElement>("[data-album-close]")
-		?.focus({ preventScroll: true });
+
+	const closeBtn = panel.querySelector<HTMLButtonElement>("[data-album-close]");
+	activateAlbumTrap(panel, closeBtn);
 
 	if (location.hash !== `#album-${category}`) {
 		try {
@@ -416,11 +621,22 @@ function openAlbum(category: string, trigger?: HTMLElement | null) {
 function syncAlbumFromHash() {
 	const hash = location.hash;
 	if (!hash.startsWith("#album-")) return;
-	const category = decodeURIComponent(hash.slice("#album-".length));
+	let category = "";
+	try {
+		category = decodeURIComponent(hash.slice("#album-".length));
+	} catch {
+		return;
+	}
 	if (!category) return;
-	const opener = document.querySelector<HTMLElement>(
-		`[data-album-open="${CSS.escape(category)}"]`,
-	);
+
+	let opener: HTMLElement | null = null;
+	try {
+		opener = document.querySelector<HTMLElement>(
+			`[data-album-open="${CSS.escape(category)}"]`,
+		);
+	} catch {
+		opener = null;
+	}
 	openAlbum(category, opener);
 }
 
@@ -474,26 +690,9 @@ document.addEventListener("click", (event) => {
 
 	if (target.closest("[data-album-close], [data-album-backdrop]")) {
 		event.preventDefault();
-		closeAlbum();
-		if (location.hash.startsWith("#album-")) {
-			try {
-				history.replaceState(
-					null,
-					"",
-					`${location.pathname}${location.search}`,
-				);
-			} catch {
-				/* ignore */
-			}
-		}
+		closeAlbum({ clearHash: true });
 	}
 });
-
-function closeAllOverlays() {
-	if (isVideoOpen()) closeVideoDialog();
-	if (isPhotoOpen()) closePhotoDialog();
-	if (isAlbumOpen()) closeAlbum();
-}
 
 document.addEventListener("site:close-overlays", closeAllOverlays);
 
@@ -508,30 +707,22 @@ document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") {
 		if (isVideoOpen()) {
 			event.preventDefault();
+			event.stopPropagation();
 			closeVideoDialog();
 			return;
 		}
 
 		if (isPhotoOpen()) {
 			event.preventDefault();
+			event.stopPropagation();
 			closePhotoDialog();
 			return;
 		}
 
 		if (isAlbumOpen()) {
 			event.preventDefault();
-			closeAlbum();
-			if (location.hash.startsWith("#album-")) {
-				try {
-					history.replaceState(
-						null,
-						"",
-						`${location.pathname}${location.search}`,
-					);
-				} catch {
-					/* ignore */
-				}
-			}
+			event.stopPropagation();
+			closeAlbum({ clearHash: true });
 		}
 		return;
 	}

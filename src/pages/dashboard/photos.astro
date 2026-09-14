@@ -261,9 +261,9 @@ const writable = hasWritableMedia();
 	});
 
 	document.addEventListener("click", async (event) => {
-		const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-			"[data-delete-photo]",
-		);
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>("[data-delete-photo]");
 		if (!button) return;
 		const slug = button.dataset.deletePhoto;
 		const category = button.dataset.category;
@@ -293,9 +293,9 @@ const writable = hasWritableMedia();
 		const axis = options.axis ?? "y";
 
 		list.addEventListener("dragstart", (event) => {
-			const handle = (event.target as HTMLElement).closest<HTMLElement>(
-				options.handleSelector,
-			);
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const handle = target.closest<HTMLElement>(options.handleSelector);
 			if (!handle || !list.contains(handle)) return;
 			const item = handle.closest<HTMLElement>("[data-reorder-item]");
 			if (!item || item.parentElement !== list) return;
@@ -316,9 +316,9 @@ const writable = hasWritableMedia();
 		list.addEventListener("dragover", (event) => {
 			if (!dragEl) return;
 			event.preventDefault();
-			const over = (event.target as HTMLElement).closest<HTMLElement>(
-				"[data-reorder-item]",
-			);
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const over = target.closest<HTMLElement>("[data-reorder-item]");
 			if (!over || over === dragEl || over.parentElement !== list) return;
 
 			list

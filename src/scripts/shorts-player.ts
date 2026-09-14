@@ -150,14 +150,22 @@ videoNext?.addEventListener("click", (event) => {
 	stepFileClip(1);
 });
 
+function isEditableKeyboardTarget(target: EventTarget | null) {
+	if (!(target instanceof HTMLElement)) return false;
+	if (target.isContentEditable) return true;
+	const tag = target.tagName;
+	return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
 document.addEventListener("keydown", (event) => {
 	if (!videoDialog || videoDialog.hidden || fileClips.length < 2) return;
-	if (event.key === "ArrowRight") {
-		event.preventDefault();
-		stepFileClip(1);
-	}
-	if (event.key === "ArrowLeft") {
-		event.preventDefault();
-		stepFileClip(-1);
-	}
+	if (isEditableKeyboardTarget(event.target)) return;
+	if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+
+	/* Photo lightbox owns left/right when it is the top overlay. */
+	const photoOpen = document.querySelector("[data-photo-dialog]:not([hidden])");
+	if (photoOpen) return;
+
+	event.preventDefault();
+	stepFileClip(event.key === "ArrowLeft" ? -1 : 1);
 });
