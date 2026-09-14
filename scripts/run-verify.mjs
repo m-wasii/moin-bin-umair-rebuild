@@ -38,6 +38,10 @@ const checks = [
 		name: "target-guard",
 		args: ["scripts/verify-target-guard.mjs"],
 	},
+	{
+		name: "serialize-json-for-script",
+		args: [...stripTypes, "scripts/verify-serialize-json-for-script.mjs"],
+	},
 ];
 
 let failed = 0;

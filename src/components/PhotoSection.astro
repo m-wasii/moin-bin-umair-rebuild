@@ -5,6 +5,7 @@ import {
 	cfImageResizingAvailable,
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
+import { serializeJsonForScript } from "../lib/serialize-json-for-script";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 import ResponsiveImage from "./ResponsiveImage.astro";
 
@@ -199,7 +200,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 							type="application/json"
 							is:inline
 							data-album-photos
-							set:html={JSON.stringify(albumPhotos)}
+							set:html={serializeJsonForScript(albumPhotos)}
 						/>
 					</div>
 				</div>
