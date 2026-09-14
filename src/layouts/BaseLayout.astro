@@ -10,6 +10,12 @@ import {
 	type Lang,
 } from "../i18n/ui";
 import { heroMediaSrc, heroMediaVersion } from "../lib/store";
+import {
+	buildResponsiveImageAttrs,
+	cfImageResizingAvailable,
+	RESPONSIVE_WIDTHS,
+} from "../lib/responsive-image";
+import { isPreviewHost } from "../lib/hosts";
 
 interface Props {
 	lang?: Lang;
@@ -32,7 +38,19 @@ const deUrl = new URL(dePath, siteOrigin).href;
 const heroVersion = await heroMediaVersion();
 const ogImagePath = heroMediaSrc("hero-poster.webp", heroVersion);
 const ogImage = new URL(ogImagePath, siteOrigin).href;
-const heroPosterPreload = ogImagePath;
+const cfImages = cfImageResizingAvailable(Astro.url.hostname);
+const isPreview = isPreviewHost(Astro.url.hostname);
+const heroPosterAttrs = buildResponsiveImageAttrs({
+	src: ogImagePath,
+	widths: RESPONSIVE_WIDTHS.hero,
+	sizes: "100vw",
+	width: 1920,
+	height: 1080,
+	loading: "eager",
+	fetchpriority: "high",
+	cfImages,
+});
+const heroPosterPreload = heroPosterAttrs.src;
 
 const structuredData = {
 	"@context": "https://schema.org",
@@ -45,7 +63,7 @@ const structuredData = {
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} data-cf-images={cfImages ? "1" : "0"}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta
@@ -56,6 +74,7 @@ const structuredData = {
 		<meta name="description" content={description} />
 		<meta name="theme-color" content="#050a12" />
 		<meta name="color-scheme" content="dark" />
+		{isPreview && <meta name="robots" content="noindex, nofollow" />}
 
 		<link rel="canonical" href={canonicalUrl} />
 		<link rel="alternate" hreflang="en" href={enUrl} />
@@ -76,6 +95,10 @@ const structuredData = {
 			href={heroPosterPreload}
 			type="image/webp"
 			fetchpriority="high"
+			imagesizes="100vw"
+			{...(heroPosterAttrs.srcset
+				? { imagesrcset: heroPosterAttrs.srcset }
+				: {})}
 		/>
 		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />

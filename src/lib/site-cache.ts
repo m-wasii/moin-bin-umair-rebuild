@@ -1,4 +1,5 @@
 import { siteOrigin } from "./hosts";
+import { cdnPurgeSecret } from "./purge-auth";
 
 const HTML_CACHE_TAG = "html";
 /** Public purge route on the site Worker (must not use Astro `_` private folders). */
@@ -30,6 +31,11 @@ function resolvePublicOrigin(options: SiteCacheRefreshOptions): string | null {
 }
 
 async function purgePublicHtmlOnSiteWorker(origin: string) {
+	const secret = cdnPurgeSecret();
+	if (!secret) {
+		throw new Error("CDN_PURGE_SECRET is not configured");
+	}
+
 	// Dashboard and mbu are separate Workers; purge is entrypoint-scoped, so
 	// catalog saves on dashboard must ask the public Worker to purge its cache.
 	const response = await fetch(new URL(SITE_CACHE_PURGE_PATH, `${origin}/`), {
@@ -37,15 +43,12 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 		headers: {
 			accept: "application/json",
 			"content-type": "application/json",
-			origin,
+			authorization: `Bearer ${secret}`,
 		},
 		body: "{}",
 	});
 	if (!response.ok) {
-		const body = await response.text().catch(() => "");
-		throw new Error(
-			`purge endpoint ${response.status}${body ? `: ${body.slice(0, 200)}` : ""}`,
-		);
+		throw new Error(`purge endpoint ${response.status}`);
 	}
 }
 
@@ -103,7 +106,8 @@ export function waitUntilFromLocals(
 	locals: App.Locals | undefined,
 ): ((promise: Promise<unknown>) => void) | undefined {
 	if (!locals) return undefined;
-	const cfContext = (locals as { cfContext?: { waitUntil?: (p: Promise<unknown>) => void } })
-		.cfContext;
+	const cfContext = (
+		locals as { cfContext?: { waitUntil?: (p: Promise<unknown>) => void } }
+	).cfContext;
 	return cfContext?.waitUntil?.bind(cfContext);
 }

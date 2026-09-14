@@ -1,4 +1,11 @@
 import type { Project, ProjectCategory, VideoProvider } from "../data/projects";
+import { ClientError } from "./api-errors";
+import {
+	assertPositiveDuration,
+	assertSafeStorageSegment,
+	assertSortOrder,
+	assertYear,
+} from "./catalog-integrity";
 import type { StoredVideo } from "./store";
 
 const CATEGORIES = new Set<ProjectCategory>(["indie", "local", "bts"]);
@@ -8,6 +15,10 @@ const LEGACY_CATEGORIES: Record<string, ProjectCategory> = {
 	commercial: "indie",
 	art: "local",
 };
+
+const YOUTUBE_ID = /^[\w-]{11}$/;
+const VIMEO_ID = /^\d{5,12}$/;
+const FETCH_TIMEOUT_MS = 8_000;
 
 export function normalizeProjectCategory(
 	value: string,
@@ -22,24 +33,57 @@ export function isProjectCategory(value: string): value is ProjectCategory {
 	return CATEGORIES.has(value as ProjectCategory);
 }
 
-function coerceYear(value: unknown, fallback: number): number {
-	const n = typeof value === "number" ? value : Number(value);
-	return Number.isFinite(n) && n >= 1900 && n <= 2100 ? Math.trunc(n) : fallback;
+function yearFromRemoteDate(value: unknown, fallback: number): number {
+	const yearText = String(value ?? "").slice(0, 4);
+	if (!/^\d{4}$/.test(yearText)) return fallback;
+	try {
+		return assertYear(Number(yearText));
+	} catch {
+		return fallback;
+	}
 }
 
-export function parseVideoUrl(url: string): { provider: VideoProvider; id: string } {
+function assertYoutubeId(id: string) {
+	if (!YOUTUBE_ID.test(id)) {
+		throw new ClientError("Invalid YouTube video id.");
+	}
+}
+
+function assertVimeoId(id: string) {
+	if (!VIMEO_ID.test(id)) {
+		throw new ClientError("Invalid Vimeo video id.");
+	}
+}
+
+export function canonicalVideoUrl(provider: VideoProvider, id: string) {
+	if (provider === "youtube") {
+		assertYoutubeId(id);
+		return `https://www.youtube.com/watch?v=${id}`;
+	}
+	assertVimeoId(id);
+	return `https://vimeo.com/${id}`;
+}
+
+export function parseVideoUrl(url: string): {
+	provider: VideoProvider;
+	id: string;
+} {
 	let parsed: URL;
 	try {
-		parsed = new URL(url);
+		parsed = new URL(url.trim());
 	} catch {
-		throw new Error(`Invalid URL: ${url}`);
+		throw new ClientError("Invalid video URL.");
 	}
 
-	const host = parsed.hostname.replace(/^www\./, "");
+	if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+		throw new ClientError("Video URL must be http(s).");
+	}
+
+	const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
 
 	if (host === "youtu.be") {
-		const id = parsed.pathname.split("/").filter(Boolean)[0];
-		if (!id) throw new Error(`Could not parse YouTube id from ${url}`);
+		const id = parsed.pathname.split("/").filter(Boolean)[0] ?? "";
+		assertYoutubeId(id);
 		return { provider: "youtube", id };
 	}
 
@@ -49,23 +93,29 @@ export function parseVideoUrl(url: string): { provider: VideoProvider; id: strin
 		host === "youtube-nocookie.com"
 	) {
 		if (parsed.pathname.startsWith("/shorts/")) {
-			const id = parsed.pathname.split("/")[2];
-			if (!id) throw new Error(`Could not parse YouTube Shorts id from ${url}`);
+			const id = parsed.pathname.split("/")[2] ?? "";
+			assertYoutubeId(id);
 			return { provider: "youtube", id };
 		}
-		const id = parsed.searchParams.get("v");
-		if (!id) throw new Error(`Could not parse YouTube id from ${url}`);
+		if (parsed.pathname.startsWith("/embed/")) {
+			const id = parsed.pathname.split("/")[2] ?? "";
+			assertYoutubeId(id);
+			return { provider: "youtube", id };
+		}
+		const id = parsed.searchParams.get("v") ?? "";
+		assertYoutubeId(id);
 		return { provider: "youtube", id };
 	}
 
 	if (host === "vimeo.com" || host === "player.vimeo.com") {
 		const parts = parsed.pathname.split("/").filter(Boolean);
-		const id = parts.find((part) => /^\d+$/.test(part));
-		if (!id) throw new Error(`Could not parse Vimeo id from ${url}`);
+		const id = parts.find((part) => VIMEO_ID.test(part));
+		if (!id) throw new ClientError("Could not parse Vimeo id from that URL.");
+		assertVimeoId(id);
 		return { provider: "vimeo", id };
 	}
 
-	throw new Error(`Unsupported video host in ${url}`);
+	throw new ClientError("Only YouTube and Vimeo URLs are supported.");
 }
 
 function upgradeVimeoThumbnail(thumbnail: string) {
@@ -77,7 +127,7 @@ function upgradeVimeoThumbnail(thumbnail: string) {
 
 function parseIso8601Duration(iso: string) {
 	const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
-	if (!match) throw new Error(`Unrecognized YouTube duration: ${iso}`);
+	if (!match) throw new ClientError("Unrecognized YouTube duration.");
 	return (
 		Number(match[1] ?? 0) * 3600 +
 		Number(match[2] ?? 0) * 60 +
@@ -85,12 +135,48 @@ function parseIso8601Duration(iso: string) {
 	);
 }
 
-async function fetchJson(url: string) {
-	const response = await fetch(url);
-	if (!response.ok) {
-		throw new Error(`HTTP ${response.status} for ${url}`);
+function assertAllowedMetadataUrl(url: string) {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		throw new ClientError("Could not load video metadata.");
 	}
-	return response.json();
+	if (parsed.protocol !== "https:") {
+		throw new ClientError("Could not load video metadata.");
+	}
+	const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+	const allowed =
+		host === "vimeo.com" || host === "youtube.com" || host === "googleapis.com";
+	if (!allowed) {
+		console.error("[video-metadata] blocked outbound host", host);
+		throw new ClientError("Could not load video metadata.");
+	}
+}
+
+async function fetchJson(url: string) {
+	assertAllowedMetadataUrl(url);
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+	try {
+		const response = await fetch(url, {
+			method: "GET",
+			redirect: "error",
+			signal: controller.signal,
+			headers: { accept: "application/json" },
+		});
+		if (!response.ok) {
+			console.error("[video-metadata] upstream HTTP", response.status);
+			throw new ClientError("Could not load video metadata.");
+		}
+		return response.json();
+	} catch (error) {
+		if (error instanceof ClientError) throw error;
+		console.error("[video-metadata] fetch failed", error);
+		throw new ClientError("Could not load video metadata.");
+	} finally {
+		clearTimeout(timer);
+	}
 }
 
 export function slugifyVideo(title: string, id: string) {
@@ -100,7 +186,8 @@ export function slugifyVideo(title: string, id: string) {
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-+|-+$/g, "")
 		.slice(0, 60);
-	return base || id.toLowerCase();
+	const fallback = assertSafeStorageSegment(id.toLowerCase(), "video id");
+	return base || fallback;
 }
 
 export interface VideoInput {
@@ -120,6 +207,7 @@ export async function enrichVideo(
 	youtubeApiKey?: string,
 ): Promise<StoredVideo> {
 	const { provider, id } = parseVideoUrl(input.url);
+	const url = canonicalVideoUrl(provider, id);
 
 	if (provider === "vimeo") {
 		const remote = (await fetchJson(
@@ -127,27 +215,44 @@ export async function enrichVideo(
 		)) as Array<Record<string, unknown>>;
 		const video = remote?.[0];
 		if (!video) {
-			throw new Error(`Vimeo video ${id} was not found. Is it public?`);
+			throw new ClientError("Vimeo video was not found. Is it public?");
 		}
 
 		const title =
 			input.title?.trim() || String(video.title ?? "").trim() || `Vimeo ${id}`;
-		const year =
+		const year = assertYear(
 			input.year ??
-			coerceYear(String(video.upload_date ?? "").slice(0, 4), new Date().getFullYear());
-		const duration = input.duration ?? Number(video.duration ?? 0);
-		const thumbnail = upgradeVimeoThumbnail(
-			String(
-				video.thumbnail_large ||
-					video.thumbnail_medium ||
-					video.thumbnail_small ||
-					"",
-			),
+				yearFromRemoteDate(video.upload_date, new Date().getFullYear()),
+		);
+		const duration = assertPositiveDuration(
+			input.duration ?? Number(video.duration ?? 0),
+		);
+		const thumbnailRaw = String(
+			video.thumbnail_large ||
+				video.thumbnail_medium ||
+				video.thumbnail_small ||
+				"",
+		);
+		let thumbnail = "";
+		if (thumbnailRaw) {
+			try {
+				const thumbUrl = new URL(thumbnailRaw);
+				if (thumbUrl.protocol === "https:") {
+					thumbnail = upgradeVimeoThumbnail(thumbUrl.toString());
+				}
+			} catch {
+				thumbnail = "";
+			}
+		}
+
+		const slug = assertSafeStorageSegment(
+			input.slug?.trim() || slugifyVideo(title, id),
+			"video slug",
 		);
 
 		return {
-			slug: input.slug || slugifyVideo(title, id),
-			url: input.url,
+			slug,
+			url,
 			id,
 			title,
 			category: input.category,
@@ -155,7 +260,7 @@ export async function enrichVideo(
 			duration,
 			thumbnail,
 			provider: "vimeo",
-			sortOrder: input.sortOrder ?? 100,
+			sortOrder: assertSortOrder(input.sortOrder ?? 100),
 			...(input.description?.trim()
 				? { description: input.description.trim() }
 				: {}),
@@ -164,7 +269,7 @@ export async function enrichVideo(
 	}
 
 	const oembed = (await fetchJson(
-		`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`,
+		`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
 	)) as { title?: string };
 
 	let duration = input.duration;
@@ -179,28 +284,32 @@ export async function enrichVideo(
 	}
 
 	if (duration == null) {
-		throw new Error(
-			"YouTube videos need a duration in seconds (or a YOUTUBE_API_KEY secret).",
+		throw new ClientError(
+			"YouTube videos need a duration in seconds (or a configured API key).",
 		);
 	}
 
 	if (input.year == null) {
-		throw new Error("YouTube videos need a year.");
+		throw new ClientError("YouTube videos need a year.");
 	}
 
 	const title = input.title?.trim() || String(oembed.title ?? "").trim() || id;
+	const slug = assertSafeStorageSegment(
+		input.slug?.trim() || slugifyVideo(title, id),
+		"video slug",
+	);
 
 	return {
-		slug: input.slug || slugifyVideo(title, id),
-		url: input.url,
+		slug,
+		url,
 		id,
 		title,
 		category: input.category,
-		year: input.year,
-		duration,
+		year: assertYear(input.year),
+		duration: assertPositiveDuration(duration),
 		thumbnail: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
 		provider: "youtube",
-		sortOrder: input.sortOrder ?? 100,
+		sortOrder: assertSortOrder(input.sortOrder ?? 100),
 		...(input.description?.trim()
 			? { description: input.description.trim() }
 			: {}),

@@ -2482,6 +2482,33 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 	}
 }
 
+/* Soften expensive blurs on small GPUs; keep denser frosted look on desktop. */
+@media (max-width: 760px) {
+	.site-header--scrolled {
+		background: rgba(5, 10, 18, 0.92);
+		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(8px);
+	}
+
+	.project-card__play {
+		background: rgba(5, 10, 18, 0.82);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+
+	.video-overlay__backdrop {
+		background: rgba(5, 10, 18, 0.92);
+		-webkit-backdrop-filter: blur(6px);
+		backdrop-filter: blur(6px);
+	}
+
+	html.nav-is-compact .site-nav {
+		background: rgba(5, 10, 18, 0.97);
+		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(8px);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.video-dialog__title {
 		overflow-x: auto;

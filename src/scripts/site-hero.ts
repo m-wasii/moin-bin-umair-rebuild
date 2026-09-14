@@ -46,3 +46,5 @@ function scheduleHeroPlayback() {
 reducedMotion.addEventListener("change", syncHeroPlayback);
 document.addEventListener("visibilitychange", syncHeroPlayback);
 scheduleHeroPlayback();
+
+export {};

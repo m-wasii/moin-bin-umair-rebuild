@@ -1,4 +1,14 @@
 import type { APIRoute } from "astro";
+import { unauthorizedMutationResponse } from "../../lib/api-auth";
+import { publicApiError } from "../../lib/api-errors";
+import {
+	assertCompleteSlugOrder,
+	assertExpectedRev,
+	assertSafeStorageSegment,
+	expectedRevFromRequest,
+	optionalPositiveDuration,
+	optionalYear,
+} from "../../lib/catalog-integrity";
 import { isProjectCategory } from "../../lib/video-metadata";
 import { enrichVideo } from "../../lib/video-metadata";
 import {
@@ -7,7 +17,7 @@ import {
 } from "../../lib/site-cache";
 import {
 	hasWritableMedia,
-	listVideos,
+	readVideosCatalog,
 	saveVideos,
 	youtubeApiKey,
 	type StoredVideo,
@@ -32,23 +42,30 @@ function json(data: unknown, status = 200) {
 	});
 }
 
-function rewriteSortOrders(videos: StoredVideo[], slugs: string[]): StoredVideo[] {
-	const orderBySlug = new Map(
-		slugs.map((slug, index) => [slug, (index + 1) * 10]),
-	);
-	return videos.map((video) => {
-		const next = orderBySlug.get(video.slug);
-		if (next == null) return video;
-		return { ...video, sortOrder: next };
-	});
+function rewriteCompleteOrder(
+	videos: StoredVideo[],
+	slugs: string[],
+): StoredVideo[] {
+	const bySlug = new Map(videos.map((video) => [video.slug, video]));
+	return slugs.map((slug, index) => ({
+		...bySlug.get(slug)!,
+		sortOrder: (index + 1) * 10,
+	}));
 }
 
 export const GET: APIRoute = async () => {
-	const videos = await listVideos();
-	return json({ videos, writable: hasWritableMedia() });
+	const { videos, revision } = await readVideosCatalog();
+	return json({
+		videos,
+		rev: revision.rev,
+		writable: hasWritableMedia(),
+	});
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -74,11 +91,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	}
 
 	try {
-		const videos = await listVideos();
+		const expectedRev = expectedRevFromRequest(request, body);
+		const { videos, revision } = await readVideosCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
+
 		const maxOrder = videos.reduce(
 			(max, item) => Math.max(max, item.sortOrder ?? 0),
 			0,
 		);
+		const year = optionalYear(body.year);
+		const duration = optionalPositiveDuration(body.duration);
 		const video = await enrichVideo(
 			{
 				url,
@@ -86,11 +108,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				title: typeof body.title === "string" ? body.title : undefined,
 				description:
 					typeof body.description === "string" ? body.description : undefined,
-				year: body.year != null && body.year !== "" ? Number(body.year) : undefined,
-				duration:
-					body.duration != null && body.duration !== ""
-						? Number(body.duration)
-						: undefined,
+				year,
+				duration,
 				featured: Boolean(body.featured),
 				slug: typeof body.slug === "string" ? body.slug : undefined,
 				sortOrder: maxOrder + 10,
@@ -98,26 +117,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			youtubeApiKey(),
 		);
 
-		if (videos.some((item) => item.id === video.id && item.provider === video.provider)) {
+		assertSafeStorageSegment(video.slug, "video slug");
+		assertSafeStorageSegment(video.id, "video id");
+
+		if (
+			videos.some(
+				(item) => item.id === video.id && item.provider === video.provider,
+			)
+		) {
 			return json({ error: "That video is already in the catalog." }, 409);
 		}
 
 		if (videos.some((item) => item.slug === video.slug)) {
-			video.slug = `${video.slug}-${video.id}`.slice(0, 80);
+			video.slug = assertSafeStorageSegment(
+				`${video.slug}-${video.id}`.slice(0, 80),
+				"video slug",
+			);
 		}
 
 		videos.push(video);
-		await saveVideos(videos, cacheOpts(request, locals));
-		return json({ video }, 201);
+		const next = await saveVideos(videos, revision, cacheOpts(request, locals));
+		return json({ video, rev: next.rev }, 201);
 	} catch (error) {
-		return json(
-			{ error: error instanceof Error ? error.message : "Could not save video." },
-			400,
+		const { message, status } = publicApiError(
+			error,
+			"Could not save video.",
+			"api/videos POST",
 		);
+		return json({ error: message }, status);
 	}
 };
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -129,38 +163,48 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		return json({ error: "Invalid JSON" }, 400);
 	}
 
-	if (body.action === "reorder") {
-		const slugs = Array.isArray(body.slugs)
-			? body.slugs.map((slug) => String(slug))
-			: [];
-		if (!slugs.length) return json({ error: "Missing slugs." }, 400);
+	try {
+		const expectedRev = expectedRevFromRequest(request, body);
+		const { videos, revision } = await readVideosCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
 
-		const videos = await listVideos();
-		const known = new Set(videos.map((video) => video.slug));
-		if (slugs.some((slug) => !known.has(slug))) {
-			return json({ error: "One or more videos were not found." }, 404);
+		if (body.action === "reorder") {
+			const rawSlugs = Array.isArray(body.slugs) ? body.slugs : [];
+			const slugs = assertCompleteSlugOrder(
+				videos.map((video) => video.slug),
+				rawSlugs.map((slug) => String(slug)),
+				"videos",
+			);
+
+			const next = await saveVideos(
+				rewriteCompleteOrder(videos, slugs),
+				revision,
+				cacheOpts(request, locals),
+			);
+			return json({ ok: true, rev: next.rev });
 		}
 
-		await saveVideos(rewriteSortOrders(videos, slugs), cacheOpts(request, locals));
-		return json({ ok: true });
-	}
+		const slug = assertSafeStorageSegment(String(body.slug ?? ""), "slug");
+		const index = videos.findIndex((item) => item.slug === slug);
+		if (index === -1) return json({ error: "Video not found." }, 404);
 
-	const slug = String(body.slug ?? "");
-	if (!slug) return json({ error: "Missing slug." }, 400);
+		const current = videos[index];
+		const url = String(body.url ?? current.url).trim();
+		const category = String(body.category ?? current.category);
 
-	const videos = await listVideos();
-	const index = videos.findIndex((item) => item.slug === slug);
-	if (index === -1) return json({ error: "Video not found." }, 404);
+		if (!isProjectCategory(category)) {
+			return json({ error: "Invalid category." }, 400);
+		}
 
-	const current = videos[index];
-	const url = String(body.url ?? current.url).trim();
-	const category = String(body.category ?? current.category);
+		const year =
+			body.year != null && body.year !== ""
+				? optionalYear(body.year)
+				: current.year;
+		const duration =
+			body.duration != null && body.duration !== ""
+				? optionalPositiveDuration(body.duration)
+				: current.duration;
 
-	if (!isProjectCategory(category)) {
-		return json({ error: "Invalid category." }, 400);
-	}
-
-	try {
 		const video = await enrichVideo(
 			{
 				url,
@@ -171,39 +215,63 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 					typeof body.description === "string"
 						? body.description
 						: current.description,
-				year: body.year != null && body.year !== "" ? Number(body.year) : current.year,
-				duration:
-					body.duration != null && body.duration !== ""
-						? Number(body.duration)
-						: current.duration,
+				year,
+				duration,
 				featured:
 					body.featured == null ? current.featured : Boolean(body.featured),
 				sortOrder: current.sortOrder,
 			},
 			youtubeApiKey(),
 		);
+		assertSafeStorageSegment(video.slug, "video slug");
+		assertSafeStorageSegment(video.id, "video id");
 		videos[index] = video;
-		await saveVideos(videos, cacheOpts(request, locals));
-		return json({ video });
+		const next = await saveVideos(videos, revision, cacheOpts(request, locals));
+		return json({ video, rev: next.rev });
 	} catch (error) {
-		return json(
-			{ error: error instanceof Error ? error.message : "Could not update video." },
-			400,
+		const { message, status } = publicApiError(
+			error,
+			"Could not update video.",
+			"api/videos PATCH",
 		);
+		return json({ error: message }, status);
 	}
 };
 
 export const DELETE: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
 
-	const slug = new URL(request.url).searchParams.get("slug");
-	if (!slug) return json({ error: "Missing slug." }, 400);
+	try {
+		const url = new URL(request.url);
+		const slugParam = url.searchParams.get("slug");
+		if (!slugParam) return json({ error: "Missing slug." }, 400);
+		const slug = assertSafeStorageSegment(slugParam, "slug");
 
-	const videos = await listVideos();
-	const next = videos.filter((item) => item.slug !== slug);
-	if (next.length === videos.length) return json({ error: "Video not found." }, 404);
-	await saveVideos(next, cacheOpts(request, locals));
-	return json({ ok: true });
+		const expectedRev = expectedRevFromRequest(request);
+		const { videos, revision } = await readVideosCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
+
+		const nextVideos = videos.filter((item) => item.slug !== slug);
+		if (nextVideos.length === videos.length) {
+			return json({ error: "Video not found." }, 404);
+		}
+		const next = await saveVideos(
+			nextVideos,
+			revision,
+			cacheOpts(request, locals),
+		);
+		return json({ ok: true, rev: next.rev });
+	} catch (error) {
+		const { message, status } = publicApiError(
+			error,
+			"Could not delete video.",
+			"api/videos DELETE",
+		);
+		return json({ error: message }, status);
+	}
 };

@@ -1,3 +1,8 @@
+import {
+	buildResponsiveImageAttrs,
+	cfImageSrc,
+	RESPONSIVE_WIDTHS,
+} from "../lib/responsive-image";
 import { lockDocumentScroll, unlockDocumentScroll } from "./site-scroll-lock";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -32,6 +37,15 @@ const externalLinkLabel = document.querySelector<HTMLElement>(
 let previousFocus: HTMLElement | null = null;
 let aboutPanelOpen = true;
 let albumFocus: HTMLElement | null = null;
+
+function cfImagesEnabled() {
+	return document.documentElement.dataset.cfImages !== "0";
+}
+
+interface AlbumPhoto {
+	src: string;
+	alt: string;
+}
 
 function setAboutPanelOpen(open: boolean) {
 	aboutPanelOpen = open;
@@ -179,7 +193,7 @@ const photoPrev =
 	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
 const photoNext =
 	document.querySelector<HTMLButtonElement>("[data-photo-next]");
-let photoGroup: Array<{ src: string; alt: string }> = [];
+let photoGroup: AlbumPhoto[] = [];
 let photoIndex = 0;
 let photoFocus: HTMLElement | null = null;
 
@@ -187,11 +201,18 @@ function isPhotoOpen() {
 	return Boolean(photoDialog && !photoDialog.hidden);
 }
 
+function lightboxSrc(src: string) {
+	return cfImageSrc(src, 1600, { enabled: cfImagesEnabled() });
+}
+
 function renderPhoto() {
 	const item = photoGroup[photoIndex];
 	if (!item || !photoImage) return;
-	photoImage.src = item.src;
+	photoImage.src = lightboxSrc(item.src);
 	photoImage.alt = item.alt;
+	photoImage.width = 1600;
+	photoImage.height = 2000;
+	photoImage.decoding = "async";
 }
 
 function stepPhoto(delta: number) {
@@ -209,20 +230,109 @@ function closePhotoDialog() {
 	photoFocus = null;
 }
 
+function readAlbumPhotos(panel: HTMLElement): AlbumPhoto[] {
+	const jsonEl = panel.querySelector<HTMLScriptElement>("[data-album-photos]");
+	if (!jsonEl?.textContent) return [];
+	try {
+		const parsed = JSON.parse(jsonEl.textContent) as unknown;
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter(
+			(item): item is AlbumPhoto =>
+				Boolean(
+					item &&
+						typeof item === "object" &&
+						typeof (item as AlbumPhoto).src === "string",
+				),
+		);
+	} catch {
+		return [];
+	}
+}
+
+function albumPhotoGroup(panel: HTMLElement): AlbumPhoto[] {
+	const cached = panel.dataset.albumPhotosCache;
+	if (cached) {
+		try {
+			return JSON.parse(cached) as AlbumPhoto[];
+		} catch {
+			/* rebuild */
+		}
+	}
+	const photos = readAlbumPhotos(panel);
+	panel.dataset.albumPhotosCache = JSON.stringify(photos);
+	return photos;
+}
+
+function ensureAlbumMasonry(panel: HTMLElement) {
+	const list = panel.querySelector<HTMLElement>("[data-album-masonry]");
+	if (!list || list.dataset.hydrated === "1") return;
+
+	const photos = albumPhotoGroup(panel);
+	const useCf = cfImagesEnabled();
+	const frag = document.createDocumentFragment();
+
+	photos.forEach((photo, index) => {
+		const li = document.createElement("li");
+		li.className = `album-masonry__item album-masonry__item--${(index % 5) + 1}`;
+
+		const button = document.createElement("button");
+		button.className = "photo-card";
+		button.type = "button";
+		button.dataset.photo = "";
+		button.dataset.photoSrc = photo.src;
+		button.dataset.photoAlt = photo.alt;
+		button.dataset.photoIndex = String(index);
+		button.setAttribute("aria-label", photo.alt);
+
+		const attrs = buildResponsiveImageAttrs({
+			src: photo.src,
+			widths: RESPONSIVE_WIDTHS.album,
+			sizes: "(max-width: 760px) 90vw, 42vw",
+			width: 1200,
+			height: 1500,
+			loading: "lazy",
+			decoding: "async",
+			alt: photo.alt,
+			cfImages: useCf,
+		});
+
+		const img = document.createElement("img");
+		img.src = attrs.src;
+		if (attrs.srcset) img.srcset = attrs.srcset;
+		if (attrs.sizes) img.sizes = attrs.sizes;
+		img.width = attrs.width;
+		img.height = attrs.height;
+		img.alt = attrs.alt ?? "";
+		img.loading = "lazy";
+		img.decoding = "async";
+
+		button.appendChild(img);
+		li.appendChild(button);
+		frag.appendChild(li);
+	});
+
+	list.replaceChildren(frag);
+	list.dataset.hydrated = "1";
+}
+
 function openPhotoDialog(button: HTMLElement) {
 	const src = button.dataset.photoSrc;
-	const group = (button.dataset.photoGroup ?? "")
-		.split("|")
-		.filter(Boolean)
-		.map((itemSrc) => {
-			const match = document.querySelector<HTMLElement>(
-				`[data-photo][data-photo-src="${CSS.escape(itemSrc)}"]`,
-			);
-			return {
-				src: itemSrc,
-				alt: match?.dataset.photoAlt ?? "",
-			};
-		});
+	const panel = button.closest<HTMLElement>("[data-album-panel]");
+	const group =
+		panel != null
+			? albumPhotoGroup(panel)
+			: (button.dataset.photoGroup ?? "")
+					.split("|")
+					.filter(Boolean)
+					.map((itemSrc) => {
+						const match = document.querySelector<HTMLElement>(
+							`[data-photo][data-photo-src="${CSS.escape(itemSrc)}"]`,
+						);
+						return {
+							src: itemSrc,
+							alt: match?.dataset.photoAlt ?? "",
+						};
+					});
 	if (!src || !photoDialog || group.length === 0) return;
 
 	photoGroup = group;
@@ -278,6 +388,7 @@ function openAlbum(category: string, trigger?: HTMLElement | null) {
 	}
 
 	albumFocus = trigger ?? albumFocus;
+	ensureAlbumMasonry(panel);
 	if (panel.hidden) {
 		lockDocumentScroll();
 		panel.hidden = false;
@@ -288,6 +399,29 @@ function openAlbum(category: string, trigger?: HTMLElement | null) {
 	panel
 		.querySelector<HTMLButtonElement>("[data-album-close]")
 		?.focus({ preventScroll: true });
+
+	if (location.hash !== `#album-${category}`) {
+		try {
+			history.replaceState(
+				null,
+				"",
+				`${location.pathname}${location.search}#album-${category}`,
+			);
+		} catch {
+			/* ignore */
+		}
+	}
+}
+
+function syncAlbumFromHash() {
+	const hash = location.hash;
+	if (!hash.startsWith("#album-")) return;
+	const category = decodeURIComponent(hash.slice("#album-".length));
+	if (!category) return;
+	const opener = document.querySelector<HTMLElement>(
+		`[data-album-open="${CSS.escape(category)}"]`,
+	);
+	openAlbum(category, opener);
 }
 
 document.addEventListener("click", (event) => {
@@ -341,6 +475,17 @@ document.addEventListener("click", (event) => {
 	if (target.closest("[data-album-close], [data-album-backdrop]")) {
 		event.preventDefault();
 		closeAlbum();
+		if (location.hash.startsWith("#album-")) {
+			try {
+				history.replaceState(
+					null,
+					"",
+					`${location.pathname}${location.search}`,
+				);
+			} catch {
+				/* ignore */
+			}
+		}
 	}
 });
 
@@ -376,6 +521,17 @@ document.addEventListener("keydown", (event) => {
 		if (isAlbumOpen()) {
 			event.preventDefault();
 			closeAlbum();
+			if (location.hash.startsWith("#album-")) {
+				try {
+					history.replaceState(
+						null,
+						"",
+						`${location.pathname}${location.search}`,
+					);
+				} catch {
+					/* ignore */
+				}
+			}
 		}
 		return;
 	}
@@ -390,3 +546,6 @@ document.addEventListener("keydown", (event) => {
 		stepPhoto(event.key === "ArrowLeft" ? -1 : 1);
 	}
 });
+
+syncAlbumFromHash();
+window.addEventListener("hashchange", syncAlbumFromHash);

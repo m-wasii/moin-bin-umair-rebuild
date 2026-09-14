@@ -3,7 +3,10 @@ import { site } from "../data/site";
 import { useTranslations, type Lang } from "../i18n/ui";
 import { heroMediaSrc, heroMediaVersion } from "../lib/store";
 import ResponsiveImage from "./ResponsiveImage.astro";
-import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
+import {
+	cfImageResizingAvailable,
+	RESPONSIVE_WIDTHS,
+} from "../lib/responsive-image";
 
 interface Props {
 	lang: Lang;
@@ -14,6 +17,7 @@ const t = useTranslations(lang);
 const heroVersion = await heroMediaVersion();
 const heroPoster = heroMediaSrc("hero-poster.webp", heroVersion);
 const heroLoop = heroMediaSrc("hero-loop.mp4", heroVersion);
+const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 ---
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
@@ -27,8 +31,10 @@ const heroLoop = heroMediaSrc("hero-loop.mp4", heroVersion);
 			height={1080}
 			widths={RESPONSIVE_WIDTHS.hero}
 			sizes="100vw"
+			loading="eager"
 			decoding="async"
 			fetchpriority="high"
+			cfImages={cfImages}
 		/>
 		<video
 			muted

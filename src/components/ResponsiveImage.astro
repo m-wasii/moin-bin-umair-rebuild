@@ -7,6 +7,7 @@ import {
 interface Props extends ResponsiveImageAttrs {
 	widths: readonly number[];
 	sizes: string;
+	cfImages?: boolean;
 }
 
 const {
@@ -20,6 +21,7 @@ const {
 	fetchpriority,
 	alt,
 	class: className,
+	cfImages,
 } = Astro.props;
 
 const attrs = buildResponsiveImageAttrs({
@@ -33,6 +35,7 @@ const attrs = buildResponsiveImageAttrs({
 	fetchpriority,
 	alt,
 	class: className,
+	cfImages,
 });
 ---
 

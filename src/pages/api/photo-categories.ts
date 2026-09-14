@@ -4,13 +4,21 @@ import {
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
+import { unauthorizedMutationResponse } from "../../lib/api-auth";
+import { publicApiError } from "../../lib/api-errors";
+import {
+	assertCompleteSlugOrder,
+	assertExpectedRev,
+	assertKebabSlug,
+	expectedRevFromRequest,
+} from "../../lib/catalog-integrity";
 import {
 	waitUntilFromLocals,
 	type SiteCacheRefreshOptions,
 } from "../../lib/site-cache";
 import {
 	hasWritableMedia,
-	listPhotoCategories,
+	readPhotoCategoriesCatalog,
 	savePhotoCategories,
 } from "../../lib/store";
 
@@ -34,11 +42,18 @@ function json(data: unknown, status = 200) {
 }
 
 export const GET: APIRoute = async () => {
-	const categories = await listPhotoCategories();
-	return json({ categories, writable: hasWritableMedia() });
+	const { categories, revision } = await readPhotoCategoriesCatalog();
+	return json({
+		categories,
+		rev: revision.rev,
+		writable: hasWritableMedia(),
+	});
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -56,34 +71,54 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		return json({ error: "Invalid JSON" }, 400);
 	}
 
-	const label = String(body.label ?? "").trim();
-	if (!label) return json({ error: "Category name is required." }, 400);
+	try {
+		const label = String(body.label ?? "").trim();
+		if (!label) return json({ error: "Category name is required." }, 400);
 
-	const slug = slugifyPhotoName(
-		typeof body.slug === "string" && body.slug.trim() ? body.slug : label,
-	);
-	if (!slug || !isPhotoCategorySlug(slug)) {
-		return json(
-			{ error: "Could not build a valid category slug from that name." },
-			400,
+		const slug = slugifyPhotoName(
+			typeof body.slug === "string" && body.slug.trim() ? body.slug : label,
 		);
-	}
+		if (!slug || !isPhotoCategorySlug(slug)) {
+			return json(
+				{ error: "Could not build a valid category slug from that name." },
+				400,
+			);
+		}
+		assertKebabSlug(slug, "category slug");
 
-	const categories = await listPhotoCategories();
-	if (categories.some((entry) => entry.slug === slug)) {
-		return json({ error: "That category already exists." }, 409);
-	}
+		const expectedRev = expectedRevFromRequest(request, body);
+		const { categories, revision } = await readPhotoCategoriesCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
 
-	const category = {
-		slug,
-		label: label || titleFromSlug(slug),
-	};
-	categories.push(category);
-	await savePhotoCategories(categories, cacheOpts(request, locals));
-	return json({ category }, 201);
+		if (categories.some((entry) => entry.slug === slug)) {
+			return json({ error: "That category already exists." }, 409);
+		}
+
+		const category = {
+			slug,
+			label: label || titleFromSlug(slug),
+		};
+		categories.push(category);
+		const next = await savePhotoCategories(
+			categories,
+			revision,
+			cacheOpts(request, locals),
+		);
+		return json({ category, rev: next.rev }, 201);
+	} catch (error) {
+		const { message, status } = publicApiError(
+			error,
+			"Could not save category.",
+			"api/photo-categories POST",
+		);
+		return json({ error: message }, status);
+	}
 };
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -95,25 +130,36 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		return json({ error: "Invalid JSON" }, 400);
 	}
 
-	if (body.action !== "reorder") {
-		return json({ error: "Unsupported action." }, 400);
+	try {
+		if (body.action !== "reorder") {
+			return json({ error: "Unsupported action." }, 400);
+		}
+
+		const expectedRev = expectedRevFromRequest(request, body);
+		const { categories, revision } = await readPhotoCategoriesCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
+
+		const rawSlugs = Array.isArray(body.slugs) ? body.slugs : [];
+		const slugs = assertCompleteSlugOrder(
+			categories.map((entry) => entry.slug),
+			rawSlugs.map((slug) => String(slug)),
+			"categories",
+		);
+
+		const bySlug = new Map(categories.map((entry) => [entry.slug, entry]));
+		const next = slugs.map((slug) => bySlug.get(slug)!);
+		const saved = await savePhotoCategories(
+			next,
+			revision,
+			cacheOpts(request, locals),
+		);
+		return json({ ok: true, rev: saved.rev });
+	} catch (error) {
+		const { message, status } = publicApiError(
+			error,
+			"Could not reorder categories.",
+			"api/photo-categories PATCH",
+		);
+		return json({ error: message }, status);
 	}
-
-	const slugs = Array.isArray(body.slugs)
-		? body.slugs.map((slug) => String(slug))
-		: [];
-	if (!slugs.length) return json({ error: "Missing slugs." }, 400);
-
-	const categories = await listPhotoCategories();
-	const bySlug = new Map(categories.map((entry) => [entry.slug, entry]));
-	if (
-		slugs.some((slug) => !bySlug.has(slug)) ||
-		slugs.length !== categories.length
-	) {
-		return json({ error: "One or more categories were not found." }, 404);
-	}
-
-	const next = slugs.map((slug) => bySlug.get(slug)!);
-	await savePhotoCategories(next, cacheOpts(request, locals));
-	return json({ ok: true });
 };

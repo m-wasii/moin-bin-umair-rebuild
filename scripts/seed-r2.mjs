@@ -246,4 +246,16 @@ await runPool(objects, 4, async ({ key, file, contentType }) => {
 	await putObject(key, file, contentType);
 	console.log(`  ✓ ${key}`);
 });
+
+// Bust immutable hero URLs after reel bytes are replaced.
+const heroMeta = {
+	v: Date.now().toString(36),
+	rev: 1,
+};
+const heroMetaPath = join(mediaRoot, "catalog", "hero.json");
+mkdirSync(dirname(heroMetaPath), { recursive: true });
+writeFileSync(heroMetaPath, `${JSON.stringify(heroMeta, null, "\t")}\n`);
+await putObject("catalog/hero.json", heroMetaPath, "application/json");
+console.log("  ✓ catalog/hero.json");
+
 console.log("seed-r2: done");

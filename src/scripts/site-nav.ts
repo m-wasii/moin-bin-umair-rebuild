@@ -1,4 +1,4 @@
-﻿import { forceTextRevealThrough } from "./text-reveal";
+﻿import { forceTextRevealThroughMain } from "./text-reveal";
 
 const header = document.querySelector<HTMLElement>("[data-header]");
 const brand = document.querySelector<HTMLElement>(".site-brand");
@@ -30,6 +30,11 @@ let cachedLinkMetrics: Array<{
 	w: number;
 	h: number;
 }> = [];
+/** Document Y positions for nav sections; invalidated on resize / layout. */
+let cachedSectionTops: number[] = [];
+let sectionTopsDirty = true;
+let cachedScrollPaddingTop = 0;
+let scrollPaddingDirty = true;
 
 function isNavCompact() {
 	return document.documentElement.classList.contains("nav-is-compact");
@@ -209,16 +214,43 @@ function slideIndicatorMetrics(
 	};
 }
 
+function invalidateSectionMetrics() {
+	sectionTopsDirty = true;
+	scrollPaddingDirty = true;
+}
+
 function getSectionScrollTop(section: HTMLElement) {
 	return section.getBoundingClientRect().top + window.scrollY;
 }
 
-function getScrollAnchor() {
-	const paddingTop =
+function ensureSectionTops(
+	navSections: Array<{ link: HTMLAnchorElement; section: HTMLElement }>,
+) {
+	if (
+		!sectionTopsDirty &&
+		cachedSectionTops.length === navSections.length
+	) {
+		return;
+	}
+
+	const scrollY = window.scrollY;
+	cachedSectionTops = navSections.map(
+		({ section }) => section.getBoundingClientRect().top + scrollY,
+	);
+	sectionTopsDirty = false;
+}
+
+function getScrollPaddingTop() {
+	if (!scrollPaddingDirty) return cachedScrollPaddingTop;
+	cachedScrollPaddingTop =
 		parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
 		0;
+	scrollPaddingDirty = false;
+	return cachedScrollPaddingTop;
+}
 
-	return window.scrollY + paddingTop + 1;
+function getScrollAnchor() {
+	return window.scrollY + getScrollPaddingTop() + 1;
 }
 
 function getNavSections() {
@@ -237,10 +269,11 @@ function getActiveSectionIndex(
 	navSections: Array<{ link: HTMLAnchorElement; section: HTMLElement }>,
 	anchor: number,
 ) {
+	ensureSectionTops(navSections);
 	let activeIndex = 0;
 
-	for (let index = 0; index < navSections.length; index += 1) {
-		if (anchor >= getSectionScrollTop(navSections[index].section) - 2) {
+	for (let index = 0; index < cachedSectionTops.length; index += 1) {
+		if (anchor >= cachedSectionTops[index] - 2) {
 			activeIndex = index;
 		}
 	}
@@ -281,10 +314,9 @@ function updateNavIndicatorFromScroll() {
 
 	if (activeIndex < navSections.length - 1) {
 		const currentSection = navSections[activeIndex].section;
-		const nextSection = navSections[activeIndex + 1].section;
-		const nextTop = getSectionScrollTop(nextSection);
+		const nextTop = cachedSectionTops[activeIndex + 1];
 		const leaveCurrent =
-			getSectionScrollTop(currentSection) + currentSection.offsetHeight * 0.58;
+			cachedSectionTops[activeIndex] + currentSection.offsetHeight * 0.58;
 
 		if (anchor >= leaveCurrent && anchor < nextTop) {
 			fromIndex = activeIndex;
@@ -428,19 +460,22 @@ navToggle?.addEventListener("click", () => {
 	}
 });
 
-/** Long hash jumps outrun opacity reveals â†’ dark empty viewport mid-scroll. */
+/** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
 const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
 
 function revealContentThrough(section: HTMLElement) {
-	const limit =
-		getSectionScrollTop(section) + section.offsetHeight + window.innerHeight;
+	const main = document.getElementById("main-content");
+	if (!main) return;
 
-	document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((item) => {
-		const top = item.getBoundingClientRect().top + window.scrollY;
-		if (top <= limit) item.classList.add("is-visible");
-	});
+	for (const child of Array.from(main.children)) {
+		if (!(child instanceof HTMLElement)) continue;
+		child
+			.querySelectorAll<HTMLElement>("[data-reveal]")
+			.forEach((item) => item.classList.add("is-visible"));
+		if (child === section || child.contains(section)) break;
+	}
 
-	forceTextRevealThrough(limit);
+	forceTextRevealThroughMain(section);
 }
 
 function beginNavScrollJump(section: HTMLElement) {
@@ -457,7 +492,9 @@ function beginNavScrollJump(section: HTMLElement) {
 		root.classList.remove("is-nav-scrolling");
 	};
 
-	if ("onscrollend" in window) {
+	const supportsScrollEnd = typeof window.onscrollend !== "undefined";
+
+	if (supportsScrollEnd) {
 		window.addEventListener("scrollend", endJump, { once: true });
 		window.setTimeout(endJump, 2500);
 		return;
@@ -496,7 +533,7 @@ navLinks.forEach((link, index) => {
 
 		const finalizeSnap = () => snapIndicatorToIndex(index);
 
-		const supportsScrollEnd = "onscrollend" in window;
+		const supportsScrollEnd = typeof window.onscrollend !== "undefined";
 
 		if (supportsScrollEnd) {
 			window.addEventListener("scrollend", finalizeSnap, { once: true });
@@ -548,6 +585,7 @@ navIndicator?.addEventListener("transitionend", (event) => {
 
 window.addEventListener("scroll", queueScrollChromeUpdate, { passive: true });
 window.addEventListener("resize", () => {
+	invalidateSectionMetrics();
 	queueNavCompactSync();
 	queueScrollChromeUpdate();
 	queueNavIndicatorUpdate();
@@ -559,6 +597,7 @@ queueNavIndicatorUpdate();
 
 if (header && "ResizeObserver" in window) {
 	new ResizeObserver(() => {
+		invalidateSectionMetrics();
 		queueNavCompactSync();
 	}).observe(header);
 }
@@ -573,6 +612,7 @@ if (nav && "ResizeObserver" in window) {
 if (document.fonts?.ready) {
 	document.fonts.ready.then(() => {
 		navExpandedFitWidth = 0;
+		invalidateSectionMetrics();
 		syncNavCompactMode();
 		measureLinkMetrics();
 		queueNavIndicatorUpdate();

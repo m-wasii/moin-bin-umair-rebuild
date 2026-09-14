@@ -159,6 +159,24 @@ export function forceTextRevealThrough(scrollLimitY: number): void {
 }
 
 /**
+ * Reveal text in main sections up to and including `section` without
+ * measuring every `[data-text-reveal]` against scroll coordinates.
+ */
+export function forceTextRevealThroughMain(section: HTMLElement): void {
+	const main = document.getElementById("main-content");
+	if (!main) return;
+
+	for (const child of Array.from(main.children)) {
+		if (!(child instanceof HTMLElement)) continue;
+		child.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
+			prepareElement(el);
+			el.classList.add(REVEALED);
+		});
+		if (child === section || child.contains(section)) break;
+	}
+}
+
+/**
  * Initialize site-wide text writing/reveal for `[data-text-reveal]` targets.
  * Plays once on viewport entry; respects prefers-reduced-motion.
  */

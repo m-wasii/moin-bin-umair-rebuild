@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /cdn-purge
+
+Sitemap: https://moinbinumair.com/sitemap.xml
