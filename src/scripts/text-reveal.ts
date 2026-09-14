@@ -10,6 +10,37 @@ type RevealMode = "words" | "mask";
 const initializedRoots = new WeakSet<ParentNode>();
 let documentObserver: IntersectionObserver | null = null;
 
+/** Pending document-scoped text hosts awaiting reveal (monotonic — never re-hidden). */
+interface PendingTextReveal {
+	el: HTMLElement;
+	top: number;
+	bottom: number;
+}
+
+let pendingDocumentText: PendingTextReveal[] = [];
+
+function cacheTextPositions(items: HTMLElement[]): PendingTextReveal[] {
+	const scrollY = window.scrollY;
+	const cached: PendingTextReveal[] = [];
+
+	for (const el of items) {
+		if (el.classList.contains(REVEALED)) continue;
+		const rect = el.getBoundingClientRect();
+		cached.push({
+			el,
+			top: rect.top + scrollY,
+			bottom: rect.bottom + scrollY,
+		});
+	}
+
+	return cached;
+}
+
+function releasePendingText(el: HTMLElement): void {
+	pendingDocumentText = pendingDocumentText.filter((item) => item.el !== el);
+	documentObserver?.unobserve(el);
+}
+
 function prefersReducedMotion(): boolean {
 	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -127,8 +158,18 @@ function prepareElement(el: HTMLElement): void {
 	el.classList.add(PREPARED);
 }
 
-function revealElement(el: HTMLElement): void {
+function revealElement(el: HTMLElement, options?: { instant?: boolean }): void {
+	if (el.classList.contains(REVEALED)) return;
 	prepareElement(el);
+	releasePendingText(el);
+
+	if (options?.instant) {
+		el.style.setProperty("--tr-duration", "0ms");
+		el.style.setProperty("--tr-stagger", "0ms");
+		el.classList.add(REVEALED);
+		return;
+	}
+
 	// Next frame so initial clipped styles paint before transitioning.
 	requestAnimationFrame(() => {
 		el.classList.add(REVEALED);
@@ -149,6 +190,48 @@ function isAlreadyInView(el: HTMLElement): boolean {
 	return rect.bottom > 0 && rect.top < vh && rect.right > 0 && rect.left < vw;
 }
 
+/** Snap text open with no stagger so nav teardown cannot re-expose clipped words. */
+function finishTextRevealInstant(el: HTMLElement): void {
+	prepareElement(el);
+	el.style.setProperty("--tr-duration", "0ms");
+	el.style.setProperty("--tr-stagger", "0ms");
+	el.classList.add(REVEALED);
+	releasePendingText(el);
+}
+
+/**
+ * Reveal pending text hosts whose cached document box intersects `[minY, maxY]`.
+ * Used by the scroll safety net so fast movement cannot outrun the observer.
+ * Monotonic: once revealed, hosts are dropped from the pending cache.
+ * Live-viewport hosts (or forceInstant) snap open to avoid clipped ink flashes.
+ */
+export function revealTextInDocumentRange(
+	minY: number,
+	maxY: number,
+	options?: { forceInstant?: boolean },
+): void {
+	if (pendingDocumentText.length === 0) return;
+
+	const vh = window.innerHeight || document.documentElement.clientHeight;
+	const remaining: PendingTextReveal[] = [];
+
+	for (const item of pendingDocumentText) {
+		if (item.el.classList.contains(REVEALED)) continue;
+		if (item.bottom < minY || item.top > maxY) {
+			remaining.push(item);
+			continue;
+		}
+
+		const rect = item.el.getBoundingClientRect();
+		const inLiveViewport = rect.bottom > 0 && rect.top < vh;
+		revealElement(item.el, {
+			instant: Boolean(options?.forceInstant) || inLiveViewport,
+		});
+	}
+
+	pendingDocumentText = remaining;
+}
+
 /**
  * Instantly finish text reveals whose top is at or above `scrollLimitY`.
  * Used for long in-page nav jumps so smooth scrolling does not fly through
@@ -158,8 +241,7 @@ export function forceTextRevealThrough(scrollLimitY: number): void {
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
 		const top = el.getBoundingClientRect().top + window.scrollY;
 		if (top > scrollLimitY) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 
@@ -177,24 +259,22 @@ export function forceTextRevealAlongPath(fromY: number, toY: number): void {
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
 		const top = el.getBoundingClientRect().top + scrollY;
 		if (top < minY - pad || top > maxY + pad) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 
 /**
  * Finish any on-screen text reveals so removing `is-nav-scrolling` cannot
  * flash clipped / opacity-0 copy in the current viewport.
+ * Also zeros mid-stagger hosts that already have `is-revealed`.
  */
 export function forceTextRevealInViewport(): void {
 	const vh = window.innerHeight || document.documentElement.clientHeight;
 
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
-		if (el.classList.contains(REVEALED)) return;
 		const rect = el.getBoundingClientRect();
 		if (rect.bottom <= 0 || rect.top >= vh) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 
@@ -222,7 +302,7 @@ export function initTextReveal(
 		return null;
 	}
 
-	/* Prepare lazily on viewport entry — wrapping every word site-wide on
+	/* Prepare lazily on prefetch entry — wrapping every word site-wide on
 	   boot caused heavy main-thread / TBT cost on DE home. */
 	const observer = new IntersectionObserver(
 		(entries, obs) => {
@@ -239,16 +319,29 @@ export function initTextReveal(
 		},
 	);
 
+	const deferred: HTMLElement[] = [];
+
 	items.forEach((item) => {
-		// Above-the-fold copy (e.g. hero footer) can sit in the bottom
-		// rootMargin band and never intersect — reveal those immediately.
+		// Above-the-fold copy (e.g. hero footer) should play immediately.
 		if (isAlreadyInView(item)) {
 			revealElement(item);
 			return;
 		}
 		observer.observe(item);
+		deferred.push(item);
 	});
 
-	if (root === document) documentObserver = observer;
+	if (root === document) {
+		documentObserver = observer;
+		pendingDocumentText = cacheTextPositions(deferred);
+
+		const refreshPending = () => {
+			pendingDocumentText = cacheTextPositions(
+				pendingDocumentText.map((item) => item.el),
+			);
+		};
+		window.addEventListener("resize", refreshPending, { passive: true });
+	}
+
 	return observer;
 }
