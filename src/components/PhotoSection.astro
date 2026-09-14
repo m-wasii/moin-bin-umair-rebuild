@@ -1,7 +1,10 @@
 ---
 import type { StoredPhoto } from "../data/photos";
 import { listPhotoCategories } from "../lib/store";
-import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
+import {
+	cfImageResizingAvailable,
+	RESPONSIVE_WIDTHS,
+} from "../lib/responsive-image";
 import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
 import ResponsiveImage from "./ResponsiveImage.astro";
 
@@ -14,6 +17,7 @@ interface Props {
 const { photos, lang, surface = "section" } = Astro.props;
 const t = useTranslations(lang);
 const categories = await listPhotoCategories();
+const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 
 function albumTitle(slug: string, label: string) {
 	const key = `photo.category.${slug}` as UiKey;
@@ -109,6 +113,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 													sizes="(max-width: 760px) 45vw, 22vw"
 													loading="lazy"
 													decoding="async"
+													cfImages={cfImages}
 												/>
 											</span>
 										))}
@@ -122,6 +127,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 												sizes="(max-width: 760px) 90vw, 42vw"
 												loading="lazy"
 												decoding="async"
+												cfImages={cfImages}
 											/>
 											<span class="photo-album__mask" aria-hidden="true" />
 											<figcaption class="photo-album__content">
@@ -150,73 +156,53 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 
 {
 	surface === "overlays" &&
-		grouped.map((group) => (
-			<div
-				class="album-overlay"
-				id={`album-${group.category}`}
-				data-album-panel={group.category}
-				hidden
-			>
+		grouped.map((group) => {
+			const albumPhotos = group.items.map((photo) => ({
+				src: photo.src,
+				alt: photo.alt || group.title,
+			}));
+			return (
 				<div
-					class="album-overlay__backdrop"
-					data-album-backdrop
-					aria-hidden="true"
-				/>
-				<div
-					class="album-overlay__dialog"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby={`album-title-${group.category}`}
+					class="album-overlay"
+					id={`album-${group.category}`}
+					data-album-panel={group.category}
+					hidden
 				>
-					<header class="album-overlay__header">
-						<button type="button" data-album-close>
-							{t("photo.album.back")}
-						</button>
-						<div>
-							<p class="photo-album__kicker">{t("photo.album.kicker")}</p>
-							<h2 id={`album-title-${group.category}`}>{group.title}</h2>
-						</div>
-						<p>
-							{t("photo.album.count", {
-								count: group.items.length,
-							})}
-						</p>
-					</header>
-					<ul class="album-masonry">
-						{group.items.map((photo, index) => (
-							<li
-								class:list={[
-									"album-masonry__item",
-									`album-masonry__item--${(index % 5) + 1}`,
-								]}
-							>
-								<button
-									class="photo-card"
-									type="button"
-									data-photo
-									data-photo-src={photo.src}
-									data-photo-alt={photo.alt || group.title}
-									data-photo-group={group.items
-										.map((item) => item.src)
-										.join("|")}
-									data-photo-index={String(index)}
-									aria-label={photo.alt || group.title}
-								>
-									<ResponsiveImage
-										src={photo.src}
-										alt={photo.alt || group.title}
-										width={1200}
-										height={1500}
-										widths={RESPONSIVE_WIDTHS.album}
-										sizes="(max-width: 760px) 90vw, 42vw"
-										loading="lazy"
-										decoding="async"
-									/>
-								</button>
-							</li>
-						))}
-					</ul>
+					<div
+						class="album-overlay__backdrop"
+						data-album-backdrop
+						aria-hidden="true"
+					/>
+					<div
+						class="album-overlay__dialog"
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby={`album-title-${group.category}`}
+					>
+						<header class="album-overlay__header">
+							<button type="button" data-album-close>
+								{t("photo.album.back")}
+							</button>
+							<div>
+								<p class="photo-album__kicker">{t("photo.album.kicker")}</p>
+								<h2 id={`album-title-${group.category}`}>{group.title}</h2>
+							</div>
+							<p>
+								{t("photo.album.count", {
+									count: group.items.length,
+								})}
+							</p>
+						</header>
+						{/* Masonry is injected on open — keeps ~214 photos out of initial DOM. */}
+						<ul class="album-masonry" data-album-masonry></ul>
+						<script
+							type="application/json"
+							is:inline
+							data-album-photos
+							set:html={JSON.stringify(albumPhotos)}
+						/>
+					</div>
 				</div>
-			</div>
-		))
+			);
+		})
 }

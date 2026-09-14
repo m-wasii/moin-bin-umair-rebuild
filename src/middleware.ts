@@ -4,6 +4,7 @@ import {
 	dashboardOrigin,
 	isDashboardHost,
 	isDashboardPath,
+	isPreviewHost,
 	siteOrigin,
 } from "./lib/hosts";
 
@@ -64,6 +65,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	} else {
 		response.headers.set("x-mbu-surface", "site");
 		response.headers.set("x-mbu-site-origin", siteOrigin(url));
+		// Preview hosts must not compete with the production canonical.
+		if (isPreviewHost(host)) {
+			response.headers.set("x-robots-tag", "noindex, nofollow");
+		}
 		// Media routes set their own long-lived Cache-Control; do not override.
 		// Internal purge endpoint must stay uncached.
 		if (

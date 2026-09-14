@@ -2,7 +2,10 @@
 import type { StoredShort } from "../data/shorts";
 import { formatDuration } from "../data/projects";
 import { shortCover, shortDuration } from "../data/shorts";
-import { RESPONSIVE_WIDTHS } from "../lib/responsive-image";
+import {
+	cfImageResizingAvailable,
+	RESPONSIVE_WIDTHS,
+} from "../lib/responsive-image";
 import { useTranslations, type Lang } from "../i18n/ui";
 import ResponsiveImage from "./ResponsiveImage.astro";
 
@@ -16,6 +19,7 @@ const { entry, lang, index = 0 } = Astro.props;
 const t = useTranslations(lang);
 const cover = shortCover(entry);
 const duration = shortDuration(entry);
+const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 const clipsJson = JSON.stringify(
 	entry.clips.map((clip) => ({
 		src: clip.src,
@@ -50,6 +54,7 @@ const clipsJson = JSON.stringify(
 					sizes="(max-width: 760px) 90vw, 28vw"
 					loading="lazy"
 					decoding="async"
+					cfImages={cfImages}
 				/>
 			)
 		}

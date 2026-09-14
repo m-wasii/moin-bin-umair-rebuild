@@ -9,6 +9,7 @@ import {
 } from "../data/projects";
 import { localizedProjectDescription } from "../i18n/project-descriptions";
 import { useTranslations, type Lang } from "../i18n/ui";
+import { buildProjectThumbnailAttrs } from "../lib/project-thumbnail";
 
 interface Props {
 	project: Project;
@@ -24,6 +25,12 @@ const watchUrl = projectWatchUrl(project);
 const hostLabel = projectHostLabel(project);
 const isVertical = project.category === "shorts";
 const description = localizedProjectDescription(project, lang);
+const thumb = buildProjectThumbnailAttrs(
+	project.thumbnail,
+	isVertical
+		? "(max-width: 760px) 42vw, 18vw"
+		: "(max-width: 760px) 92vw, (max-width: 1100px) 46vw, 32vw",
+);
 ---
 
 <article
@@ -46,7 +53,7 @@ const description = localizedProjectDescription(project, lang);
 	<a
 		class="project-card__link"
 		href={watchUrl}
-		rel="noreferrer"
+		rel="noopener noreferrer"
 		data-video
 		data-video-id={project.id}
 		data-video-provider={projectProvider(project)}
@@ -57,7 +64,9 @@ const description = localizedProjectDescription(project, lang);
 	>
 		<figure class="project-card__frame">
 			<img
-				src={project.thumbnail}
+				src={thumb.src}
+				srcset={thumb.srcset}
+				sizes={thumb.sizes}
 				alt={t("card.stillAlt", { title: project.title })}
 				width={isVertical ? 1080 : 1280}
 				height={isVertical ? 1920 : 720}

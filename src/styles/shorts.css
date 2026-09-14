@@ -286,4 +286,10 @@
 		aspect-ratio: 1;
 		scroll-snap-align: start;
 	}
+
+	.shorts-tile__play {
+		background: rgba(5, 10, 18, 0.82);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
 }

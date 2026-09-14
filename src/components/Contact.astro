@@ -81,8 +81,8 @@ const socialLinks = [
 							<a
 								class="text-link text-link--row"
 								href={link.href}
-								{...(link.external
-									? { target: "_blank", rel: "noreferrer" }
+								{...("external" in link && link.external
+									? { target: "_blank", rel: "noopener noreferrer" }
 									: {})}
 							>
 								<span

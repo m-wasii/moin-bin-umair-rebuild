@@ -1,5 +1,4 @@
 ---
-import { Image } from "astro:assets";
 import portrait from "../assets/about-portrait.webp";
 import { useTranslations, type Lang } from "../i18n/ui";
 
@@ -43,12 +42,15 @@ const t = useTranslations(lang);
 		</article>
 
 		<figure class="about__cell about__cell--portrait" data-reveal>
-			<Image
-				src={portrait}
-				alt={t("about.portrait.alt")}
-				widths={[480, 720, 960]}
-				sizes="(max-width: 991px) calc(100vw - 4rem), 32vw"
+			{/* Hashed /_astro asset — avoid runtime `/_image` (404 on Workers SSR). */}
+			<img
 				class="about__portrait-img"
+				src={portrait.src}
+				width={portrait.width}
+				height={portrait.height}
+				alt={t("about.portrait.alt")}
+				loading="lazy"
+				decoding="async"
 			/>
 		</figure>
 
