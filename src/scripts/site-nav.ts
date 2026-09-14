@@ -1,4 +1,5 @@
-﻿import { forceTextRevealThroughMain } from "./text-reveal";
+﻿import { createFocusTrap, type FocusTrap } from "./focus-trap";
+import { forceTextRevealThroughMain } from "./text-reveal";
 
 const header = document.querySelector<HTMLElement>("[data-header]");
 const brand = document.querySelector<HTMLElement>(".site-brand");
@@ -17,6 +18,9 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const NAV_FIT_CLEARANCE = 32;
 /** Extra width needed before expanding back out of compact (anti-flicker). */
 const NAV_EXPAND_HYSTERESIS = 48;
+
+let navFocusTrap: FocusTrap | null = header ? createFocusTrap(header) : null;
+let navTrigger: HTMLElement | null = null;
 
 let scrollFrame = 0;
 let navIndicatorFrame = 0;
@@ -442,22 +446,59 @@ function queueScrollChromeUpdate() {
 	}
 }
 
-function closeNavigation() {
+function isNavigationOpen() {
+	return navToggle?.getAttribute("aria-expanded") === "true";
+}
+
+function isSiteOverlayOpen() {
+	return Boolean(
+		document.querySelector(
+			"[data-video-dialog]:not([hidden]), [data-photo-dialog]:not([hidden]), [data-album-panel]:not([hidden])",
+		),
+	);
+}
+
+function closeNavigation(options?: { restoreFocus?: boolean }) {
+	const wasOpen = isNavigationOpen();
+	navFocusTrap?.deactivate();
 	navToggle?.setAttribute("aria-expanded", "false");
 	nav?.classList.remove("site-nav--open");
 	document.body.classList.remove("nav-open");
+
+	if (!wasOpen) {
+		navTrigger = null;
+		return;
+	}
+
+	const restore = navTrigger ?? navToggle;
+	navTrigger = null;
+	if (options?.restoreFocus) {
+		restore?.focus({ preventScroll: true });
+	}
+}
+
+function openNavigation() {
+	if (!navToggle) return;
+
+	document.dispatchEvent(new CustomEvent("site:close-overlays"));
+	navTrigger =
+		document.activeElement instanceof HTMLElement
+			? document.activeElement
+			: navToggle;
+	navToggle.setAttribute("aria-expanded", "true");
+	nav?.classList.add("site-nav--open");
+	document.body.classList.add("nav-open");
+	queueNavIndicatorUpdate();
+	navFocusTrap?.activate(navLinks[0] ?? navToggle);
 }
 
 navToggle?.addEventListener("click", () => {
-	const shouldOpen = navToggle.getAttribute("aria-expanded") !== "true";
+	if (isNavigationOpen()) closeNavigation({ restoreFocus: true });
+	else openNavigation();
+});
 
-	navToggle.setAttribute("aria-expanded", shouldOpen.toString());
-	nav?.classList.toggle("site-nav--open", shouldOpen);
-	document.body.classList.toggle("nav-open", shouldOpen);
-
-	if (shouldOpen) {
-		queueNavIndicatorUpdate();
-	}
+document.addEventListener("site:close-nav", () => {
+	closeNavigation({ restoreFocus: false });
 });
 
 /** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
@@ -564,11 +605,11 @@ navLinks.forEach((link, index) => {
 
 document.addEventListener("keydown", (event) => {
 	if (event.key !== "Escape") return;
+	if (isSiteOverlayOpen()) return;
+	if (!isNavigationOpen()) return;
 
-	if (navToggle?.getAttribute("aria-expanded") === "true") {
-		closeNavigation();
-		navToggle.focus();
-	}
+	event.preventDefault();
+	closeNavigation({ restoreFocus: true });
 });
 
 navIndicator?.addEventListener("transitionend", (event) => {

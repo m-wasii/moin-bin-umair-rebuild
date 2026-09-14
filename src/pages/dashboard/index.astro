@@ -177,9 +177,9 @@ const writable = hasWritableMedia();
 	});
 
 	rows?.addEventListener("click", async (event) => {
-		const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
-			"[data-delete-video]",
-		);
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>("[data-delete-video]");
 		if (!button) return;
 		const slug = button.dataset.deleteVideo;
 		if (!slug || !confirm("Remove this video from the site?")) return;
@@ -198,9 +198,9 @@ const writable = hasWritableMedia();
 		let dragEl: HTMLElement | null = null;
 
 		list.addEventListener("dragstart", (event) => {
-			const handle = (event.target as HTMLElement).closest<HTMLElement>(
-				"[data-drag-handle]",
-			);
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const handle = target.closest<HTMLElement>("[data-drag-handle]");
 			if (!handle || !list.contains(handle)) return;
 			const item = handle.closest<HTMLElement>("[data-reorder-item]");
 			if (!item) return;
@@ -221,9 +221,9 @@ const writable = hasWritableMedia();
 		list.addEventListener("dragover", (event) => {
 			if (!dragEl) return;
 			event.preventDefault();
-			const over = (event.target as HTMLElement).closest<HTMLElement>(
-				"[data-reorder-item]",
-			);
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const over = target.closest<HTMLElement>("[data-reorder-item]");
 			if (!over || over === dragEl || !list.contains(over)) return;
 			list
 				.querySelectorAll(".is-drop-target")
