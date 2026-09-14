@@ -149,6 +149,14 @@ function isAlreadyInView(el: HTMLElement): boolean {
 	return rect.bottom > 0 && rect.top < vh && rect.right > 0 && rect.left < vw;
 }
 
+/** Snap text open with no stagger so nav teardown cannot re-expose clipped words. */
+function finishTextRevealInstant(el: HTMLElement): void {
+	prepareElement(el);
+	el.style.setProperty("--tr-duration", "0ms");
+	el.style.setProperty("--tr-stagger", "0ms");
+	el.classList.add(REVEALED);
+}
+
 /**
  * Instantly finish text reveals whose top is at or above `scrollLimitY`.
  * Used for long in-page nav jumps so smooth scrolling does not fly through
@@ -158,8 +166,7 @@ export function forceTextRevealThrough(scrollLimitY: number): void {
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
 		const top = el.getBoundingClientRect().top + window.scrollY;
 		if (top > scrollLimitY) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 
@@ -177,24 +184,22 @@ export function forceTextRevealAlongPath(fromY: number, toY: number): void {
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
 		const top = el.getBoundingClientRect().top + scrollY;
 		if (top < minY - pad || top > maxY + pad) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 
 /**
  * Finish any on-screen text reveals so removing `is-nav-scrolling` cannot
  * flash clipped / opacity-0 copy in the current viewport.
+ * Also zeros mid-stagger hosts that already have `is-revealed`.
  */
 export function forceTextRevealInViewport(): void {
 	const vh = window.innerHeight || document.documentElement.clientHeight;
 
 	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
-		if (el.classList.contains(REVEALED)) return;
 		const rect = el.getBoundingClientRect();
 		if (rect.bottom <= 0 || rect.top >= vh) return;
-		prepareElement(el);
-		el.classList.add(REVEALED);
+		finishTextRevealInstant(el);
 	});
 }
 

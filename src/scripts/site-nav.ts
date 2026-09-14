@@ -504,9 +504,6 @@ document.addEventListener("site:close-nav", () => {
 	closeNavigation({ restoreFocus: false });
 });
 
-/** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
-const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
-
 /** Invalidates stale scrollend/timeout cleanup from interrupted nav jumps. */
 let navJumpGeneration = 0;
 let navJumpEndTimeout = 0;
@@ -580,33 +577,35 @@ function finishNavScrollJump(generation: number) {
 	document.documentElement.classList.remove("is-nav-scrolling");
 }
 
+/**
+ * Protect every in-page smooth-scroll against unrevealed content.
+ * No distance threshold — short and long jumps share this path.
+ */
 function beginNavScrollJump(section: HTMLElement) {
 	const fromY = window.scrollY;
 	const toY = getSectionScrollTop(section);
 	const distance = Math.abs(toY - fromY);
 	const root = document.documentElement;
-	const wasNavScrolling = root.classList.contains("is-nav-scrolling");
 
 	cancelNavJumpCleanup();
 	navJumpGeneration += 1;
 	const generation = navJumpGeneration;
 
-	const isShortJump =
-		reducedMotion.matches ||
-		distance < window.innerHeight * NAV_JUMP_REVEAL_VIEWPORTS;
-
-	/*
-	 * Short jumps normally skip the override. If they interrupt an active long
-	 * jump, keep is-nav-scrolling until this scroll settles — never let the
-	 * previous jump's teardown (or an immediate short-path clear) expose
-	 * unrevealed content mid-flight.
-	 */
-	if (isShortJump && !wasNavScrolling) return;
-
 	root.classList.add("is-nav-scrolling");
 	revealContentAlongPath(fromY, toY);
 
 	const finish = () => finishNavScrollJump(generation);
+
+	/*
+	 * Still enter the protected path (generation + path reveal + override),
+	 * but settle immediately when there is no smooth-scroll flight — otherwise
+	 * is-nav-scrolling would linger until the 2.5s fallback with no scrollend.
+	 */
+	if (distance < 2 || reducedMotion.matches) {
+		requestAnimationFrame(finish);
+		return;
+	}
+
 	const supportsScrollEnd = typeof window.onscrollend !== "undefined";
 
 	if (supportsScrollEnd) {
@@ -647,44 +646,111 @@ function beginNavScrollJump(section: HTMLElement) {
 	navJumpEndTimeout = window.setTimeout(finish, 2500);
 }
 
-navLinks.forEach((link, index) => {
-	link.addEventListener("click", () => {
-		document.dispatchEvent(new CustomEvent("site:close-overlays"));
-		closeNavigation();
+function queueNavIndicatorSnap(index: number) {
+	const finalizeSnap = () => snapIndicatorToIndex(index);
+	const supportsScrollEnd = typeof window.onscrollend !== "undefined";
 
-		const section = document.getElementById(link.hash.slice(1));
-		if (section) beginNavScrollJump(section);
+	if (supportsScrollEnd) {
+		window.addEventListener("scrollend", finalizeSnap, { once: true });
+		return;
+	}
 
-		const finalizeSnap = () => snapIndicatorToIndex(index);
+	let lastY = window.scrollY;
+	let stableFrames = 0;
 
-		const supportsScrollEnd = typeof window.onscrollend !== "undefined";
+	const waitForScrollEnd = () => {
+		if (Math.abs(window.scrollY - lastY) < 1) {
+			stableFrames += 1;
+			if (stableFrames >= 4) {
+				finalizeSnap();
+				return;
+			}
+		} else {
+			stableFrames = 0;
+			lastY = window.scrollY;
+		}
 
-		if (supportsScrollEnd) {
-			window.addEventListener("scrollend", finalizeSnap, { once: true });
+		requestAnimationFrame(waitForScrollEnd);
+	};
+
+	requestAnimationFrame(waitForScrollEnd);
+}
+
+/**
+ * Same-document hash targets that open overlays / panels — not section jumps.
+ * Keep album deep-links out of the reveal-protected scroll pipeline.
+ */
+function isNonSectionHash(hashId: string) {
+	return hashId.startsWith("album-");
+}
+
+/**
+ * Resolve an in-page section jump from any same-document hash link.
+ * Returns null for external links, missing targets, and non-section hashes.
+ */
+function resolveInPageSectionJump(anchor: HTMLAnchorElement) {
+	if (anchor.target && anchor.target !== "_self") return null;
+	if (anchor.hasAttribute("download")) return null;
+
+	const hrefAttr = anchor.getAttribute("href");
+	if (!hrefAttr || hrefAttr.startsWith("http") || hrefAttr.startsWith("//")) {
+		return null;
+	}
+
+	let url: URL;
+	try {
+		url = new URL(anchor.href, window.location.href);
+	} catch {
+		return null;
+	}
+
+	if (url.origin !== window.location.origin) return null;
+	if (url.pathname !== window.location.pathname) return null;
+	if (!url.hash || url.hash === "#") return null;
+
+	const hashId = decodeURIComponent(url.hash.slice(1));
+	if (!hashId || isNonSectionHash(hashId)) return null;
+
+	const section = document.getElementById(hashId);
+	if (!(section instanceof HTMLElement)) return null;
+
+	return { section, hashId };
+}
+
+/**
+ * Unified entry: every same-page `#section` link enters the protected
+ * navigation pipeline (navbar pills, brand, back-to-top, hero CTA, skip link).
+ * Components do not need `data-nav-link` for reveal protection.
+ */
+document.addEventListener(
+	"click",
+	(event) => {
+		if (event.defaultPrevented) return;
+		if (event.button !== 0) return;
+		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
 			return;
 		}
 
-		let lastY = window.scrollY;
-		let stableFrames = 0;
+		const target = event.target;
+		if (!(target instanceof Element)) return;
 
-		const waitForScrollEnd = () => {
-			if (Math.abs(window.scrollY - lastY) < 1) {
-				stableFrames += 1;
-				if (stableFrames >= 4) {
-					finalizeSnap();
-					return;
-				}
-			} else {
-				stableFrames = 0;
-				lastY = window.scrollY;
-			}
+		const anchor = target.closest("a[href]");
+		if (!(anchor instanceof HTMLAnchorElement)) return;
 
-			requestAnimationFrame(waitForScrollEnd);
-		};
+		const jump = resolveInPageSectionJump(anchor);
+		if (!jump) return;
 
-		requestAnimationFrame(waitForScrollEnd);
-	});
-});
+		document.dispatchEvent(new CustomEvent("site:close-overlays"));
+		closeNavigation();
+		beginNavScrollJump(jump.section);
+
+		const navIndex = navLinks.findIndex(
+			(link) => link.hash.slice(1) === jump.hashId,
+		);
+		if (navIndex >= 0) queueNavIndicatorSnap(navIndex);
+	},
+	true,
+);
 
 document.addEventListener("keydown", (event) => {
 	if (event.key !== "Escape") return;

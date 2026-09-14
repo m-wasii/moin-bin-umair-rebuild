@@ -2027,10 +2027,10 @@ html.video-open {
 }
 
 /*
- * Long in-page nav jumps (e.g. Home → Shorts) smooth-scroll through many
- * unrevealed blocks. Without this, opacity:0 cards leave only the dark
- * page background mid-scroll — a black cutout. Instantly show path content
- * for the duration of the jump (site.ts toggles html.is-nav-scrolling).
+ * In-page hash navigation (any distance) smooth-scrolls through unrevealed
+ * blocks. Without this, opacity:0 / clipped copy leaves only the dark page
+ * background mid-scroll — a black cutout. Instantly show path content for
+ * the duration of the jump (site-nav.ts toggles html.is-nav-scrolling).
  */
 html.is-nav-scrolling.js [data-reveal] {
 	opacity: 1;
