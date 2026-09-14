@@ -27,6 +27,12 @@ async function sleep(ms) {
 }
 
 async function purgeOnce(origin, scope) {
+	const secret = (process.env.CDN_PURGE_SECRET || "").trim();
+	if (!secret) {
+		throw new Error(
+			"CDN_PURGE_SECRET is required (Worker secret / CI repository secret).",
+		);
+	}
 	const url = new URL("/cdn-purge", `${origin}/`);
 	url.searchParams.set("scope", scope);
 	const response = await fetch(url, {
@@ -36,7 +42,7 @@ async function purgeOnce(origin, scope) {
 			// Avoid Cloudflare’s “Cross-site POST form submissions are forbidden”
 			// (triggered for form-like Content-Types / missing JSON type).
 			"content-type": "application/json",
-			origin: origin,
+			authorization: `Bearer ${secret}`,
 		},
 		body: "{}",
 	});

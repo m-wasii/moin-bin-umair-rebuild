@@ -26,7 +26,8 @@
 		"@astrojs/cloudflare": "^14.2.5",
 		"@fontsource-variable/dm-sans": "^5.2.5",
 		"@fontsource-variable/outfit": "^5.2.5",
-		"astro": "^7.2.4"
+		"astro": "^7.2.4",
+		"jose": "^6.2.12"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.10",

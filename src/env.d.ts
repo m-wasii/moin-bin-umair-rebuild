@@ -31,6 +31,12 @@ interface CloudflareEnv {
 		delete(key: string): Promise<unknown>;
 	};
 	YOUTUBE_API_KEY?: string;
+	/** Shared bearer token for POST /cdn-purge (mbu + dashboard Workers). */
+	CDN_PURGE_SECRET?: string;
+	/** Access team domain, e.g. myteam.cloudflareaccess.com */
+	CF_ACCESS_TEAM_DOMAIN?: string;
+	/** Access application AUD tag for the dashboard hostname */
+	CF_ACCESS_AUD?: string;
 	DASHBOARD_ENFORCE_CF_ACCESS?: string;
 	CF_VERSION_METADATA?: { id: string; tag?: string };
 }

@@ -1,4 +1,6 @@
 import type { APIRoute } from "astro";
+import { unauthorizedMutationResponse } from "../../lib/api-auth";
+import { publicApiError } from "../../lib/api-errors";
 import { isProjectCategory } from "../../lib/video-metadata";
 import { enrichVideo } from "../../lib/video-metadata";
 import {
@@ -32,7 +34,10 @@ function json(data: unknown, status = 200) {
 	});
 }
 
-function rewriteSortOrders(videos: StoredVideo[], slugs: string[]): StoredVideo[] {
+function rewriteSortOrders(
+	videos: StoredVideo[],
+	slugs: string[],
+): StoredVideo[] {
 	const orderBySlug = new Map(
 		slugs.map((slug, index) => [slug, (index + 1) * 10]),
 	);
@@ -49,6 +54,9 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -86,7 +94,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				title: typeof body.title === "string" ? body.title : undefined,
 				description:
 					typeof body.description === "string" ? body.description : undefined,
-				year: body.year != null && body.year !== "" ? Number(body.year) : undefined,
+				year:
+					body.year != null && body.year !== "" ? Number(body.year) : undefined,
 				duration:
 					body.duration != null && body.duration !== ""
 						? Number(body.duration)
@@ -98,7 +107,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			youtubeApiKey(),
 		);
 
-		if (videos.some((item) => item.id === video.id && item.provider === video.provider)) {
+		if (
+			videos.some(
+				(item) => item.id === video.id && item.provider === video.provider,
+			)
+		) {
 			return json({ error: "That video is already in the catalog." }, 409);
 		}
 
@@ -110,14 +123,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		await saveVideos(videos, cacheOpts(request, locals));
 		return json({ video }, 201);
 	} catch (error) {
-		return json(
-			{ error: error instanceof Error ? error.message : "Could not save video." },
-			400,
+		const { message, status } = publicApiError(
+			error,
+			"Could not save video.",
+			"api/videos POST",
 		);
+		return json({ error: message }, status);
 	}
 };
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -141,7 +159,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 			return json({ error: "One or more videos were not found." }, 404);
 		}
 
-		await saveVideos(rewriteSortOrders(videos, slugs), cacheOpts(request, locals));
+		await saveVideos(
+			rewriteSortOrders(videos, slugs),
+			cacheOpts(request, locals),
+		);
 		return json({ ok: true });
 	}
 
@@ -171,7 +192,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 					typeof body.description === "string"
 						? body.description
 						: current.description,
-				year: body.year != null && body.year !== "" ? Number(body.year) : current.year,
+				year:
+					body.year != null && body.year !== ""
+						? Number(body.year)
+						: current.year,
 				duration:
 					body.duration != null && body.duration !== ""
 						? Number(body.duration)
@@ -186,14 +210,19 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		await saveVideos(videos, cacheOpts(request, locals));
 		return json({ video });
 	} catch (error) {
-		return json(
-			{ error: error instanceof Error ? error.message : "Could not update video." },
-			400,
+		const { message, status } = publicApiError(
+			error,
+			"Could not update video.",
+			"api/videos PATCH",
 		);
+		return json({ error: message }, status);
 	}
 };
 
 export const DELETE: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -203,7 +232,8 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 
 	const videos = await listVideos();
 	const next = videos.filter((item) => item.slug !== slug);
-	if (next.length === videos.length) return json({ error: "Video not found." }, 404);
+	if (next.length === videos.length)
+		return json({ error: "Video not found." }, 404);
 	await saveVideos(next, cacheOpts(request, locals));
 	return json({ ok: true });
 };

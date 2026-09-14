@@ -85,6 +85,7 @@ function workerEnv() {
 	return env as {
 		MEDIA?: MediaBucket;
 		YOUTUBE_API_KEY?: string;
+		CDN_PURGE_SECRET?: string;
 		DASHBOARD_ENFORCE_CF_ACCESS?: string;
 	};
 }

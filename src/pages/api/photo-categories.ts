@@ -4,6 +4,7 @@ import {
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
+import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import {
 	waitUntilFromLocals,
 	type SiteCacheRefreshOptions,
@@ -39,6 +40,9 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -84,6 +88,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 };
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}

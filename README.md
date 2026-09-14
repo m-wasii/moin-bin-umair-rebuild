@@ -83,13 +83,14 @@ Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
 
 - `https://mbu-pr-<number>.wasi-workdesk.workers.dev`
 
-GitHub Actions publishes those hosts when two **repository** secrets exist
+GitHub Actions publishes those hosts when these **repository** secrets exist
 ([Settings → Secrets and variables → Actions](https://github.com/m-wasii/moin-bin-umair-rebuild/settings/secrets/actions)):
 
 | Secret | Value |
 | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID from `npx wrangler whoami`, or Workers & Pages → Overview in the [Cloudflare dashboard](https://dash.cloudflare.com/) |
 | `CLOUDFLARE_API_TOKEN` | API token created below (shown only once) |
+| `CDN_PURGE_SECRET` | Same long random value set as a Worker secret on both `mbu` and `dashboard` (`npx wrangler secret put CDN_PURGE_SECRET`) |
 
 Create the token at [Account API tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Edit Cloudflare Workers**. Confirm it has:
 
@@ -140,7 +141,9 @@ Dashboard saves write to the same bucket. The API token needs
 
    - `SITE` = `https://yourdomain.com`
    - `PUBLIC_DASHBOARD_URL` = `https://dashboard.yourdomain.com`
-   - Optional: `YOUTUBE_API_KEY`
+   - **Required (server-only) when Access is enforced:** `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` on the **dashboard** Worker (JWT verification; do not trust the email header alone)
+   - **Required (server-only):** `CDN_PURGE_SECRET` on both `mbu` and `dashboard` Workers, plus the same value as a GitHub Actions repository secret (post-deploy cache purge)
+   - Optional (server-only): `YOUTUBE_API_KEY`
    - Optional while testing Access: `DASHBOARD_ENFORCE_CF_ACCESS=false`
 
 5. **Google login (Cloudflare Access)** on `dashboard.yourdomain.com` only:
@@ -152,11 +155,12 @@ Dashboard saves write to the same bucket. The API token needs
 
 The public Worker redirects `/dashboard` to `dashboard.<account>.workers.dev`.
 That dashboard hostname is gated the same way as a custom domain: Cloudflare
-Access (Google) plus an app-level check for
-`cf-access-authenticated-user-email`. Without Access configured, the Worker
-returns 401 (set `DASHBOARD_ENFORCE_CF_ACCESS=false` only while bringing Access
-online). Ephemeral PR preview Workers (`mbu-pr-*`) are not dashboard hosts, so
-their on-host `/dashboard` stays open for QA.
+Access (Google) plus Worker-side verification of `Cf-Access-Jwt-Assertion`
+(`CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`). The email header alone is not
+trusted. Without Access configured, the Worker returns 401/503 (set
+`DASHBOARD_ENFORCE_CF_ACCESS=false` only while bringing Access online).
+Ephemeral PR preview Workers (`mbu-pr-*`) are not dashboard hosts, so their
+on-host `/dashboard` stays open for visual QA; catalog mutations stay blocked.
 
 Handoff: give the client this repo, recreate the Worker + `moin-media` R2 bucket +
 Access on **their** Cloudflare account, set `SITE` / dashboard URL, deploy. Do not

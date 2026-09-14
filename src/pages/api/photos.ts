@@ -5,6 +5,7 @@ import {
 	slugifyPhotoName,
 	titleFromSlug,
 } from "../../data/photos";
+import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import { mediaVersionFromBytes } from "../../lib/media-url";
 import {
 	waitUntilFromLocals,
@@ -18,6 +19,7 @@ import {
 	putPhotoBytes,
 	savePhotos,
 } from "../../lib/store";
+import { isValidWebp } from "../../lib/webp";
 
 export const prerender = false;
 
@@ -44,6 +46,9 @@ export const GET: APIRoute = async () => {
 };
 
 export const POST: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json(
 			{
@@ -84,8 +89,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	}
 
 	const bytes = new Uint8Array(await file.arrayBuffer());
-	const header = String.fromCharCode(...bytes.slice(0, 4));
-	if (header !== "RIFF") {
+	if (!isValidWebp(bytes)) {
 		return json({ error: "File is not a valid WebP image." }, 415);
 	}
 
@@ -118,6 +122,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 };
 
 export const PATCH: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
@@ -145,7 +152,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 	const photos = await listPhotos();
 	const inCategory = photos.filter((photo) => photo.category === category);
 	const bySlug = new Map(inCategory.map((photo) => [photo.slug, photo]));
-	if (slugs.some((slug) => !bySlug.has(slug)) || slugs.length !== inCategory.length) {
+	if (
+		slugs.some((slug) => !bySlug.has(slug)) ||
+		slugs.length !== inCategory.length
+	) {
 		return json({ error: "One or more photos were not found." }, 404);
 	}
 
@@ -169,6 +179,9 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
 	if (!hasWritableMedia()) {
 		return json({ error: "R2 is not bound yet." }, 503);
 	}
