@@ -5,7 +5,7 @@ the editor dashboard are the same Cloudflare Worker with different hostnames.
 
 ## Local development
 
-Requirements: Node.js 22.12 or newer and npm.
+Requirements: Node.js 22.19 or newer (see `.nvmrc`) and npm.
 
 ```sh
 npm install
