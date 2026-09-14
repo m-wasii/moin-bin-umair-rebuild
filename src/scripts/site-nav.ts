@@ -1,5 +1,8 @@
 ﻿import { createFocusTrap, type FocusTrap } from "./focus-trap";
-import { forceTextRevealThroughMain } from "./text-reveal";
+import {
+	forceTextRevealAlongPath,
+	forceTextRevealInViewport,
+} from "./text-reveal";
 
 const header = document.querySelector<HTMLElement>("[data-header]");
 const brand = document.querySelector<HTMLElement>(".site-brand");
@@ -504,52 +507,132 @@ document.addEventListener("site:close-nav", () => {
 /** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
 const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
 
-function revealContentThrough(section: HTMLElement) {
+/** Invalidates stale scrollend/timeout cleanup from interrupted nav jumps. */
+let navJumpGeneration = 0;
+let navJumpEndTimeout = 0;
+let navJumpScrollEndHandler: (() => void) | null = null;
+
+function cancelNavJumpCleanup() {
+	if (navJumpEndTimeout) {
+		window.clearTimeout(navJumpEndTimeout);
+		navJumpEndTimeout = 0;
+	}
+
+	if (navJumpScrollEndHandler) {
+		window.removeEventListener("scrollend", navJumpScrollEndHandler);
+		navJumpScrollEndHandler = null;
+	}
+}
+
+/**
+ * Permanently reveal `[data-reveal]` blocks along the scroll path between
+ * `fromY` and `toY` (either direction). Does not reveal the whole page.
+ */
+function revealContentAlongPath(fromY: number, toY: number) {
 	const main = document.getElementById("main-content");
 	if (!main) return;
 
+	const minY = Math.min(fromY, toY);
+	const maxY = Math.max(fromY, toY);
+	const pad = window.innerHeight || 0;
+	const scrollY = window.scrollY;
+
 	for (const child of Array.from(main.children)) {
 		if (!(child instanceof HTMLElement)) continue;
+
+		const top = child.getBoundingClientRect().top + scrollY;
+		const bottom = top + child.offsetHeight;
+		if (bottom < minY - pad || top > maxY + pad) continue;
+
 		child
 			.querySelectorAll<HTMLElement>("[data-reveal]")
 			.forEach((item) => item.classList.add("is-visible"));
-		if (child === section || child.contains(section)) break;
 	}
 
-	forceTextRevealThroughMain(section);
+	forceTextRevealAlongPath(fromY, toY);
+}
+
+/** Lock in any still-hidden reveals currently in view before ending the jump. */
+function revealViewportForNavTeardown() {
+	const vh = window.innerHeight || document.documentElement.clientHeight;
+
+	document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((item) => {
+		if (item.classList.contains("is-visible")) return;
+		const rect = item.getBoundingClientRect();
+		if (rect.bottom <= 0 || rect.top >= vh) return;
+		item.classList.add("is-visible");
+	});
+
+	forceTextRevealInViewport();
+}
+
+function isNearNavTarget(targetY: number) {
+	const expected = Math.max(0, targetY - getScrollPaddingTop());
+	const tolerance = Math.max(64, window.innerHeight * 0.2);
+	return Math.abs(window.scrollY - expected) <= tolerance;
+}
+
+function finishNavScrollJump(generation: number) {
+	if (generation !== navJumpGeneration) return;
+
+	cancelNavJumpCleanup();
+	revealViewportForNavTeardown();
+	document.documentElement.classList.remove("is-nav-scrolling");
 }
 
 function beginNavScrollJump(section: HTMLElement) {
-	const distance = Math.abs(getSectionScrollTop(section) - window.scrollY);
-	if (reducedMotion.matches || distance < window.innerHeight * NAV_JUMP_REVEAL_VIEWPORTS) {
-		return;
-	}
-
+	const fromY = window.scrollY;
+	const toY = getSectionScrollTop(section);
+	const distance = Math.abs(toY - fromY);
 	const root = document.documentElement;
+	const wasNavScrolling = root.classList.contains("is-nav-scrolling");
+
+	cancelNavJumpCleanup();
+	navJumpGeneration += 1;
+	const generation = navJumpGeneration;
+
+	const isShortJump =
+		reducedMotion.matches ||
+		distance < window.innerHeight * NAV_JUMP_REVEAL_VIEWPORTS;
+
+	/*
+	 * Short jumps normally skip the override. If they interrupt an active long
+	 * jump, keep is-nav-scrolling until this scroll settles — never let the
+	 * previous jump's teardown (or an immediate short-path clear) expose
+	 * unrevealed content mid-flight.
+	 */
+	if (isShortJump && !wasNavScrolling) return;
+
 	root.classList.add("is-nav-scrolling");
-	revealContentThrough(section);
+	revealContentAlongPath(fromY, toY);
 
-	const endJump = () => {
-		root.classList.remove("is-nav-scrolling");
-	};
-
+	const finish = () => finishNavScrollJump(generation);
 	const supportsScrollEnd = typeof window.onscrollend !== "undefined";
 
 	if (supportsScrollEnd) {
-		window.addEventListener("scrollend", endJump, { once: true });
-		window.setTimeout(endJump, 2500);
+		const onScrollEnd = () => {
+			if (generation !== navJumpGeneration) return;
+			/* Ignore scrollend from an interrupted prior smooth-scroll. */
+			if (!isNearNavTarget(toY)) return;
+			finish();
+		};
+
+		navJumpScrollEndHandler = onScrollEnd;
+		window.addEventListener("scrollend", onScrollEnd);
+		navJumpEndTimeout = window.setTimeout(finish, 2500);
 		return;
 	}
 
 	let lastY = window.scrollY;
 	let stableFrames = 0;
 	const waitForScrollEnd = () => {
+		if (generation !== navJumpGeneration) return;
 		if (!root.classList.contains("is-nav-scrolling")) return;
 
 		if (Math.abs(window.scrollY - lastY) < 1) {
 			stableFrames += 1;
 			if (stableFrames >= 4) {
-				endJump();
+				finish();
 				return;
 			}
 		} else {
@@ -561,7 +644,7 @@ function beginNavScrollJump(section: HTMLElement) {
 	};
 
 	requestAnimationFrame(waitForScrollEnd);
-	window.setTimeout(endJump, 2500);
+	navJumpEndTimeout = window.setTimeout(finish, 2500);
 }
 
 navLinks.forEach((link, index) => {

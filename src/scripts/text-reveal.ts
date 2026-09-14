@@ -164,21 +164,38 @@ export function forceTextRevealThrough(scrollLimitY: number): void {
 }
 
 /**
- * Reveal text in main sections up to and including `section` without
- * measuring every `[data-text-reveal]` against scroll coordinates.
+ * Instantly finish text reveals whose document Y falls within
+ * `[min(fromY, toY), max(fromY, toY)]` (plus one viewport of padding).
+ * Handles both downward and upward navbar jumps.
  */
-export function forceTextRevealThroughMain(section: HTMLElement): void {
-	const main = document.getElementById("main-content");
-	if (!main) return;
+export function forceTextRevealAlongPath(fromY: number, toY: number): void {
+	const minY = Math.min(fromY, toY);
+	const maxY = Math.max(fromY, toY);
+	const pad = window.innerHeight || 0;
+	const scrollY = window.scrollY;
 
-	for (const child of Array.from(main.children)) {
-		if (!(child instanceof HTMLElement)) continue;
-		child.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
-			prepareElement(el);
-			el.classList.add(REVEALED);
-		});
-		if (child === section || child.contains(section)) break;
-	}
+	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
+		const top = el.getBoundingClientRect().top + scrollY;
+		if (top < minY - pad || top > maxY + pad) return;
+		prepareElement(el);
+		el.classList.add(REVEALED);
+	});
+}
+
+/**
+ * Finish any on-screen text reveals so removing `is-nav-scrolling` cannot
+ * flash clipped / opacity-0 copy in the current viewport.
+ */
+export function forceTextRevealInViewport(): void {
+	const vh = window.innerHeight || document.documentElement.clientHeight;
+
+	document.querySelectorAll<HTMLElement>("[data-text-reveal]").forEach((el) => {
+		if (el.classList.contains(REVEALED)) return;
+		const rect = el.getBoundingClientRect();
+		if (rect.bottom <= 0 || rect.top >= vh) return;
+		prepareElement(el);
+		el.classList.add(REVEALED);
+	});
 }
 
 /**
