@@ -1,9 +1,13 @@
 import type { APIRoute } from "astro";
 import { isPhotoCategory } from "../../../../data/photos";
 import { assertSafeStorageSegment } from "../../../../lib/catalog-integrity";
-import { getPhotoBytes } from "../../../../lib/store";
+import { getPhotoObject } from "../../../../lib/store";
 
 export const prerender = false;
+
+function asBody(body: ReadableStream<Uint8Array> | Uint8Array) {
+	return body as BodyInit;
+}
 
 export const GET: APIRoute = async ({ params }) => {
 	const category = params.category ?? "";
@@ -20,14 +24,15 @@ export const GET: APIRoute = async ({ params }) => {
 		return new Response("Not found", { status: 404 });
 	}
 
-	const bytes = await getPhotoBytes(category, slug);
-	if (!bytes) {
+	const object = await getPhotoObject(category, slug);
+	if (!object) {
 		return new Response("Not found", { status: 404 });
 	}
 
-	return new Response(bytes, {
+	return new Response(asBody(object.body), {
 		headers: {
-			"content-type": "image/webp",
+			"content-type": object.contentType || "image/webp",
+			"content-length": String(object.size),
 			"cache-control": "public, max-age=31536000, immutable",
 		},
 	});

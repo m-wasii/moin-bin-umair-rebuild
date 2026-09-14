@@ -2,7 +2,7 @@ import { ClientError } from "./api-errors";
 import type { ProjectCategory, VideoProvider } from "../data/projects";
 import type { StoredPhoto, StoredPhotoCategory } from "../data/photos";
 import type { StoredShort, StoredShortClip } from "../data/shorts";
-import type { StoredVideo } from "./store";
+import type { StoredVideo } from "./store/types";
 
 /** Concurrent catalog write lost the race (etag/rev mismatch). */
 export class CatalogConflictError extends ClientError {
