@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { isPhotoCategory } from "../../../../data/photos";
 import { assertSafeStorageSegment } from "../../../../lib/catalog-integrity";
+import { parseHostImageWidth, resizePhotoWebp } from "../../../../lib/image-resize";
 import { getPhotoObject } from "../../../../lib/store";
 
 export const prerender = false;
@@ -9,7 +10,7 @@ function asBody(body: ReadableStream<Uint8Array> | Uint8Array) {
 	return body as BodyInit;
 }
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, url }) => {
 	const category = params.category ?? "";
 	const file = params.file ?? "";
 	if (!isPhotoCategory(category) || !file.endsWith(".webp")) {
@@ -27,6 +28,13 @@ export const GET: APIRoute = async ({ params }) => {
 	const object = await getPhotoObject(category, slug);
 	if (!object) {
 		return new Response("Not found", { status: 404 });
+	}
+
+	const width = parseHostImageWidth(url.searchParams.get("w"));
+	if (width) {
+		const resized = await resizePhotoWebp(object.body, width);
+		if (resized) return resized;
+		// Fall through to original if transform unavailable (misconfigured env).
 	}
 
 	return new Response(asBody(object.body), {

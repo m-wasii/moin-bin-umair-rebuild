@@ -26,4 +26,8 @@
 			"bucket_name": "moin-media",
 		},
 	],
+	// Host-side photo resize for workers.dev (no /cdn-cgi/image/ there).
+	"images": {
+		"binding": "IMAGES",
+	},
 }

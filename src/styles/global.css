@@ -1166,6 +1166,11 @@ main {
 	min-width: 0;
 }
 
+/* Pin orphan portrait tiles to the right edge of the 12-col grid. */
+.photo-album--end {
+	grid-column: 8 / span 5;
+}
+
 .photo-album:nth-child(2) {
 	margin-top: clamp(2.5rem, 6vw, 5.5rem);
 }
@@ -1180,11 +1185,6 @@ main {
 
 .photo-album:nth-child(6) {
 	margin-top: clamp(1.5rem, 3.5vw, 3rem);
-}
-
-.photo-album:nth-child(6) .photo-album__stack,
-.photo-album:nth-child(7) .photo-album__stack {
-	width: 78%;
 }
 
 .photo-album__hit {
@@ -1228,6 +1228,8 @@ main {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	/* Intentional dark shade on stacked peek cards — do not remove. */
+	filter: saturate(0.55) brightness(0.28);
 }
 
 .photo-album__frame {
@@ -1241,9 +1243,7 @@ main {
 	background: #080f1a;
 }
 
-.photo-album:nth-child(1) .photo-album__frame,
-.photo-album:nth-child(2) .photo-album__frame,
-.photo-album:nth-child(5) .photo-album__frame {
+.photo-album--wide .photo-album__frame {
 	aspect-ratio: 16 / 9;
 }
 
@@ -2154,10 +2154,6 @@ html.is-nav-scrolling.js [data-text-reveal] .text-reveal__mask {
 
 	.photo-album {
 		grid-column: span 6;
-	}
-
-	.photo-album:nth-child(7) {
-		grid-column: 1 / -1;
 	}
 }
 

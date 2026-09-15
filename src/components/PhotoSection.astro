@@ -29,8 +29,34 @@ const grouped = categories
 	}))
 	.filter((group) => group.items.length > 0);
 
-// Trieste full-width first; remaining albums share the grid; new albums at end.
-const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
+/**
+ * After Trieste (full-width landscape), tiles alternate in 7+5 rows:
+ * landscape+portrait, then portrait+landscape, repeating to the end.
+ * Random Experimentations is portrait (like Product) and right-aligned.
+ */
+function albumLayoutForIndex(
+	albumIndex: number,
+	category: string,
+): {
+	span: number;
+	aspect: "wide" | "tall";
+	alignEnd?: boolean;
+} {
+	if (category === "random-experimentations") {
+		return { span: 5, aspect: "tall", alignEnd: true };
+	}
+	if (albumIndex === 0) return { span: 12, aspect: "wide" };
+
+	const i = albumIndex - 1;
+	const row = Math.floor(i / 2);
+	const posInRow = i % 2;
+	const isLandscapeFirstRow = row % 2 === 0;
+	const isWide = isLandscapeFirstRow ? posInRow === 0 : posInRow === 1;
+
+	return isWide
+		? { span: 7, aspect: "wide" }
+		: { span: 5, aspect: "tall" };
+}
 ---
 
 {
@@ -78,10 +104,21 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 							count: group.items.length,
 						});
 						const indexLabel = String(albumIndex + 1).padStart(2, "0");
+						const layout = albumLayoutForIndex(
+							albumIndex,
+							group.category,
+						);
+						const albumClass = [
+							"photo-album",
+							`photo-album--${layout.aspect}`,
+							layout.alignEnd ? "photo-album--end" : "",
+						]
+							.filter(Boolean)
+							.join(" ");
 						return (
 							<li
-								class="photo-album"
-								style={`--album-span: ${albumSpans[albumIndex] ?? 6}; --album-index: ${albumIndex}`}
+								class={albumClass}
+								style={`--album-span: ${layout.span}; --album-index: ${albumIndex}`}
 								data-reveal
 							>
 								<button
@@ -103,7 +140,7 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 													alt=""
 													width={800}
 													height={1000}
-													widths={RESPONSIVE_WIDTHS.album}
+													widths={RESPONSIVE_WIDTHS.albumPeek}
 													sizes="(max-width: 760px) 45vw, 22vw"
 													loading="lazy"
 													decoding="async"
@@ -115,9 +152,9 @@ const albumSpans = [12, 7, 5, 5, 7, 6, 6, 6, 6, 6];
 											<ResponsiveImage
 												src={cover.src}
 												alt=""
-												width={1600}
-												height={1200}
-												widths={RESPONSIVE_WIDTHS.album}
+												width={1200}
+												height={900}
+												widths={RESPONSIVE_WIDTHS.albumCover}
 												sizes="(max-width: 760px) 90vw, 42vw"
 												loading="lazy"
 												decoding="async"

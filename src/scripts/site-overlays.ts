@@ -459,7 +459,7 @@ function ensureAlbumMasonry(panel: HTMLElement) {
 		const attrs = buildResponsiveImageAttrs({
 			src: photo.src,
 			widths: RESPONSIVE_WIDTHS.album,
-			sizes: "(max-width: 760px) 90vw, 42vw",
+			sizes: "(max-width: 760px) 45vw, 28vw",
 			width: 1200,
 			height: 1500,
 			loading: "lazy",
