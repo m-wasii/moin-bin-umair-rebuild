@@ -49,6 +49,7 @@ const photoClose =
 const photoImage = document.querySelector<HTMLImageElement>(
 	"[data-photo-dialog-image]",
 );
+const photoStage = document.querySelector<HTMLElement>(".photo-dialog__stage");
 const photoLoading = document.querySelector<HTMLElement>("[data-photo-loading]");
 const photoPrev =
 	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
@@ -62,6 +63,8 @@ let photoFocus: HTMLElement | null = null;
 let photoGroup: AlbumPhoto[] = [];
 let photoIndex = 0;
 let photoLoadToken = 0;
+let photoActual = false;
+let photoPointerDown: { x: number; y: number } | null = null;
 
 let videoScrollLocked = false;
 let photoScrollLocked = false;
@@ -227,7 +230,9 @@ function closePhotoDialog(options?: { resumeAlbum?: boolean }) {
 	blurIfInside(photoDialog);
 	if (photoDialog) photoDialog.hidden = true;
 	photoLoadToken += 1;
+	photoPointerDown = null;
 	setPhotoPending(false);
+	setPhotoActual(false);
 	if (photoImage) {
 		photoImage.onload = null;
 		photoImage.onerror = null;
@@ -379,6 +384,82 @@ function setPhotoPending(pending: boolean) {
 	photoPanel?.toggleAttribute("aria-busy", pending);
 }
 
+function photoZoomLabel(actual: boolean) {
+	if (!photoImage) return "";
+	return actual
+		? (photoImage.dataset.photoZoomOut ?? "Fit image")
+		: (photoImage.dataset.photoZoomIn ?? "View at 100%");
+}
+
+function containedImageRect(img: HTMLImageElement) {
+	const box = img.getBoundingClientRect();
+	const naturalWidth = img.naturalWidth;
+	const naturalHeight = img.naturalHeight;
+	if (!naturalWidth || !naturalHeight || !box.width || !box.height) {
+		return box;
+	}
+
+	const scale = Math.min(box.width / naturalWidth, box.height / naturalHeight);
+	const width = naturalWidth * scale;
+	const height = naturalHeight * scale;
+	return new DOMRect(
+		box.left + (box.width - width) / 2,
+		box.top + (box.height - height) / 2,
+		width,
+		height,
+	);
+}
+
+function setPhotoActual(
+	actual: boolean,
+	origin?: { clientX: number; clientY: number },
+) {
+	const painted = actual && photoImage && origin
+		? containedImageRect(photoImage)
+		: null;
+
+	photoActual = actual;
+	photoImage?.classList.toggle("photo-dialog__image--actual", actual);
+	photoStage?.classList.toggle("photo-dialog__stage--actual", actual);
+	if (photoImage) {
+		photoImage.setAttribute("aria-pressed", actual ? "true" : "false");
+		photoImage.setAttribute("aria-label", photoZoomLabel(actual));
+	}
+
+	if (!actual) {
+		if (photoStage) {
+			photoStage.scrollLeft = 0;
+			photoStage.scrollTop = 0;
+		}
+		return;
+	}
+
+	if (!photoImage || !photoStage || !painted || !origin) return;
+
+	const fracX = painted.width
+		? Math.min(1, Math.max(0, (origin.clientX - painted.left) / painted.width))
+		: 0.5;
+	const fracY = painted.height
+		? Math.min(1, Math.max(0, (origin.clientY - painted.top) / painted.height))
+		: 0.5;
+
+	requestAnimationFrame(() => {
+		if (!photoImage || !photoStage) return;
+		const stage = photoStage.getBoundingClientRect();
+		photoStage.scrollLeft =
+			photoImage.naturalWidth * fracX - (origin.clientX - stage.left);
+		photoStage.scrollTop =
+			photoImage.naturalHeight * fracY - (origin.clientY - stage.top);
+	});
+}
+
+function togglePhotoZoom(origin?: { clientX: number; clientY: number }) {
+	if (!isPhotoOpen() || !photoImage) return;
+	if (photoImage.classList.contains("photo-dialog__image--pending")) return;
+	if (photoImage.naturalWidth <= 0) return;
+	setPhotoActual(!photoActual, origin);
+}
+
 function settlePhotoLoad(token: number) {
 	if (token !== photoLoadToken) return;
 	setPhotoPending(false);
@@ -389,6 +470,7 @@ function renderPhoto() {
 	if (!item || !photoImage) return;
 
 	const token = ++photoLoadToken;
+	setPhotoActual(false);
 	/* Full master — album thumbs stay on resized variants. */
 	photoImage.alt = item.alt;
 	photoImage.removeAttribute("width");
@@ -584,6 +666,26 @@ photoPrev?.addEventListener("click", () => {
 });
 photoNext?.addEventListener("click", () => {
 	stepPhoto(1);
+});
+photoImage?.addEventListener("pointerdown", (event) => {
+	if (event.button !== 0) return;
+	photoPointerDown = { x: event.clientX, y: event.clientY };
+});
+photoImage?.addEventListener("click", (event) => {
+	if (!photoPointerDown) return;
+	const moved = Math.hypot(
+		event.clientX - photoPointerDown.x,
+		event.clientY - photoPointerDown.y,
+	);
+	photoPointerDown = null;
+	if (moved > 8) return;
+	event.preventDefault();
+	togglePhotoZoom(event);
+});
+photoImage?.addEventListener("keydown", (event) => {
+	if (event.key !== "Enter" && event.key !== " ") return;
+	event.preventDefault();
+	togglePhotoZoom();
 });
 
 function openAlbum(category: string, trigger?: HTMLElement | null) {
