@@ -1171,6 +1171,19 @@ main {
 	grid-column: 8 / span 5;
 }
 
+/* Editorial: Trieste-style landscape hero, slightly smaller + centered. */
+.photo-album--hero-compact {
+	grid-column: 1 / -1;
+}
+
+.photo-album--hero-compact .photo-album__stack {
+	width: 72%;
+}
+
+.photo-album:first-child {
+	margin-bottom: clamp(1.5rem, 3vw, 3rem);
+}
+
 .photo-album:nth-child(2) {
 	margin-top: clamp(2.5rem, 6vw, 5.5rem);
 }
@@ -1183,8 +1196,27 @@ main {
 	margin-top: clamp(2.25rem, 5vw, 4.5rem);
 }
 
+/* Editorial hero break — match Trieste breathing room. */
 .photo-album:nth-child(6) {
-	margin-top: clamp(1.5rem, 3.5vw, 3rem);
+	margin-top: clamp(1.5rem, 3vw, 3rem);
+	margin-bottom: clamp(2.75rem, 5vw, 4.5rem);
+}
+
+/* Pair stagger after Editorial (mirrors 2 / 4 / 5), shifted down. */
+.photo-album:nth-child(7) {
+	margin-top: clamp(3.75rem, 7.5vw, 7rem);
+}
+
+.photo-album:nth-child(8) {
+	margin-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.photo-album:nth-child(9) {
+	margin-top: clamp(-1.25rem, -2vw, -0.25rem);
+}
+
+.photo-album:nth-child(10) {
+	margin-top: clamp(3.5rem, 6.5vw, 6rem);
 }
 
 .photo-album__hit {
@@ -1532,6 +1564,7 @@ main {
 }
 
 .photo-dialog figure {
+	position: relative;
 	margin: 0;
 	width: 100%;
 	height: min(68svh, 42rem);
@@ -1541,13 +1574,59 @@ main {
 	border-radius: var(--radius);
 }
 
-.photo-dialog img {
+.photo-dialog__image {
 	display: block;
 	width: 100%;
 	height: 100%;
 	max-width: none;
 	object-fit: contain;
 	border-radius: var(--radius);
+	opacity: 1;
+	transition: opacity 120ms ease;
+}
+
+.photo-dialog__image--pending {
+	opacity: 0;
+}
+
+.photo-dialog__loading {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+}
+
+.photo-dialog__loading[hidden] {
+	display: none;
+}
+
+.photo-dialog__spinner {
+	width: 1.65rem;
+	height: 1.65rem;
+	border: 2px solid rgba(247, 241, 232, 0.22);
+	border-top-color: rgba(247, 241, 232, 0.88);
+	border-radius: 50%;
+	animation: photo-dialog-spin 0.7s linear infinite;
+}
+
+@keyframes photo-dialog-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.photo-dialog__image {
+		transition: none;
+	}
+
+	.photo-dialog__spinner {
+		animation: none;
+		border-color: rgba(247, 241, 232, 0.55);
+		border-top-color: rgba(247, 241, 232, 0.55);
+		opacity: 0.85;
+	}
 }
 
 .photo-dialog__close,

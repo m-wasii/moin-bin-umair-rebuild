@@ -30,26 +30,21 @@ const grouped = categories
 	.filter((group) => group.items.length > 0);
 
 /**
- * After Trieste (full-width landscape), tiles alternate in 7+5 rows:
- * landscape+portrait, then portrait+landscape, repeating to the end.
- * Random Experimentations is portrait (like Product) and right-aligned.
+ * Hero breaks: Trieste (full-width) and Editorial (slightly narrower).
+ * Between/after heroes, tiles alternate in 7+5 rows:
+ * landscape+portrait, then portrait+landscape.
  */
-function albumLayoutForIndex(
-	albumIndex: number,
-	category: string,
-): {
+function albumLayoutForIndex(albumIndex: number): {
 	span: number;
 	aspect: "wide" | "tall";
-	alignEnd?: boolean;
+	hero?: "full" | "compact";
 } {
-	if (category === "random-experimentations") {
-		return { span: 5, aspect: "tall", alignEnd: true };
-	}
-	if (albumIndex === 0) return { span: 12, aspect: "wide" };
+	if (albumIndex === 0) return { span: 12, aspect: "wide", hero: "full" };
+	if (albumIndex === 5) return { span: 12, aspect: "wide", hero: "compact" };
 
-	const i = albumIndex - 1;
-	const row = Math.floor(i / 2);
-	const posInRow = i % 2;
+	const pairIndex = albumIndex < 5 ? albumIndex - 1 : albumIndex - 6;
+	const row = Math.floor(pairIndex / 2);
+	const posInRow = pairIndex % 2;
 	const isLandscapeFirstRow = row % 2 === 0;
 	const isWide = isLandscapeFirstRow ? posInRow === 0 : posInRow === 1;
 
@@ -104,14 +99,11 @@ function albumLayoutForIndex(
 							count: group.items.length,
 						});
 						const indexLabel = String(albumIndex + 1).padStart(2, "0");
-						const layout = albumLayoutForIndex(
-							albumIndex,
-							group.category,
-						);
+						const layout = albumLayoutForIndex(albumIndex);
 						const albumClass = [
 							"photo-album",
 							`photo-album--${layout.aspect}`,
-							layout.alignEnd ? "photo-album--end" : "",
+							layout.hero === "compact" ? "photo-album--hero-compact" : "",
 						]
 							.filter(Boolean)
 							.join(" ");
