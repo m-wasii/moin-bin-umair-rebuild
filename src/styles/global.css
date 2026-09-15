@@ -2131,6 +2131,9 @@ html.nav-is-compact {
 html.nav-is-measuring .site-nav {
 	visibility: hidden !important;
 	pointer-events: none !important;
+	/* Snap closed styles while probing so restoring compact doesn't
+	   animate opacity 1→0 as a full-viewport “open menu” flash. */
+	transition: none !important;
 }
 
 html.nav-is-compact .site-header {

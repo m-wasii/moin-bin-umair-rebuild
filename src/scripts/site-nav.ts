@@ -53,12 +53,17 @@ function setNavCompact(compact: boolean) {
 
 	if (wasCompact === compact) return;
 
-	root.classList.toggle("nav-is-compact", compact);
-
-	if (wasCompact !== compact) {
-		closeNavigation();
+	/* Entering compact: snap overlay to closed (no opacity fade from the pill). */
+	if (compact) {
+		root.classList.add("nav-is-measuring");
+		root.classList.add("nav-is-compact");
+		void header?.offsetWidth;
+		root.classList.remove("nav-is-measuring");
+	} else {
+		root.classList.remove("nav-is-compact");
 	}
 
+	closeNavigation();
 	measureLinkMetrics();
 	queueNavIndicatorUpdate();
 }
@@ -102,9 +107,11 @@ function withExpandedNavMetrics<T>(fn: () => T): T {
 		return fn();
 	} finally {
 		if (wasCompact) {
+			/* Commit closed compact styles under measuring (transition:none)
+			   before becoming visible again — avoids a menu-open flash. */
 			root.classList.add("nav-is-compact");
-			root.classList.remove("nav-is-measuring");
 			void header?.offsetWidth;
+			root.classList.remove("nav-is-measuring");
 		}
 	}
 }
