@@ -25,10 +25,19 @@ const t = useTranslations(lang);
 		</header>
 		<figure class="photo-dialog__stage">
 			<img
+				class="photo-dialog__image"
 				data-photo-dialog-image
 				alt=""
 				decoding="async"
 			/>
+			<div
+				class="photo-dialog__loading"
+				data-photo-loading
+				hidden
+				aria-hidden="true"
+			>
+				<div class="photo-dialog__spinner"></div>
+			</div>
 		</figure>
 		<nav class="photo-dialog__nav" aria-label={t("section.photography.title")}>
 			<button type="button" data-photo-prev aria-label={t("photo.prev")}>

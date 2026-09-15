@@ -49,6 +49,7 @@ const photoClose =
 const photoImage = document.querySelector<HTMLImageElement>(
 	"[data-photo-dialog-image]",
 );
+const photoLoading = document.querySelector<HTMLElement>("[data-photo-loading]");
 const photoPrev =
 	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
 const photoNext =
@@ -60,6 +61,7 @@ let albumFocus: HTMLElement | null = null;
 let photoFocus: HTMLElement | null = null;
 let photoGroup: AlbumPhoto[] = [];
 let photoIndex = 0;
+let photoLoadToken = 0;
 
 let videoScrollLocked = false;
 let photoScrollLocked = false;
@@ -224,7 +226,11 @@ function closePhotoDialog(options?: { resumeAlbum?: boolean }) {
 	photoTrap?.deactivate();
 	blurIfInside(photoDialog);
 	if (photoDialog) photoDialog.hidden = true;
+	photoLoadToken += 1;
+	setPhotoPending(false);
 	if (photoImage) {
+		photoImage.onload = null;
+		photoImage.onerror = null;
 		photoImage.removeAttribute("src");
 		photoImage.alt = "";
 	}
@@ -367,15 +373,36 @@ videoDialog?.addEventListener("video-dialog:open", (event) => {
 videoClose?.addEventListener("click", closeVideoDialog);
 videoBackdrop?.addEventListener("click", closeVideoDialog);
 
+function setPhotoPending(pending: boolean) {
+	photoImage?.classList.toggle("photo-dialog__image--pending", pending);
+	if (photoLoading) photoLoading.hidden = !pending;
+	photoPanel?.toggleAttribute("aria-busy", pending);
+}
+
+function settlePhotoLoad(token: number) {
+	if (token !== photoLoadToken) return;
+	setPhotoPending(false);
+}
+
 function renderPhoto() {
 	const item = photoGroup[photoIndex];
 	if (!item || !photoImage) return;
+
+	const token = ++photoLoadToken;
 	/* Full master — album thumbs stay on resized variants. */
-	photoImage.src = item.src;
 	photoImage.alt = item.alt;
 	photoImage.removeAttribute("width");
 	photoImage.removeAttribute("height");
 	photoImage.decoding = "async";
+	setPhotoPending(true);
+
+	const finish = () => settlePhotoLoad(token);
+	photoImage.onload = finish;
+	photoImage.onerror = finish;
+	photoImage.src = item.src;
+
+	/* Cached masters resolve synchronously; still allow next/prev while pending. */
+	if (photoImage.complete && photoImage.naturalWidth > 0) finish();
 }
 
 function stepPhoto(delta: number) {
