@@ -4,6 +4,21 @@ interface CloudflareEnv {
 	ASSETS?: {
 		fetch(input: Request | string): Promise<Response>;
 	};
+	/** Cloudflare Images binding — host-side resize for `/media/photos/?w=`. */
+	IMAGES?: {
+		input(
+			stream: ReadableStream<Uint8Array> | ArrayBuffer | Uint8Array,
+		): {
+			transform(options: { width: number; fit?: string }): {
+				output(options: {
+					format: "image/webp";
+					quality?: number;
+				}): Promise<{
+					response(init?: { headers?: HeadersInit }): Response;
+				}>;
+			};
+		};
+	};
 	MEDIA?: {
 		get(
 			key: string,

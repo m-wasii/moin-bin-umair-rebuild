@@ -1,18 +1,29 @@
-/** Responsive /media URLs via Cloudflare Image Resizing (no variants stored in git). */
+/** Responsive /media URLs: CF Image Resizing on custom zones, else host `?w=`. */
 
 export const RESPONSIVE_WIDTHS = {
-	album: [480, 720, 960, 1280],
+	/** Album cover cards (~424–650 CSS px → ~800–1200 device px). */
+	albumCover: [400, 600, 800, 1200],
+	/** Stacked peek cards (smaller on-screen than covers). */
+	albumPeek: [400, 600, 800],
+	/** Album masonry / lightbox grid thumbs. */
+	album: [400, 600, 800, 1200],
 	short: [480, 720, 1080],
 	hero: [960, 1280, 1920],
 	lightbox: [960, 1280, 1920],
 } as const;
 
+/** Widths accepted by the host photo resize route (`?w=`). */
+export const HOST_IMAGE_WIDTHS = [400, 600, 800, 1200, 1600] as const;
+
+export type HostImageWidth = (typeof HOST_IMAGE_WIDTHS)[number];
+
 /**
  * `/cdn-cgi/image/` requires Image Resizing on a proxied custom zone.
- * workers.dev / pages.dev previews 404 those URLs — serve raw `/media/` there.
+ * workers.dev / pages.dev / local 404 those URLs — use host `?w=` there.
  */
 export function cfImageResizingAvailable(hostname: string) {
 	const host = hostname.split(":")[0]?.toLowerCase() ?? "";
+	if (host === "localhost" || host === "127.0.0.1") return false;
 	return !(host.endsWith(".workers.dev") || host.endsWith(".pages.dev"));
 }
 
@@ -27,13 +38,36 @@ export function isOptimizableMedia(src: string) {
 	return src.startsWith("/media/");
 }
 
+/** Host `?w=` resize is implemented for photography objects only. */
+export function isHostResizableMedia(src: string) {
+	return src.startsWith("/media/photos/");
+}
+
+export function isHostImageWidth(value: number): value is HostImageWidth {
+	return (HOST_IMAGE_WIDTHS as readonly number[]).includes(value);
+}
+
+/** Host-side width variant: preserves existing query (e.g. `v=`) and sets `w`. */
+export function hostImageSrc(src: string, width: number) {
+	if (!isHostResizableMedia(src)) return src;
+	const { path, search } = splitSrc(src);
+	const params = new URLSearchParams(
+		search.startsWith("?") ? search.slice(1) : search,
+	);
+	params.set("w", String(width));
+	const query = params.toString();
+	return query ? `${path}?${query}` : path;
+}
+
 export function cfImageSrc(
 	src: string,
 	width: number,
 	options: { enabled?: boolean } = {},
 ) {
 	if (!isOptimizableMedia(src)) return src;
-	if (options.enabled === false) return src;
+	if (options.enabled === false) {
+		return isHostResizableMedia(src) ? hostImageSrc(src, width) : src;
+	}
 	const { path, search } = splitSrc(src);
 	return `/cdn-cgi/image/width=${width},format=auto,quality=82${path}${search}`;
 }
@@ -43,8 +77,12 @@ export function buildSrcSet(
 	widths: readonly number[],
 	options: { enabled?: boolean } = {},
 ): string | undefined {
-	if (!isOptimizableMedia(src) || options.enabled === false) return undefined;
-	return widths.map((w) => `${cfImageSrc(src, w)} ${w}w`).join(", ");
+	if (!isOptimizableMedia(src)) return undefined;
+	const useCf = options.enabled !== false;
+	if (!useCf && !isHostResizableMedia(src)) return undefined;
+	return widths
+		.map((w) => `${cfImageSrc(src, w, { enabled: useCf })} ${w}w`)
+		.join(", ");
 }
 
 export interface ResponsiveImageAttrs {
@@ -71,15 +109,18 @@ export function buildResponsiveImageAttrs(options: {
 	fetchpriority?: "high" | "low" | "auto";
 	alt?: string;
 	class?: string;
-	/** When false, skip `/cdn-cgi/image/` (preview hosts). Default true. */
+	/** When false, emit host `?w=` srcset (preview hosts). Default true. */
 	cfImages?: boolean;
 }): ResponsiveImageAttrs {
 	const cf = { enabled: options.cfImages !== false };
 	const srcset = buildSrcSet(options.src, options.widths, cf);
-	const fallbackWidth = options.widths[options.widths.length - 1] ?? options.width;
+	const fallbackWidth =
+		options.widths[options.widths.length - 1] ?? options.width;
 
 	return {
-		src: srcset ? cfImageSrc(options.src, fallbackWidth, cf) : options.src,
+		src: srcset
+			? cfImageSrc(options.src, fallbackWidth, cf)
+			: options.src,
 		...(srcset ? { srcset, sizes: options.sizes } : {}),
 		width: options.width,
 		height: options.height,

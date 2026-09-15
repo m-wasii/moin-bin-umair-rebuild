@@ -1228,6 +1228,8 @@ main {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	/* Intentional dark shade on stacked peek cards — do not remove. */
+	filter: saturate(0.55) brightness(0.28);
 }
 
 .photo-album__frame {
