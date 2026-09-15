@@ -104,6 +104,8 @@ const ui = {
 		"photo.category.product-photography": "Product Photography",
 		"photo.prev": "Previous",
 		"photo.next": "Next",
+		"photo.zoomIn": "View at 100%",
+		"photo.zoomOut": "Fit image",
 		"contact.meta": "Enquiries",
 		"contact.title": "Let’s make something worth watching.",
 		"contact.titleHtml": "Let’s make something<br /> worth watching.",
@@ -226,6 +228,8 @@ const ui = {
 		"photo.category.product-photography": "Product Photography",
 		"photo.prev": "Zurück",
 		"photo.next": "Weiter",
+		"photo.zoomIn": "In Originalgröße anzeigen",
+		"photo.zoomOut": "Einpassen",
 		"contact.meta": "Anfragen",
 		"contact.title": "Lass uns etwas machen, das man sehen will.",
 		"contact.titleHtml":

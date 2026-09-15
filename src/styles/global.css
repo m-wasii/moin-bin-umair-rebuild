@@ -1574,6 +1574,11 @@ main {
 	border-radius: var(--radius);
 }
 
+.photo-dialog figure.photo-dialog__stage--actual {
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
 .photo-dialog__image {
 	display: block;
 	width: 100%;
@@ -1582,11 +1587,25 @@ main {
 	object-fit: contain;
 	border-radius: var(--radius);
 	opacity: 1;
+	cursor: zoom-in;
+	user-select: none;
+	-webkit-user-drag: none;
 	transition: opacity 120ms ease;
+}
+
+.photo-dialog__image--actual {
+	width: auto;
+	height: auto;
+	max-width: none;
+	max-height: none;
+	object-fit: none;
+	cursor: zoom-out;
 }
 
 .photo-dialog__image--pending {
 	opacity: 0;
+	cursor: default;
+	pointer-events: none;
 }
 
 .photo-dialog__loading {

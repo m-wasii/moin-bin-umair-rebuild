@@ -27,8 +27,15 @@ const t = useTranslations(lang);
 			<img
 				class="photo-dialog__image"
 				data-photo-dialog-image
+				data-photo-zoom-in={t("photo.zoomIn")}
+				data-photo-zoom-out={t("photo.zoomOut")}
 				alt=""
 				decoding="async"
+				draggable="false"
+				role="button"
+				tabindex="0"
+				aria-pressed="false"
+				aria-label={t("photo.zoomIn")}
 			/>
 			<div
 				class="photo-dialog__loading"
