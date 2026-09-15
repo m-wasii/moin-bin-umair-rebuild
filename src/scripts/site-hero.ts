@@ -1,4 +1,6 @@
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+import { prefersReducedMotion, reducedMotionMql } from "./motion";
+
+const reducedMotion = reducedMotionMql();
 const heroMedia = document.querySelector<HTMLElement>("[data-hero-media]");
 const heroVideo = document.querySelector<HTMLVideoElement>("[data-hero-video]");
 let heroSourceAttached = false;
@@ -18,7 +20,7 @@ function attachHeroSource() {
 function syncHeroPlayback() {
 	if (!heroVideo) return;
 
-	if (reducedMotion.matches || document.hidden) {
+	if (prefersReducedMotion() || document.hidden) {
 		heroVideo.pause();
 		return;
 	}
@@ -32,7 +34,7 @@ function syncHeroPlayback() {
 }
 
 function scheduleHeroPlayback() {
-	if (!heroVideo || reducedMotion.matches) return;
+	if (!heroVideo || prefersReducedMotion()) return;
 
 	const start = () => syncHeroPlayback();
 	const ric = window.requestIdleCallback?.bind(window);

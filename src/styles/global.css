@@ -2569,3 +2569,63 @@ html.nav-is-compact .site-nav__link[aria-current="page"] {
 		transition: none !important;
 	}
 }
+
+/* Site-wide force via FORCE_REDUCED_MOTION → html[data-reduce-motion="1"] */
+html[data-reduce-motion="1"] {
+	scroll-behavior: auto;
+}
+
+html[data-reduce-motion="1"] .video-dialog__title {
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	scrollbar-width: thin;
+}
+
+html[data-reduce-motion="1"] .video-dialog__header p {
+	animation: none;
+}
+
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after {
+	scroll-behavior: auto !important;
+	transition-duration: 0.01ms !important;
+	animation-duration: 0.01ms !important;
+	animation-iteration-count: 1 !important;
+}
+
+html[data-reduce-motion="1"] .hero__media-poster {
+	display: block;
+}
+
+html[data-reduce-motion="1"] .hero__media video {
+	display: none;
+}
+
+html[data-reduce-motion="1"] .about__cell:not(.about__cell--portrait):hover,
+html[data-reduce-motion="1"] .about__cell--portrait:hover .about__portrait-img {
+	transform: none;
+}
+
+html[data-reduce-motion="1"] .hero__orbit svg {
+	animation: none;
+}
+
+html[data-reduce-motion="1"] .hero__footer {
+	opacity: 1;
+	transform: none;
+	animation: none;
+}
+
+html[data-reduce-motion="1"].js [data-reveal] {
+	opacity: 1;
+	transform: none;
+}
+
+html[data-reduce-motion="1"].js [data-text-reveal],
+html[data-reduce-motion="1"].js [data-text-reveal] .text-reveal__word-inner,
+html[data-reduce-motion="1"].js [data-text-reveal] .text-reveal__mask {
+	opacity: 1 !important;
+	clip-path: none !important;
+	transition: none !important;
+}

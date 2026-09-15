@@ -1,4 +1,5 @@
 ﻿import { createFocusTrap, type FocusTrap } from "./focus-trap";
+import { prefersReducedMotion, reducedMotionMql } from "./motion";
 import {
 	forceTextRevealAlongPath,
 	forceTextRevealInViewport,
@@ -16,7 +17,7 @@ const navToggle =
 const navLinks = Array.from(
 	document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"),
 );
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const reducedMotion = reducedMotionMql();
 /** Extra space required between brand/nav and nav/lang before collapsing. */
 const NAV_FIT_CLEARANCE = 32;
 /** Extra width needed before expanding back out of compact (anti-flicker). */
@@ -309,7 +310,7 @@ function snapIndicatorToIndex(index: number) {
 function updateNavIndicatorFromScroll() {
 	if (!nav || !navIndicator || !cachedLinkMetrics.length) return;
 
-	if (reducedMotion.matches) return;
+	if (prefersReducedMotion()) return;
 
 	const navSections = getNavSections();
 	if (!navSections.length) return;
@@ -377,7 +378,7 @@ function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 
 	measureLinkMetrics();
 
-	if (!reducedMotion.matches) {
+	if (!prefersReducedMotion()) {
 		updateNavIndicatorFromScroll();
 		return;
 	}
@@ -601,7 +602,7 @@ function beginNavScrollJump(section: HTMLElement) {
 	 * but settle immediately when there is no smooth-scroll flight — otherwise
 	 * is-nav-scrolling would linger until the 2.5s fallback with no scrollend.
 	 */
-	if (distance < 2 || reducedMotion.matches) {
+	if (distance < 2 || prefersReducedMotion()) {
 		requestAnimationFrame(finish);
 		return;
 	}
@@ -813,7 +814,7 @@ const sectionVisibility = new Map<string, number>();
 const sections = document.querySelectorAll<HTMLElement>("[data-nav-section]");
 
 function setActiveNavigation() {
-	if (!reducedMotion.matches) return;
+	if (!prefersReducedMotion()) return;
 
 	const active = [...sectionVisibility.entries()]
 		.sort((a, b) => b[1] - a[1])
@@ -838,7 +839,7 @@ function setActiveNavigation() {
 
 const sectionObserver = new IntersectionObserver(
 	(entries) => {
-		if (!reducedMotion.matches) return;
+		if (!prefersReducedMotion()) return;
 
 		entries.forEach((entry) => {
 			sectionVisibility.set(entry.target.id, entry.intersectionRatio);
@@ -854,7 +855,7 @@ const sectionObserver = new IntersectionObserver(
 sections.forEach((section) => sectionObserver.observe(section));
 
 reducedMotion.addEventListener("change", () => {
-	if (reducedMotion.matches) {
+	if (prefersReducedMotion()) {
 		wasNavTransitioning = false;
 		nav?.classList.remove("is-scroll-tracking", "is-nav-settling");
 		setActiveNavigation();

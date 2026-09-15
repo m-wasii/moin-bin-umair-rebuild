@@ -1,7 +1,7 @@
+import { prefersReducedMotion } from "./motion";
 import { revealConfig } from "./reveal-config";
 import { initTextReveal, revealTextInDocumentRange } from "./text-reveal";
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const revealItems = Array.from(
 	document.querySelectorAll<HTMLElement>("[data-reveal]"),
 );
@@ -137,7 +137,7 @@ function installScrollSafetyNet(
 	onScroll();
 }
 
-if (reducedMotion.matches || !("IntersectionObserver" in window)) {
+if (prefersReducedMotion() || !("IntersectionObserver" in window)) {
 	revealItems.forEach((item) => markVisible(item));
 	initTextReveal();
 } else {
