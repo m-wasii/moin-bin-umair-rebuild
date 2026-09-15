@@ -1,4 +1,3 @@
-import { prefersReducedMotion } from "./motion";
 import { textRevealConfig as config } from "./text-reveal-config";
 
 const WORD_INNER = "text-reveal__word-inner";
@@ -40,6 +39,10 @@ function cacheTextPositions(items: HTMLElement[]): PendingTextReveal[] {
 function releasePendingText(el: HTMLElement): void {
 	pendingDocumentText = pendingDocumentText.filter((item) => item.el !== el);
 	documentObserver?.unobserve(el);
+}
+
+function prefersReducedMotion(): boolean {
+	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function visibleTextLength(el: HTMLElement): number {

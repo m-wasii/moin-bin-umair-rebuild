@@ -8,8 +8,9 @@ import {
 	createFocusTrap,
 	type FocusTrap,
 } from "./focus-trap";
-import { prefersReducedMotion } from "./motion";
 import { lockDocumentScroll, unlockDocumentScroll } from "./site-scroll-lock";
+
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 const videoDialog = document.querySelector<HTMLElement>("[data-video-dialog]");
 const videoPanel = document.querySelector<HTMLElement>(".video-dialog__panel");
@@ -673,7 +674,7 @@ document.addEventListener("click", (event) => {
 			const scrollTarget = heading ?? expandToggle;
 			scrollTarget.scrollIntoView({
 				block: "nearest",
-				behavior: prefersReducedMotion() ? "auto" : "smooth",
+				behavior: reducedMotion.matches ? "auto" : "smooth",
 			});
 		}
 

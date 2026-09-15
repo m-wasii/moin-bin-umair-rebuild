@@ -16,7 +16,6 @@ import {
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
 import { isPreviewHost } from "../lib/hosts";
-import { FORCE_REDUCED_MOTION } from "../scripts/motion";
 
 interface Props {
 	lang?: Lang;
@@ -64,11 +63,7 @@ const structuredData = {
 ---
 
 <!doctype html>
-<html
-	lang={lang}
-	data-cf-images={cfImages ? "1" : "0"}
-	data-reduce-motion={FORCE_REDUCED_MOTION ? "1" : undefined}
->
+<html lang={lang} data-cf-images={cfImages ? "1" : "0"}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta
