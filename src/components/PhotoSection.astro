@@ -6,7 +6,7 @@ import {
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
 import { serializeJsonForScript } from "../lib/serialize-json-for-script";
-import { useTranslations, type Lang, type UiKey } from "../i18n/ui";
+import { useTranslations, type Lang } from "../i18n/ui";
 import ResponsiveImage from "./ResponsiveImage.astro";
 
 interface Props {
@@ -20,18 +20,11 @@ const t = useTranslations(lang);
 const categories = await listPhotoCategories();
 const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 
-function albumTitle(slug: string, label: string) {
-	const key = `photo.category.${slug}` as UiKey;
-	const translated = t(key);
-	return typeof translated === "string" && translated.length > 0
-		? translated
-		: label;
-}
-
+// Album titles stay English in every locale (catalog labels, not i18n).
 const grouped = categories
 	.map((category) => ({
 		category: category.slug,
-		title: albumTitle(category.slug, category.label),
+		title: category.label,
 		items: photos.filter((photo) => photo.category === category.slug),
 	}))
 	.filter((group) => group.items.length > 0);
