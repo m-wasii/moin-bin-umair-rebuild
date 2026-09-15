@@ -1,6 +1,5 @@
 import {
 	buildResponsiveImageAttrs,
-	cfImageSrc,
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
 import {
@@ -368,17 +367,14 @@ videoDialog?.addEventListener("video-dialog:open", (event) => {
 videoClose?.addEventListener("click", closeVideoDialog);
 videoBackdrop?.addEventListener("click", closeVideoDialog);
 
-function lightboxSrc(src: string) {
-	return cfImageSrc(src, 1600, { enabled: cfImagesEnabled() });
-}
-
 function renderPhoto() {
 	const item = photoGroup[photoIndex];
 	if (!item || !photoImage) return;
-	photoImage.src = lightboxSrc(item.src);
+	/* Full master — album thumbs stay on resized variants. */
+	photoImage.src = item.src;
 	photoImage.alt = item.alt;
-	photoImage.width = 1600;
-	photoImage.height = 2000;
+	photoImage.removeAttribute("width");
+	photoImage.removeAttribute("height");
 	photoImage.decoding = "async";
 }
 
