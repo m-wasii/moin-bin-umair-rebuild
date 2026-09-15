@@ -35,8 +35,17 @@ const deHref = localizedHomePath("de");
 		aria-label={t("a11y.primaryNav")}
 		data-nav
 	>
-		<span class="site-nav__indicator" data-nav-indicator aria-hidden="true"
-		></span>
+		<span class="site-nav__indicator" data-nav-indicator aria-hidden="true">
+			<span class="site-nav__invert-shift" data-nav-invert-shift>
+				<span class="site-nav__invert-track" data-nav-invert-track>
+					{
+						navigation.map((item) => (
+							<span class="site-nav__invert-label">{item.label}</span>
+						))
+					}
+				</span>
+			</span>
+		</span>
 		{
 			navigation.map((item, index) => (
 				<a
@@ -45,7 +54,7 @@ const deHref = localizedHomePath("de");
 					data-nav-link
 					aria-current={index === 0 ? "page" : undefined}
 				>
-					{item.label}
+					<span class="site-nav__label">{item.label}</span>
 				</a>
 			))
 		}

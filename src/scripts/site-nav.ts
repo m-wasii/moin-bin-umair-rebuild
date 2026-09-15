@@ -11,6 +11,9 @@ const nav = document.querySelector<HTMLElement>("[data-nav]");
 const navIndicator = document.querySelector<HTMLElement>(
 	"[data-nav-indicator]",
 );
+const navInvertTrack = document.querySelector<HTMLElement>(
+	"[data-nav-invert-track]",
+);
 const navToggle =
 	document.querySelector<HTMLButtonElement>("[data-nav-toggle]");
 const navLinks = Array.from(
@@ -167,15 +170,31 @@ function measureLinkMetrics() {
 	const insetY = parseFloat(navStyles.borderTopWidth) || 0;
 	const compact = isNavCompact();
 
-	cachedLinkMetrics = navLinks.map((link) => {
-		const rect = link.getBoundingClientRect();
+	/* Padding-box size for the counter-shifted invert layer (excludes border). */
+	nav.style.setProperty("--nav-track-w", `${nav.clientWidth.toFixed(2)}px`);
+	nav.style.setProperty("--nav-track-h", `${nav.clientHeight.toFixed(2)}px`);
 
-		return {
+	const invertLabels = navInvertTrack
+		? Array.from(navInvertTrack.children)
+		: [];
+
+	cachedLinkMetrics = navLinks.map((link, index) => {
+		const rect = link.getBoundingClientRect();
+		const metrics = {
 			x: rect.left - navRect.left - insetX,
 			y: rect.top - navRect.top - insetY,
 			w: compact ? 3 : rect.width,
 			h: rect.height,
 		};
+
+		const invertLabel = invertLabels[index];
+		if (invertLabel instanceof HTMLElement) {
+			invertLabel.style.width = `${rect.width.toFixed(2)}px`;
+			invertLabel.style.height = `${rect.height.toFixed(2)}px`;
+			invertLabel.style.padding = "0";
+		}
+
+		return metrics;
 	});
 }
 
@@ -187,6 +206,7 @@ function setIndicatorMetrics(metrics: {
 }) {
 	if (!nav || !navIndicator) return;
 
+	/* Position via transform; size via CSS vars with no transition. */
 	nav.style.setProperty("--nav-indicator-x", `${metrics.x.toFixed(2)}px`);
 	nav.style.setProperty("--nav-indicator-y", `${metrics.y.toFixed(2)}px`);
 	nav.style.setProperty("--nav-indicator-w", `${metrics.w.toFixed(2)}px`);
@@ -382,7 +402,7 @@ function updateNavIndicatorFromScroll() {
 function updateNavIndicator(activeLink?: HTMLAnchorElement) {
 	if (!nav || !navIndicator) return;
 
-	measureLinkMetrics();
+	if (!cachedLinkMetrics.length) measureLinkMetrics();
 
 	if (!reducedMotion.matches) {
 		updateNavIndicatorFromScroll();
@@ -705,7 +725,7 @@ document.addEventListener("keydown", (event) => {
 navIndicator?.addEventListener("transitionend", (event) => {
 	if (
 		event.target !== navIndicator ||
-		event.propertyName !== "left" ||
+		event.propertyName !== "transform" ||
 		!nav?.classList.contains("is-nav-settling")
 	) {
 		return;
