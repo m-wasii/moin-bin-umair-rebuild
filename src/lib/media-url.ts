@@ -5,7 +5,9 @@ export function withMediaVersion(path: string, version: string) {
 
 	const qIndex = path.indexOf("?");
 	const base = qIndex === -1 ? path : path.slice(0, qIndex);
-	const params = new URLSearchParams(qIndex === -1 ? "" : path.slice(qIndex + 1));
+	const params = new URLSearchParams(
+		qIndex === -1 ? "" : path.slice(qIndex + 1),
+	);
 	params.set("v", trimmed);
 	return `${base}?${params.toString()}`;
 }

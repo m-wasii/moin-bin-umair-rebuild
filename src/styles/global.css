@@ -362,7 +362,8 @@ main {
 	transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.site-nav:not(.is-scroll-tracking):not(.is-nav-settling) .site-nav__invert-shift {
+.site-nav:not(.is-scroll-tracking):not(.is-nav-settling)
+	.site-nav__invert-shift {
 	transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -2208,7 +2209,9 @@ html.is-nav-scrolling.js [data-text-reveal] .text-reveal__mask {
 	clip-path: inset(0 100% 0 0);
 }
 
-.js [data-text-reveal][data-text-reveal-mode="mask"].is-revealed .text-reveal__mask {
+.js
+	[data-text-reveal][data-text-reveal-mode="mask"].is-revealed
+	.text-reveal__mask {
 	display: block;
 	clip-path: inset(0 0 0 0);
 	transition: clip-path var(--tr-duration) var(--tr-ease);
@@ -2228,7 +2231,9 @@ html.is-nav-scrolling.js [data-text-reveal] .text-reveal__mask {
 	clip-path: inset(-0.22em 100% -0.28em -0.08em);
 }
 
-.js [data-text-reveal][data-text-reveal-mode="words"].is-revealed .text-reveal__word-inner {
+.js
+	[data-text-reveal][data-text-reveal-mode="words"].is-revealed
+	.text-reveal__word-inner {
 	display: inline-block;
 	/* Negative inset keeps the wipe transition but leaves room for glyph overhangs. */
 	clip-path: inset(-0.22em -0.08em -0.28em -0.08em);

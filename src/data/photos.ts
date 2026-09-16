@@ -12,7 +12,9 @@ export const defaultPhotoCategories = [
 ] as const;
 
 /** Seed / legacy slug list. Prefer listPhotoCategories for runtime catalogs. */
-export const photoCategories = defaultPhotoCategories.map((entry) => entry.slug);
+export const photoCategories = defaultPhotoCategories.map(
+	(entry) => entry.slug,
+);
 
 export type PhotoCategory = string;
 

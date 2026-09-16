@@ -1,7 +1,11 @@
 import seedVideos from "../../data/videos.seed.json";
 import { assertStoredVideos } from "../catalog-integrity";
 import type { SiteCacheRefreshOptions } from "../site-cache";
-import { readCatalogRecord, resolveCatalogList, writeCatalogRecord } from "./catalog";
+import {
+	readCatalogRecord,
+	resolveCatalogList,
+	writeCatalogRecord,
+} from "./catalog";
 import type { CatalogRevision, StoredVideo } from "./types";
 import { VIDEOS_KEY } from "./types";
 

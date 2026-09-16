@@ -38,9 +38,9 @@ const clipsJson = JSON.stringify(
 		data-video-provider="file"
 		data-video-title={entry.title}
 		data-video-clips={clipsJson}
-		data-video-orientation={
-			cover && cover.height > cover.width ? "portrait" : "square"
-		}
+		data-video-orientation={cover && cover.height > cover.width
+			? "portrait"
+			: "square"}
 		aria-label={t("shorts.playAria", { title: entry.title })}
 	>
 		{

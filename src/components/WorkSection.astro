@@ -43,9 +43,7 @@ const rowSizes = useUniformGrid
 const canCollapse =
 	EXPANDABLE_IDS.has(id) && rowSizes.length > MAX_VISIBLE_ROWS;
 const visibleCount = canCollapse
-	? rowSizes
-			.slice(0, MAX_VISIBLE_ROWS)
-			.reduce((sum, size) => sum + size, 0)
+	? rowSizes.slice(0, MAX_VISIBLE_ROWS).reduce((sum, size) => sum + size, 0)
 	: projects.length;
 ---
 
@@ -105,7 +103,7 @@ const visibleCount = canCollapse
 					>
 						<span data-work-expand-label>{t("section.seeMore")}</span>
 						<svg viewBox="0 0 18 18" aria-hidden="true">
-							<path d="M9 2v13M4 10l5 5 5-5"></path>
+							<path d="M9 2v13M4 10l5 5 5-5" />
 						</svg>
 					</button>
 				)}

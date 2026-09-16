@@ -86,11 +86,11 @@ Pull requests deploy a dedicated preview Worker (production `mbu` is unchanged):
 GitHub Actions publishes those hosts when these **repository** secrets exist
 ([Settings → Secrets and variables → Actions](https://github.com/m-wasii/moin-bin-umair-rebuild/settings/secrets/actions)):
 
-| Secret | Value |
-| --- | --- |
+| Secret                  | Value                                                                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID from `npx wrangler whoami`, or Workers & Pages → Overview in the [Cloudflare dashboard](https://dash.cloudflare.com/) |
-| `CLOUDFLARE_API_TOKEN` | API token created below (shown only once) |
-| `CDN_PURGE_SECRET` | Same long random value set as a Worker secret on both `mbu` and `dashboard` (`npx wrangler secret put CDN_PURGE_SECRET`) |
+| `CLOUDFLARE_API_TOKEN`  | API token created below (shown only once)                                                                                        |
+| `CDN_PURGE_SECRET`      | Same long random value set as a Worker secret on both `mbu` and `dashboard` (`npx wrangler secret put CDN_PURGE_SECRET`)         |
 
 Create the token at [Account API tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token** → **Edit Cloudflare Workers**. Confirm it has:
 

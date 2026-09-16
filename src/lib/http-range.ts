@@ -72,7 +72,9 @@ export function parseByteRange(
 	};
 }
 
-export function rangeUnsatisfiableHeaders(size: number): Record<string, string> {
+export function rangeUnsatisfiableHeaders(
+	size: number,
+): Record<string, string> {
 	return {
 		"content-range": `bytes */${size}`,
 		"accept-ranges": "bytes",

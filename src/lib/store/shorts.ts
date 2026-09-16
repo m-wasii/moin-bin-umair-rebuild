@@ -13,7 +13,11 @@ import {
 	localPath,
 	readLocalBytes,
 } from "./bucket";
-import { readCatalogRecord, resolveCatalogList, writeCatalogRecord } from "./catalog";
+import {
+	readCatalogRecord,
+	resolveCatalogList,
+	writeCatalogRecord,
+} from "./catalog";
 import type { CatalogRevision, StoredMediaBody } from "./types";
 import { SHORTS_KEY } from "./types";
 

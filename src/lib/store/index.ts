@@ -1,11 +1,7 @@
 /**
  * Public storage API — existing `from ".../lib/store"` imports resolve here.
  */
-export type {
-	CatalogRevision,
-	StoredVideo,
-	StoredMediaBody,
-} from "./types";
+export type { CatalogRevision, StoredVideo, StoredMediaBody } from "./types";
 export type { StoredPhotoCategory } from "./photos";
 
 export {

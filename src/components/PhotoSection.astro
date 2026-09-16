@@ -48,9 +48,7 @@ function albumLayoutForIndex(albumIndex: number): {
 	const isLandscapeFirstRow = row % 2 === 0;
 	const isWide = isLandscapeFirstRow ? posInRow === 0 : posInRow === 1;
 
-	return isWide
-		? { span: 7, aspect: "wide" }
-		: { span: 5, aspect: "tall" };
+	return isWide ? { span: 7, aspect: "wide" } : { span: 5, aspect: "tall" };
 }
 ---
 
@@ -217,7 +215,7 @@ function albumLayoutForIndex(albumIndex: number): {
 							</p>
 						</header>
 						{/* Masonry is injected on open — keeps ~214 photos out of initial DOM. */}
-						<ul class="album-masonry" data-album-masonry></ul>
+						<ul class="album-masonry" data-album-masonry />
 						<script
 							type="application/json"
 							is:inline
