@@ -1,4 +1,5 @@
 ﻿import { createFocusTrap, type FocusTrap } from "./focus-trap";
+import { waitForScrollToSettle } from "./nav-scroll-settle";
 import {
 	forceTextRevealAlongPath,
 	forceTextRevealInViewport,
@@ -531,8 +532,6 @@ document.addEventListener("site:close-nav", () => {
 
 /** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
 const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
-/** Frames with <1px scroll delta before treating motion as settled (no scrollend). */
-const SCROLL_SETTLE_STABLE_FRAMES = 4;
 /** Safety net when scrollend never fires (interrupted / browser quirks). */
 const NAV_JUMP_SETTLE_TIMEOUT_MS = 2500;
 
@@ -540,10 +539,6 @@ const NAV_JUMP_SETTLE_TIMEOUT_MS = 2500;
 let navJumpGeneration = 0;
 let navJumpEndTimeout = 0;
 let navJumpScrollEndHandler: (() => void) | null = null;
-
-function supportsNativeScrollEnd() {
-	return typeof window.onscrollend !== "undefined";
-}
 
 function cancelNavJumpCleanup() {
 	if (navJumpEndTimeout) {
@@ -554,74 +549,6 @@ function cancelNavJumpCleanup() {
 	if (navJumpScrollEndHandler) {
 		window.removeEventListener("scrollend", navJumpScrollEndHandler);
 		navJumpScrollEndHandler = null;
-	}
-}
-
-/**
- * Smooth scrolling can settle after the navigation call returns,
- * so destination reveals wait until the viewport is stable.
- */
-function watchScrollUntilStable(
-	onStable: () => void,
-	options?: { shouldAbort?: () => boolean },
-) {
-	let lastY = window.scrollY;
-	let stableFrames = 0;
-
-	const tick = () => {
-		if (options?.shouldAbort?.()) return;
-
-		if (Math.abs(window.scrollY - lastY) < 1) {
-			stableFrames += 1;
-			if (stableFrames >= SCROLL_SETTLE_STABLE_FRAMES) {
-				onStable();
-				return;
-			}
-		} else {
-			stableFrames = 0;
-			lastY = window.scrollY;
-		}
-
-		requestAnimationFrame(tick);
-	};
-
-	requestAnimationFrame(tick);
-}
-
-function waitForScrollToSettle(
-	onSettle: () => void,
-	options?: {
-		shouldAbort?: () => boolean;
-		shouldIgnoreEvent?: () => boolean;
-		timeoutMs?: number;
-		registerNativeHandler?: (handler: () => void) => void;
-		registerTimeout?: (timeoutId: number) => void;
-	},
-) {
-	const finish = () => {
-		if (options?.shouldAbort?.()) return;
-		onSettle();
-	};
-
-	if (supportsNativeScrollEnd()) {
-		const onScrollEnd = () => {
-			if (options?.shouldAbort?.()) return;
-			if (options?.shouldIgnoreEvent?.()) return;
-			finish();
-		};
-		options?.registerNativeHandler?.(onScrollEnd);
-		window.addEventListener(
-			"scrollend",
-			onScrollEnd,
-			options?.timeoutMs == null ? { once: true } : undefined,
-		);
-	} else {
-		watchScrollUntilStable(finish, { shouldAbort: options?.shouldAbort });
-	}
-
-	if (options?.timeoutMs != null) {
-		const timeoutId = window.setTimeout(finish, options.timeoutMs);
-		options.registerTimeout?.(timeoutId);
 	}
 }
 
