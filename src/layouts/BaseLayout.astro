@@ -30,8 +30,7 @@ const description = t("meta.description");
 const enPath = localizedHomePath("en");
 const dePath = localizedHomePath("de");
 const canonicalPath = localizedHomePath(lang);
-const siteOrigin =
-	Astro.site ?? new URL("https://moinbinumair.com");
+const siteOrigin = Astro.site ?? new URL("https://moinbinumair.com");
 const canonicalUrl = new URL(canonicalPath, siteOrigin).href;
 const enUrl = new URL(enPath, siteOrigin).href;
 const deUrl = new URL(dePath, siteOrigin).href;
@@ -96,9 +95,7 @@ const structuredData = {
 			type="image/webp"
 			fetchpriority="high"
 			imagesizes="100vw"
-			{...(heroPosterAttrs.srcset
-				? { imagesrcset: heroPosterAttrs.srcset }
-				: {})}
+			{...heroPosterAttrs.srcset ? { imagesrcset: heroPosterAttrs.srcset } : {}}
 		/>
 		<link rel="preconnect" href="https://i.vimeocdn.com" crossorigin />
 		<link rel="preconnect" href="https://player.vimeo.com" crossorigin />
@@ -112,7 +109,13 @@ const structuredData = {
 		<title>{title}</title>
 		<script
 			is:inline
-			define:vars={{ PREFERRED_LANG_KEY, LANG_SCROLL_KEY, enPath, dePath, lang }}
+			define:vars={{
+				PREFERRED_LANG_KEY,
+				LANG_SCROLL_KEY,
+				enPath,
+				dePath,
+				lang,
+			}}
 		>
 			document.documentElement.classList.add("js");
 			/* Pre-paint compact only where the pill almost never fits; site.ts
@@ -122,7 +125,9 @@ const structuredData = {
 					if (window.innerWidth < 1200) {
 						document.documentElement.classList.add("nav-is-compact");
 					}
-				} catch (e) {}
+				} catch (e) {
+					/* Ignore restricted window metrics during early boot. */
+				}
 			})();
 			/* Restore scroll after language switch without smooth top→section jump. */
 			(function () {
@@ -162,14 +167,18 @@ const structuredData = {
 									"",
 									location.pathname + location.search + hash,
 								);
-							} catch (e) {}
+							} catch (e) {
+								/* Ignore history SecurityError; scroll restore still runs. */
+							}
 						}
 						requestAnimationFrame(function () {
 							restore();
 							document.documentElement.classList.remove("scroll-instant");
 						});
 					});
-				} catch (e) {}
+				} catch (e) {
+					/* Ignore malformed optional persisted scroll; page init must continue. */
+				}
 			})();
 			(function () {
 				try {
@@ -179,9 +188,10 @@ const structuredData = {
 					if (stored === "en" || stored === "de") {
 						target = stored === "de" ? dePath : enPath;
 					} else {
-						var languages = navigator.languages && navigator.languages.length
-							? Array.from(navigator.languages)
-							: [navigator.language || ""];
+						var languages =
+							navigator.languages && navigator.languages.length
+								? Array.from(navigator.languages)
+								: [navigator.language || ""];
 						var prefersDe = false;
 						for (var i = 0; i < languages.length; i++) {
 							var code = String(languages[i] || "").toLowerCase();
@@ -206,7 +216,9 @@ const structuredData = {
 					if (current === normalizedTarget || current === target) return;
 
 					location.replace(target + location.search + location.hash);
-				} catch (e) {}
+				} catch (e) {
+					/* Ignore storage / privacy mode failures; keep current language. */
+				}
 			})();
 		</script>
 		<script
@@ -219,9 +231,11 @@ const structuredData = {
 		<a class="skip-link" href="#main-content">{t("a11y.skip")}</a>
 		<slot />
 		<script src="../scripts/site-bootstrap.ts"></script>
-		{/* Defer shorts player until idle / near viewport / interaction.
+		{
+			/* Defer shorts player until idle / near viewport / interaction.
 		    First tap on a short awaits the chunk, then opens via openFileShort
-		    so the click cannot race the module's own capture listener. */}
+		    so the click cannot race the module's own capture listener. */
+		}
 		<script>
 			type ShortsPlayerModule = typeof import("../scripts/shorts-player.ts");
 

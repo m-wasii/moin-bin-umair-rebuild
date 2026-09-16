@@ -61,6 +61,7 @@ export async function readLocalJson<T>(key: string): Promise<T | null> {
 		const raw = await readFile(await localPath(key), "utf8");
 		return JSON.parse(raw) as T;
 	} catch {
+		// Missing local DEV media files are expected before seeding.
 		return null;
 	}
 }
@@ -83,6 +84,7 @@ export async function readLocalBytes(key: string) {
 		const { readFile } = await import("node:fs/promises");
 		return await readFile(await localPath(key));
 	} catch {
+		// Missing local DEV media files are expected before seeding.
 		return null;
 	}
 }
@@ -106,7 +108,7 @@ export async function deleteLocal(key: string) {
 		const { unlink } = await import("node:fs/promises");
 		await unlink(await localPath(key));
 	} catch {
-		// ignore
+		// Ignore missing files during local DEV cleanup.
 	}
 }
 
@@ -118,10 +120,7 @@ export async function withLocalCatalogLock<T>(
 	fn: () => Promise<T>,
 ): Promise<T> {
 	const previous = localCatalogLocks.get(key) ?? Promise.resolve();
-	let release!: () => void;
-	const done = new Promise<void>((resolve) => {
-		release = resolve;
-	});
+	const { promise: done, resolve: release } = Promise.withResolvers<void>();
 	const chain = previous.then(() => done);
 	localCatalogLocks.set(key, chain);
 	await previous.catch(() => undefined);

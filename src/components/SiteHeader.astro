@@ -61,11 +61,7 @@ const deHref = localizedHomePath("de");
 	</nav>
 
 	<div class="site-header__end">
-		<nav
-			class="lang-switch"
-			aria-label={t("a11y.langSwitch")}
-			data-lang-switch
-		>
+		<nav class="lang-switch" aria-label={t("a11y.langSwitch")} data-lang-switch>
 			<a
 				class:list={["lang-switch__option", { "is-active": lang === "en" }]}
 				href={enHref}
@@ -122,7 +118,9 @@ const deHref = localizedHomePath("de");
 			if (nextLang === "en" || nextLang === "de") {
 				try {
 					localStorage.setItem(PREFERRED_LANG_KEY, nextLang);
-				} catch (e) {}
+				} catch (e) {
+					/* Ignore storage failures (private mode / blocked storage). */
+				}
 			}
 
 			event.preventDefault();
@@ -134,7 +132,9 @@ const deHref = localizedHomePath("de");
 						hash: location.hash || "",
 					}),
 				);
-			} catch (e) {}
+			} catch (e) {
+				/* Ignore storage failures; language navigation still proceeds. */
+			}
 			// Navigate without the hash so the browser doesn't smooth-scroll
 			// from the top to the fragment; BaseLayout restores scroll + hash.
 			location.assign(base + location.search);

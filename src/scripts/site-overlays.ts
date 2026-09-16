@@ -2,11 +2,7 @@ import {
 	buildResponsiveImageAttrs,
 	RESPONSIVE_WIDTHS,
 } from "../lib/responsive-image";
-import {
-	blurIfInside,
-	createFocusTrap,
-	type FocusTrap,
-} from "./focus-trap";
+import { blurIfInside, createFocusTrap, type FocusTrap } from "./focus-trap";
 import { lockDocumentScroll, unlockDocumentScroll } from "./site-scroll-lock";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -50,7 +46,9 @@ const photoImage = document.querySelector<HTMLImageElement>(
 	"[data-photo-dialog-image]",
 );
 const photoStage = document.querySelector<HTMLElement>(".photo-dialog__stage");
-const photoLoading = document.querySelector<HTMLElement>("[data-photo-loading]");
+const photoLoading = document.querySelector<HTMLElement>(
+	"[data-photo-loading]",
+);
 const photoPrev =
 	document.querySelector<HTMLButtonElement>("[data-photo-prev]");
 const photoNext =
@@ -86,6 +84,14 @@ function cfImagesEnabled() {
 interface AlbumPhoto {
 	src: string;
 	alt: string;
+}
+
+function isAlbumPhoto(item: unknown): item is AlbumPhoto {
+	return (
+		!!item &&
+		typeof item === "object" &&
+		typeof (item as AlbumPhoto).src === "string"
+	);
 }
 
 function closeNavigationOverlay() {
@@ -275,7 +281,7 @@ function closeAlbum(options?: { clearHash?: boolean }) {
 		try {
 			history.replaceState(null, "", `${location.pathname}${location.search}`);
 		} catch {
-			/* ignore */
+			// Ignore SecurityError from locked history during some navigations.
 		}
 	}
 }
@@ -414,9 +420,8 @@ function setPhotoActual(
 	actual: boolean,
 	origin?: { clientX: number; clientY: number },
 ) {
-	const painted = actual && photoImage && origin
-		? containedImageRect(photoImage)
-		: null;
+	const painted =
+		actual && photoImage && origin ? containedImageRect(photoImage) : null;
 
 	photoActual = actual;
 	photoImage?.classList.toggle("photo-dialog__image--actual", actual);
@@ -499,15 +504,9 @@ function readAlbumPhotos(panel: HTMLElement): AlbumPhoto[] {
 	try {
 		const parsed = JSON.parse(jsonEl.textContent) as unknown;
 		if (!Array.isArray(parsed)) return [];
-		return parsed.filter(
-			(item): item is AlbumPhoto =>
-				Boolean(
-					item &&
-						typeof item === "object" &&
-						typeof (item as AlbumPhoto).src === "string",
-				),
-		);
+		return parsed.filter(isAlbumPhoto);
 	} catch {
+		// Ignore malformed album JSON embedded in the panel.
 		return [];
 	}
 }
@@ -518,24 +517,17 @@ function albumPhotoGroup(panel: HTMLElement): AlbumPhoto[] {
 		try {
 			const parsed = JSON.parse(cached) as unknown;
 			if (Array.isArray(parsed)) {
-				return parsed.filter(
-					(item): item is AlbumPhoto =>
-						Boolean(
-							item &&
-								typeof item === "object" &&
-								typeof (item as AlbumPhoto).src === "string",
-						),
-				);
+				return parsed.filter(isAlbumPhoto);
 			}
 		} catch {
-			/* rebuild */
+			// Ignore corrupt dataset cache; rebuild from the panel script tag.
 		}
 	}
 	const photos = readAlbumPhotos(panel);
 	try {
 		panel.dataset.albumPhotosCache = JSON.stringify(photos);
 	} catch {
-		/* ignore quota / serialization issues */
+		// Ignore quota / serialization issues; album still opens without cache.
 	}
 	return photos;
 }

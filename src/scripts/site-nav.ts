@@ -87,7 +87,8 @@ function readExpandedFitMetrics() {
 
 	/* Equal 1fr side columns: each side must fit the wider of brand/end. */
 	const side = Math.max(brandRect.width, endRect.width);
-	const fitWidth = side * 2 + navRect.width + gap * 2 + padX + NAV_FIT_CLEARANCE;
+	const fitWidth =
+		side * 2 + navRect.width + gap * 2 + padX + NAV_FIT_CLEARANCE;
 
 	const collides =
 		brandRect.right + NAV_FIT_CLEARANCE > navRect.left ||
@@ -260,10 +261,7 @@ function getSectionScrollTop(section: HTMLElement) {
 function ensureSectionTops(
 	navSections: Array<{ link: HTMLAnchorElement; section: HTMLElement }>,
 ) {
-	if (
-		!sectionTopsDirty &&
-		cachedSectionTops.length === navSections.length
-	) {
+	if (!sectionTopsDirty && cachedSectionTops.length === navSections.length) {
 		return;
 	}
 
@@ -533,11 +531,19 @@ document.addEventListener("site:close-nav", () => {
 
 /** Long hash jumps outrun opacity reveals → dark empty viewport mid-scroll. */
 const NAV_JUMP_REVEAL_VIEWPORTS = 1.25;
+/** Frames with <1px scroll delta before treating motion as settled (no scrollend). */
+const SCROLL_SETTLE_STABLE_FRAMES = 4;
+/** Safety net when scrollend never fires (interrupted / browser quirks). */
+const NAV_JUMP_SETTLE_TIMEOUT_MS = 2500;
 
 /** Invalidates stale scrollend/timeout cleanup from interrupted nav jumps. */
 let navJumpGeneration = 0;
 let navJumpEndTimeout = 0;
 let navJumpScrollEndHandler: (() => void) | null = null;
+
+function supportsNativeScrollEnd() {
+	return typeof window.onscrollend !== "undefined";
+}
 
 function cancelNavJumpCleanup() {
 	if (navJumpEndTimeout) {
@@ -549,6 +555,84 @@ function cancelNavJumpCleanup() {
 		window.removeEventListener("scrollend", navJumpScrollEndHandler);
 		navJumpScrollEndHandler = null;
 	}
+}
+
+/**
+ * Smooth scrolling can settle after the navigation call returns,
+ * so destination reveals wait until the viewport is stable.
+ */
+function watchScrollUntilStable(
+	onStable: () => void,
+	options?: { shouldAbort?: () => boolean },
+) {
+	let lastY = window.scrollY;
+	let stableFrames = 0;
+
+	const tick = () => {
+		if (options?.shouldAbort?.()) return;
+
+		if (Math.abs(window.scrollY - lastY) < 1) {
+			stableFrames += 1;
+			if (stableFrames >= SCROLL_SETTLE_STABLE_FRAMES) {
+				onStable();
+				return;
+			}
+		} else {
+			stableFrames = 0;
+			lastY = window.scrollY;
+		}
+
+		requestAnimationFrame(tick);
+	};
+
+	requestAnimationFrame(tick);
+}
+
+function waitForScrollToSettle(
+	onSettle: () => void,
+	options?: {
+		shouldAbort?: () => boolean;
+		shouldIgnoreEvent?: () => boolean;
+		timeoutMs?: number;
+		registerNativeHandler?: (handler: () => void) => void;
+		registerTimeout?: (timeoutId: number) => void;
+	},
+) {
+	const finish = () => {
+		if (options?.shouldAbort?.()) return;
+		onSettle();
+	};
+
+	if (supportsNativeScrollEnd()) {
+		const onScrollEnd = () => {
+			if (options?.shouldAbort?.()) return;
+			if (options?.shouldIgnoreEvent?.()) return;
+			finish();
+		};
+		options?.registerNativeHandler?.(onScrollEnd);
+		window.addEventListener(
+			"scrollend",
+			onScrollEnd,
+			options?.timeoutMs == null ? { once: true } : undefined,
+		);
+	} else {
+		watchScrollUntilStable(finish, { shouldAbort: options?.shouldAbort });
+	}
+
+	if (options?.timeoutMs != null) {
+		const timeoutId = window.setTimeout(finish, options.timeoutMs);
+		options.registerTimeout?.(timeoutId);
+	}
+}
+
+function markNavigationJump() {
+	cancelNavJumpCleanup();
+	navJumpGeneration += 1;
+	return navJumpGeneration;
+}
+
+function clearNavigationJump(generation: number) {
+	finishNavScrollJump(generation);
 }
 
 /**
@@ -613,10 +697,7 @@ function beginNavScrollJump(section: HTMLElement) {
 	const distance = Math.abs(toY - fromY);
 	const root = document.documentElement;
 	const wasNavScrolling = root.classList.contains("is-nav-scrolling");
-
-	cancelNavJumpCleanup();
-	navJumpGeneration += 1;
-	const generation = navJumpGeneration;
+	const generation = markNavigationJump();
 
 	const isShortJump =
 		reducedMotion.matches ||
@@ -633,45 +714,20 @@ function beginNavScrollJump(section: HTMLElement) {
 	root.classList.add("is-nav-scrolling");
 	revealContentAlongPath(fromY, toY);
 
-	const finish = () => finishNavScrollJump(generation);
-	const supportsScrollEnd = typeof window.onscrollend !== "undefined";
-
-	if (supportsScrollEnd) {
-		const onScrollEnd = () => {
-			if (generation !== navJumpGeneration) return;
-			/* Ignore scrollend from an interrupted prior smooth-scroll. */
-			if (!isNearNavTarget(toY)) return;
-			finish();
-		};
-
-		navJumpScrollEndHandler = onScrollEnd;
-		window.addEventListener("scrollend", onScrollEnd);
-		navJumpEndTimeout = window.setTimeout(finish, 2500);
-		return;
-	}
-
-	let lastY = window.scrollY;
-	let stableFrames = 0;
-	const waitForScrollEnd = () => {
-		if (generation !== navJumpGeneration) return;
-		if (!root.classList.contains("is-nav-scrolling")) return;
-
-		if (Math.abs(window.scrollY - lastY) < 1) {
-			stableFrames += 1;
-			if (stableFrames >= 4) {
-				finish();
-				return;
-			}
-		} else {
-			stableFrames = 0;
-			lastY = window.scrollY;
-		}
-
-		requestAnimationFrame(waitForScrollEnd);
-	};
-
-	requestAnimationFrame(waitForScrollEnd);
-	navJumpEndTimeout = window.setTimeout(finish, 2500);
+	waitForScrollToSettle(() => clearNavigationJump(generation), {
+		shouldAbort: () =>
+			generation !== navJumpGeneration ||
+			!root.classList.contains("is-nav-scrolling"),
+		/* Ignore scrollend from an interrupted prior smooth-scroll. */
+		shouldIgnoreEvent: () => !isNearNavTarget(toY),
+		timeoutMs: NAV_JUMP_SETTLE_TIMEOUT_MS,
+		registerNativeHandler: (handler) => {
+			navJumpScrollEndHandler = handler;
+		},
+		registerTimeout: (timeoutId) => {
+			navJumpEndTimeout = timeoutId;
+		},
+	});
 }
 
 navLinks.forEach((link, index) => {
@@ -682,34 +738,7 @@ navLinks.forEach((link, index) => {
 		const section = document.getElementById(link.hash.slice(1));
 		if (section) beginNavScrollJump(section);
 
-		const finalizeSnap = () => snapIndicatorToIndex(index);
-
-		const supportsScrollEnd = typeof window.onscrollend !== "undefined";
-
-		if (supportsScrollEnd) {
-			window.addEventListener("scrollend", finalizeSnap, { once: true });
-			return;
-		}
-
-		let lastY = window.scrollY;
-		let stableFrames = 0;
-
-		const waitForScrollEnd = () => {
-			if (Math.abs(window.scrollY - lastY) < 1) {
-				stableFrames += 1;
-				if (stableFrames >= 4) {
-					finalizeSnap();
-					return;
-				}
-			} else {
-				stableFrames = 0;
-				lastY = window.scrollY;
-			}
-
-			requestAnimationFrame(waitForScrollEnd);
-		};
-
-		requestAnimationFrame(waitForScrollEnd);
+		waitForScrollToSettle(() => snapIndicatorToIndex(index));
 	});
 });
 

@@ -7,15 +7,16 @@ import {
 import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import { publicApiError } from "../../lib/api-errors";
 import {
+	jsonResponse,
+	mutationCacheOpts,
+	readMutationJsonBody,
+} from "../../lib/api-http";
+import {
 	assertCompleteSlugOrder,
 	assertExpectedRev,
 	assertKebabSlug,
 	expectedRevFromRequest,
 } from "../../lib/catalog-integrity";
-import {
-	waitUntilFromLocals,
-	type SiteCacheRefreshOptions,
-} from "../../lib/site-cache";
 import {
 	hasWritableMedia,
 	readPhotoCategoriesCatalog,
@@ -24,26 +25,9 @@ import {
 
 export const prerender = false;
 
-function cacheOpts(
-	request: Request,
-	locals: App.Locals,
-): SiteCacheRefreshOptions {
-	return {
-		requestUrl: new URL(request.url),
-		waitUntil: waitUntilFromLocals(locals),
-	};
-}
-
-function json(data: unknown, status = 200) {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "content-type": "application/json; charset=utf-8" },
-	});
-}
-
 export const GET: APIRoute = async () => {
 	const { categories, revision } = await readPhotoCategoriesCatalog();
-	return json({
+	return jsonResponse({
 		categories,
 		rev: revision.rev,
 		writable: hasWritableMedia(),
@@ -55,7 +39,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json(
+		return jsonResponse(
 			{
 				error:
 					"R2 is not bound yet. Add a MEDIA bucket binding, then save again.",
@@ -64,22 +48,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		);
 	}
 
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
+	const parsed = await readMutationJsonBody(request);
+	if (!parsed.ok) return parsed.response;
+	const body = parsed.body;
 
 	try {
 		const label = String(body.label ?? "").trim();
-		if (!label) return json({ error: "Category name is required." }, 400);
+		if (!label)
+			return jsonResponse({ error: "Category name is required." }, 400);
 
 		const slug = slugifyPhotoName(
 			typeof body.slug === "string" && body.slug.trim() ? body.slug : label,
 		);
 		if (!slug || !isPhotoCategorySlug(slug)) {
-			return json(
+			return jsonResponse(
 				{ error: "Could not build a valid category slug from that name." },
 				400,
 			);
@@ -91,7 +73,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		assertExpectedRev(revision.rev, expectedRev);
 
 		if (categories.some((entry) => entry.slug === slug)) {
-			return json({ error: "That category already exists." }, 409);
+			return jsonResponse({ error: "That category already exists." }, 409);
 		}
 
 		const category = {
@@ -102,16 +84,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		const next = await savePhotoCategories(
 			categories,
 			revision,
-			cacheOpts(request, locals),
+			mutationCacheOpts(request, locals),
 		);
-		return json({ category, rev: next.rev }, 201);
+		return jsonResponse({ category, rev: next.rev }, 201);
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not save category.",
 			"api/photo-categories POST",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };
 
@@ -120,19 +102,16 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
 	}
 
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
+	const parsed = await readMutationJsonBody(request);
+	if (!parsed.ok) return parsed.response;
+	const body = parsed.body;
 
 	try {
 		if (body.action !== "reorder") {
-			return json({ error: "Unsupported action." }, 400);
+			return jsonResponse({ error: "Unsupported action." }, 400);
 		}
 
 		const expectedRev = expectedRevFromRequest(request, body);
@@ -151,15 +130,15 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		const saved = await savePhotoCategories(
 			next,
 			revision,
-			cacheOpts(request, locals),
+			mutationCacheOpts(request, locals),
 		);
-		return json({ ok: true, rev: saved.rev });
+		return jsonResponse({ ok: true, rev: saved.rev });
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not reorder categories.",
 			"api/photo-categories PATCH",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };

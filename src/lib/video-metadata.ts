@@ -19,6 +19,7 @@ const LEGACY_CATEGORIES: Record<string, ProjectCategory> = {
 const YOUTUBE_ID = /^[\w-]{11}$/;
 const VIMEO_ID = /^\d{5,12}$/;
 const FETCH_TIMEOUT_MS = 8_000;
+const DEFAULT_SORT_ORDER = 100;
 
 export function normalizeProjectCategory(
 	value: string,
@@ -39,6 +40,7 @@ function yearFromRemoteDate(value: unknown, fallback: number): number {
 	try {
 		return assertYear(Number(yearText));
 	} catch {
+		// Out-of-range remote years fall back instead of rejecting enrichment.
 		return fallback;
 	}
 }
@@ -202,80 +204,112 @@ export interface VideoInput {
 	sortOrder?: number;
 }
 
-export async function enrichVideo(
+interface ParsedVideoSource {
+	provider: VideoProvider;
+	id: string;
+	url: string;
+}
+
+function parseVideoSource(url: string): ParsedVideoSource {
+	const { provider, id } = parseVideoUrl(url);
+	return { provider, id, url: canonicalVideoUrl(provider, id) };
+}
+
+function resolveHttpsThumbnail(raw: string): string {
+	if (!raw) return "";
+	try {
+		const thumbUrl = new URL(raw);
+		if (thumbUrl.protocol !== "https:") return "";
+		return upgradeVimeoThumbnail(thumbUrl.toString());
+	} catch {
+		// Remote thumbnails can be malformed; omit rather than fail enrichment.
+		return "";
+	}
+}
+
+function resolveVideoSlug(input: VideoInput, title: string, id: string) {
+	return assertSafeStorageSegment(
+		input.slug?.trim() || slugifyVideo(title, id),
+		"video slug",
+	);
+}
+
+function buildVideo(
 	input: VideoInput,
-	youtubeApiKey?: string,
+	source: ParsedVideoSource,
+	fields: {
+		title: string;
+		year: number;
+		duration: number;
+		thumbnail: string;
+	},
+): StoredVideo {
+	return {
+		slug: resolveVideoSlug(input, fields.title, source.id),
+		url: source.url,
+		id: source.id,
+		title: fields.title,
+		category: input.category,
+		year: fields.year,
+		duration: fields.duration,
+		thumbnail: fields.thumbnail,
+		provider: source.provider,
+		sortOrder: assertSortOrder(input.sortOrder ?? DEFAULT_SORT_ORDER),
+		...(input.description?.trim()
+			? { description: input.description.trim() }
+			: {}),
+		...(input.featured ? { featured: true } : {}),
+	};
+}
+
+async function enrichVimeo(
+	input: VideoInput,
+	source: ParsedVideoSource,
 ): Promise<StoredVideo> {
-	const { provider, id } = parseVideoUrl(input.url);
-	const url = canonicalVideoUrl(provider, id);
+	const remote = (await fetchJson(
+		`https://vimeo.com/api/v2/video/${encodeURIComponent(source.id)}.json`,
+	)) as Array<Record<string, unknown>>;
+	const video = remote?.[0];
+	if (!video) {
+		throw new ClientError("Vimeo video was not found. Is it public?");
+	}
 
-	if (provider === "vimeo") {
-		const remote = (await fetchJson(
-			`https://vimeo.com/api/v2/video/${encodeURIComponent(id)}.json`,
-		)) as Array<Record<string, unknown>>;
-		const video = remote?.[0];
-		if (!video) {
-			throw new ClientError("Vimeo video was not found. Is it public?");
-		}
-
-		const title =
-			input.title?.trim() || String(video.title ?? "").trim() || `Vimeo ${id}`;
-		const year = assertYear(
-			input.year ??
-				yearFromRemoteDate(video.upload_date, new Date().getFullYear()),
-		);
-		const duration = assertPositiveDuration(
-			input.duration ?? Number(video.duration ?? 0),
-		);
-		const thumbnailRaw = String(
+	const title =
+		input.title?.trim() ||
+		String(video.title ?? "").trim() ||
+		`Vimeo ${source.id}`;
+	const year = assertYear(
+		input.year ??
+			yearFromRemoteDate(video.upload_date, new Date().getFullYear()),
+	);
+	const duration = assertPositiveDuration(
+		input.duration ?? Number(video.duration ?? 0),
+	);
+	const thumbnail = resolveHttpsThumbnail(
+		String(
 			video.thumbnail_large ||
 				video.thumbnail_medium ||
 				video.thumbnail_small ||
 				"",
-		);
-		let thumbnail = "";
-		if (thumbnailRaw) {
-			try {
-				const thumbUrl = new URL(thumbnailRaw);
-				if (thumbUrl.protocol === "https:") {
-					thumbnail = upgradeVimeoThumbnail(thumbUrl.toString());
-				}
-			} catch {
-				thumbnail = "";
-			}
-		}
+		),
+	);
 
-		const slug = assertSafeStorageSegment(
-			input.slug?.trim() || slugifyVideo(title, id),
-			"video slug",
-		);
+	return buildVideo(input, source, { title, year, duration, thumbnail });
+}
 
-		return {
-			slug,
-			url,
-			id,
-			title,
-			category: input.category,
-			year,
-			duration,
-			thumbnail,
-			provider: "vimeo",
-			sortOrder: assertSortOrder(input.sortOrder ?? 100),
-			...(input.description?.trim()
-				? { description: input.description.trim() }
-				: {}),
-			...(input.featured ? { featured: true } : {}),
-		};
-	}
-
+async function enrichYouTube(
+	input: VideoInput,
+	source: ParsedVideoSource,
+	youtubeApiKey?: string,
+): Promise<StoredVideo> {
 	const oembed = (await fetchJson(
-		`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+		`https://www.youtube.com/oembed?url=${encodeURIComponent(source.url)}&format=json`,
 	)) as { title?: string };
 
 	let duration = input.duration;
 	if (duration == null && youtubeApiKey) {
 		const data = (await fetchJson(
-			`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${encodeURIComponent(id)}&key=${encodeURIComponent(youtubeApiKey)}`,
+			`https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${encodeURIComponent(source.id)}&key=${encodeURIComponent(youtubeApiKey)}`,
 		)) as {
 			items?: Array<{ contentDetails?: { duration?: string } }>;
 		};
@@ -293,28 +327,24 @@ export async function enrichVideo(
 		throw new ClientError("YouTube videos need a year.");
 	}
 
-	const title = input.title?.trim() || String(oembed.title ?? "").trim() || id;
-	const slug = assertSafeStorageSegment(
-		input.slug?.trim() || slugifyVideo(title, id),
-		"video slug",
-	);
+	const title =
+		input.title?.trim() || String(oembed.title ?? "").trim() || source.id;
 
-	return {
-		slug,
-		url,
-		id,
+	return buildVideo(input, source, {
 		title,
-		category: input.category,
 		year: assertYear(input.year),
 		duration: assertPositiveDuration(duration),
-		thumbnail: `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`,
-		provider: "youtube",
-		sortOrder: assertSortOrder(input.sortOrder ?? 100),
-		...(input.description?.trim()
-			? { description: input.description.trim() }
-			: {}),
-		...(input.featured ? { featured: true } : {}),
-	};
+		thumbnail: `https://i.ytimg.com/vi/${source.id}/maxresdefault.jpg`,
+	});
+}
+
+export async function enrichVideo(
+	input: VideoInput,
+	youtubeApiKey?: string,
+): Promise<StoredVideo> {
+	const source = parseVideoSource(input.url);
+	if (source.provider === "vimeo") return enrichVimeo(input, source);
+	return enrichYouTube(input, source, youtubeApiKey);
 }
 
 export function storedVideoToProject(video: StoredVideo): Project {
