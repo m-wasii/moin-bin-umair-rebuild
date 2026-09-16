@@ -183,9 +183,12 @@ const writable = hasWritableMedia();
 		if (!button) return;
 		const slug = button.dataset.deleteVideo;
 		if (!slug || !confirm("Remove this video from the site?")) return;
-		const response = await fetch(`/api/videos?slug=${encodeURIComponent(slug)}`, {
-			method: "DELETE",
-		});
+		const response = await fetch(
+			`/api/videos?slug=${encodeURIComponent(slug)}`,
+			{
+				method: "DELETE",
+			},
+		);
 		const result = await readResponse(response);
 		if (!response.ok) {
 			alert(result.error ?? "Could not delete.");
@@ -241,7 +244,9 @@ const writable = hasWritableMedia();
 			list
 				.querySelectorAll(".is-drop-target")
 				.forEach((el) => el.classList.remove("is-drop-target"));
-			const slugs = [...list.querySelectorAll<HTMLElement>("[data-reorder-item]")]
+			const slugs = [
+				...list.querySelectorAll<HTMLElement>("[data-reorder-item]"),
+			]
 				.map((el) => el.dataset.slug)
 				.filter((slug): slug is string => Boolean(slug));
 			const response = await fetch("/api/videos", {

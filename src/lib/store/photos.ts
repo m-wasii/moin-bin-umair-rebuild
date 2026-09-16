@@ -19,7 +19,11 @@ import {
 	readLocalBytes,
 	writeLocalBytes,
 } from "./bucket";
-import { readCatalogRecord, resolveCatalogList, writeCatalogRecord } from "./catalog";
+import {
+	readCatalogRecord,
+	resolveCatalogList,
+	writeCatalogRecord,
+} from "./catalog";
 import type { CatalogRevision, StoredMediaBody } from "./types";
 import { PHOTO_CATEGORIES_KEY, PHOTOS_KEY } from "./types";
 

@@ -3,11 +3,7 @@ import {
 	parseByteRange,
 	rangeUnsatisfiableHeaders,
 } from "../../lib/http-range";
-import {
-	getMediaHead,
-	getMediaObject,
-	getMediaRange,
-} from "../../lib/store";
+import { getMediaHead, getMediaObject, getMediaRange } from "../../lib/store";
 
 export const prerender = false;
 

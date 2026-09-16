@@ -118,9 +118,7 @@ export function buildResponsiveImageAttrs(options: {
 		options.widths[options.widths.length - 1] ?? options.width;
 
 	return {
-		src: srcset
-			? cfImageSrc(options.src, fallbackWidth, cf)
-			: options.src,
+		src: srcset ? cfImageSrc(options.src, fallbackWidth, cf) : options.src,
 		...(srcset ? { srcset, sizes: options.sizes } : {}),
 		width: options.width,
 		height: options.height,

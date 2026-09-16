@@ -9,14 +9,9 @@ export { HOST_IMAGE_WIDTHS, isHostImageWidth };
 export type { HostImageWidth };
 
 interface ImagesBinding {
-	input(
-		stream: ReadableStream<Uint8Array> | ArrayBuffer | Uint8Array,
-	): {
+	input(stream: ReadableStream<Uint8Array> | ArrayBuffer | Uint8Array): {
 		transform(options: { width: number; fit?: string }): {
-			output(options: {
-				format: "image/webp";
-				quality?: number;
-			}): Promise<{
+			output(options: { format: "image/webp"; quality?: number }): Promise<{
 				response(init?: { headers?: HeadersInit }): Response;
 			}>;
 		};
@@ -114,9 +109,7 @@ export async function resizePhotoWebp(
 	}
 }
 
-export function parseHostImageWidth(
-	raw: string | null,
-): HostImageWidth | null {
+export function parseHostImageWidth(raw: string | null): HostImageWidth | null {
 	if (!raw) return null;
 	const width = Number.parseInt(raw, 10);
 	if (!Number.isFinite(width) || !isHostImageWidth(width)) return null;

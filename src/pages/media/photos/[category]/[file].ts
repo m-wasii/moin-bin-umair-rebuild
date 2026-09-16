@@ -1,7 +1,10 @@
 import type { APIRoute } from "astro";
 import { isPhotoCategory } from "../../../../data/photos";
 import { assertSafeStorageSegment } from "../../../../lib/catalog-integrity";
-import { parseHostImageWidth, resizePhotoWebp } from "../../../../lib/image-resize";
+import {
+	parseHostImageWidth,
+	resizePhotoWebp,
+} from "../../../../lib/image-resize";
 import { getPhotoObject } from "../../../../lib/store";
 
 export const prerender = false;

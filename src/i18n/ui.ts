@@ -57,12 +57,10 @@ const ui = {
 			"International films and personal narrative work.",
 		"section.indie.empty": "Indie / Art films will appear here.",
 		"section.local.title": "Local Films",
-		"section.local.description":
-			"Karachi and local narrative films.",
+		"section.local.description": "Karachi and local narrative films.",
 		"section.local.empty": "Local films will appear here.",
 		"section.bts.title": "BTS & trailers",
-		"section.bts.description":
-			"Behind-the-scenes cuts and trailers.",
+		"section.bts.description": "Behind-the-scenes cuts and trailers.",
 		"section.bts.empty": "BTS and trailers will appear here.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Campaigns and standalone short-form films.",
@@ -152,12 +150,12 @@ const ui = {
 		"nav.shorts": "Shorts",
 		"nav.contact": "Kontakt",
 		"hero.tagline": "Filmemacher · Visueller Geschichtenerzähler",
-		"hero.orbit": "Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
+		"hero.orbit":
+			"Bild · Bewegung · Geschichte · Bild · Bewegung · Geschichte ·",
 		"hero.explore": "Arbeit entdecken",
 		"about.meta": "Profil",
 		"about.title": "Über mich",
-		"about.intro":
-			"Filmemacher und Fotograf zwischen Still und Bewegung.",
+		"about.intro": "Filmemacher und Fotograf zwischen Still und Bewegung.",
 		"about.stats.value": "200+",
 		"about.stats.label": "Projekte",
 		"about.stats.body":
@@ -180,12 +178,10 @@ const ui = {
 			"Internationale Filme und persönliche narrative Arbeiten.",
 		"section.indie.empty": "Indie-/Kunstfilme erscheinen hier.",
 		"section.local.title": "Lokale Filme",
-		"section.local.description":
-			"Karachi und lokale narrative Filme.",
+		"section.local.description": "Karachi und lokale narrative Filme.",
 		"section.local.empty": "Lokale Filme erscheinen hier.",
 		"section.bts.title": "BTS & Trailer",
-		"section.bts.description":
-			"Behind-the-Scenes und Trailer.",
+		"section.bts.description": "Behind-the-Scenes und Trailer.",
 		"section.bts.empty": "BTS und Trailer erscheinen hier.",
 		"section.shorts.title": "Shorts",
 		"section.shorts.description": "Kampagnen und eigenständige Kurzfilme.",
@@ -232,8 +228,7 @@ const ui = {
 		"photo.zoomOut": "Einpassen",
 		"contact.meta": "Anfragen",
 		"contact.title": "Lass uns etwas machen, das man sehen will.",
-		"contact.titleHtml":
-			"Lass uns etwas machen,<br /> das man sehen will.",
+		"contact.titleHtml": "Lass uns etwas machen,<br /> das man sehen will.",
 		"contact.description":
 			"Indiefilme, narrative Projekte und kreative Zusammenarbeiten.",
 		"contact.email": "E-Mail",

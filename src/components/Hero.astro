@@ -22,7 +22,9 @@ const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 
 <section class="hero" id="home" aria-labelledby="hero-title" data-nav-section>
 	<div class="hero__media" aria-hidden="true" data-hero-media>
-		{/* Poster is the LCP candidate; video loads after idle so it does not compete. */}
+		{
+			/* Poster is the LCP candidate; video loads after idle so it does not compete. */
+		}
 		<ResponsiveImage
 			class="hero__media-poster"
 			src={heroPoster}
@@ -57,8 +59,7 @@ const cfImages = cfImageResizingAvailable(Astro.url.hostname);
 			<defs>
 				<path
 					id="hero-orbit-path"
-					d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"
-				></path>
+					d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"></path>
 			</defs>
 			<text>
 				<textPath href="#hero-orbit-path">{t("hero.orbit")}</textPath>

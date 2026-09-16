@@ -42,7 +42,9 @@ const t = useTranslations(lang);
 		</article>
 
 		<figure class="about__cell about__cell--portrait" data-reveal>
-			{/* Hashed /_astro asset — avoid runtime `/_image` (404 on Workers SSR). */}
+			{
+				/* Hashed /_astro asset — avoid runtime `/_image` (404 on Workers SSR). */
+			}
 			<img
 				class="about__portrait-img"
 				src={portrait.src}
