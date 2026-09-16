@@ -36,14 +36,23 @@ assertEq(
 	'string "false" (not Boolean())',
 );
 assertEq(parseOptionalBoolean("FALSE"), false, "case-insensitive false");
-assertEq(parseOptionalBoolean("on"), true, 'string "on"');
-assertEq(parseOptionalBoolean("0"), false, 'string "0"');
-assertEq(parseOptionalBoolean(1), true, "number 1");
-assertEq(parseOptionalBoolean(0), false, "number 0");
+assertEq(parseOptionalBoolean(" True "), true, "trimmed true");
 assertEq(parseOptionalBoolean(undefined), undefined, "undefined → absent");
 assertEq(parseOptionalBoolean(null), undefined, "null → absent");
 assertEq(parseOptionalBoolean(""), undefined, "empty string → absent");
 assertEq(parseOptionalBoolean("maybe"), undefined, "unknown string → absent");
+assertEq(
+	parseOptionalBoolean("on"),
+	undefined,
+	'"on" not accepted (dashboard sends boolean)',
+);
+assertEq(parseOptionalBoolean("off"), undefined, '"off" not accepted');
+assertEq(parseOptionalBoolean("no"), undefined, '"no" not accepted');
+assertEq(parseOptionalBoolean("0"), undefined, '"0" not accepted');
+assertEq(parseOptionalBoolean("1"), undefined, '"1" not accepted');
+assertEq(parseOptionalBoolean(0), undefined, "number 0 not accepted");
+assertEq(parseOptionalBoolean(1), undefined, "number 1 not accepted");
+assertEq(parseOptionalBoolean("yes"), undefined, '"yes" not accepted');
 
 if (Boolean("false") !== true) {
 	fail('sanity: Boolean("false") should be true in JS');
@@ -80,6 +89,34 @@ try {
 } catch (error) {
 	if (error instanceof ClientError) ok("array body rejected");
 	else fail(`wrong error for array body: ${error}`);
+}
+
+const nullRequest = new Request("https://example.test", {
+	method: "POST",
+	headers: { "content-type": "application/json" },
+	body: "null",
+});
+
+try {
+	await readJsonObject(nullRequest);
+	fail("null body accepted");
+} catch (error) {
+	if (error instanceof ClientError) ok("null body rejected");
+	else fail(`wrong error for null body: ${error}`);
+}
+
+const primitiveRequest = new Request("https://example.test", {
+	method: "POST",
+	headers: { "content-type": "application/json" },
+	body: '"hello"',
+});
+
+try {
+	await readJsonObject(primitiveRequest);
+	fail("primitive body accepted");
+} catch (error) {
+	if (error instanceof ClientError) ok("primitive body rejected");
+	else fail(`wrong error for primitive body: ${error}`);
 }
 
 const bogusRequest = new Request("https://example.test", {

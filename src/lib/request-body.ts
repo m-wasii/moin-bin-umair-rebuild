@@ -2,7 +2,7 @@ import { ClientError } from "./api-errors.ts";
 
 /**
  * Parse a JSON object body. Rejects arrays, primitives, and malformed JSON.
- * Callers map ClientError / SyntaxError into HTTP 400 as needed.
+ * Callers map ClientError into HTTP 400 as needed.
  */
 export async function readJsonObject(
 	request: Request,
@@ -20,31 +20,18 @@ export async function readJsonObject(
 }
 
 /**
- * Optional boolean from JSON / form-like values.
- * Treats "false" / "0" / "no" / "off" as false (unlike Boolean("false")).
- * Returns undefined when the field is absent or empty.
+ * Optional boolean for JSON mutation bodies.
+ * Accepts real booleans and the strings "true" / "false" only
+ * (so `"false"` is never treated as true the way Boolean("false") is).
+ * Returns undefined when the field is absent, empty, or not a recognized value.
  */
 export function parseOptionalBoolean(value: unknown): boolean | undefined {
 	if (value == null || value === "") return undefined;
 	if (typeof value === "boolean") return value;
-	if (typeof value === "number") {
-		if (value === 1) return true;
-		if (value === 0) return false;
-		return undefined;
-	}
 	if (typeof value === "string") {
 		const normalized = value.trim().toLowerCase();
-		if (normalized === "true" || normalized === "1" || normalized === "on") {
-			return true;
-		}
-		if (
-			normalized === "false" ||
-			normalized === "0" ||
-			normalized === "off" ||
-			normalized === "no"
-		) {
-			return false;
-		}
+		if (normalized === "true") return true;
+		if (normalized === "false") return false;
 	}
 	return undefined;
 }

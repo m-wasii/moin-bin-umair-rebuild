@@ -1,5 +1,6 @@
 {
 	"useTabs": true,
+	"endOfLine": "auto",
 	"plugins": ["prettier-plugin-astro"],
 	"overrides": [
 		{

@@ -1,0 +1,8 @@
+# Normalize text to LF in the repo and on checkout so Prettier and CI
+# agree on Windows and Linux (avoids core.autocrlf → CRLF working trees).
+* text=auto eol=lf
+
+# Windows wrapper scripts may still need CRLF when executed by cmd.exe.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
