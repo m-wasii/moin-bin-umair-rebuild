@@ -8,6 +8,11 @@ import {
 import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import { publicApiError } from "../../lib/api-errors";
 import {
+	jsonResponse,
+	mutationCacheOpts,
+	readMutationJsonBody,
+} from "../../lib/api-http";
+import {
 	assertCompleteSlugOrder,
 	assertExpectedRev,
 	assertKebabSlug,
@@ -15,10 +20,6 @@ import {
 	expectedRevFromRequest,
 } from "../../lib/catalog-integrity";
 import { mediaVersionFromBytes } from "../../lib/media-url";
-import {
-	waitUntilFromLocals,
-	type SiteCacheRefreshOptions,
-} from "../../lib/site-cache";
 import {
 	deletePhotoBytes,
 	hasWritableMedia,
@@ -31,26 +32,9 @@ import { isValidWebp } from "../../lib/webp";
 
 export const prerender = false;
 
-function cacheOpts(
-	request: Request,
-	locals: App.Locals,
-): SiteCacheRefreshOptions {
-	return {
-		requestUrl: new URL(request.url),
-		waitUntil: waitUntilFromLocals(locals),
-	};
-}
-
-function json(data: unknown, status = 200) {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "content-type": "application/json; charset=utf-8" },
-	});
-}
-
 export const GET: APIRoute = async () => {
 	const { photos, revision } = await readPhotosCatalog();
-	return json({
+	return jsonResponse({
 		photos,
 		rev: revision.rev,
 		writable: hasWritableMedia(),
@@ -62,7 +46,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json(
+		return jsonResponse(
 			{
 				error:
 					"R2 is not bound yet. Add a MEDIA bucket binding, then upload again.",
@@ -84,18 +68,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				: expectedRevFromRequest(request);
 
 		if (!(file instanceof File) || file.size === 0) {
-			return json({ error: "Choose an image to upload." }, 400);
+			return jsonResponse({ error: "Choose an image to upload." }, 400);
 		}
 		if (!isPhotoCategory(categoryRaw)) {
-			return json({ error: "Pick a photo category." }, 400);
+			return jsonResponse({ error: "Pick a photo category." }, 400);
 		}
 		const category = assertKebabSlug(categoryRaw, "photo category");
 		const knownCategories = await listPhotoCategories();
 		if (!knownCategories.some((entry) => entry.slug === category)) {
-			return json({ error: "Pick a photo category." }, 400);
+			return jsonResponse({ error: "Pick a photo category." }, 400);
 		}
 		if (file.type !== "image/webp") {
-			return json(
+			return jsonResponse(
 				{
 					error:
 						"Upload WebP only. The dashboard converts JPEG/PNG automatically — refresh and try again.",
@@ -104,12 +88,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			);
 		}
 		if (file.size > 4_500_000) {
-			return json({ error: "Converted image is too large (max 4.5 MB)." }, 413);
+			return jsonResponse(
+				{ error: "Converted image is too large (max 4.5 MB)." },
+				413,
+			);
 		}
 
 		const bytes = new Uint8Array(await file.arrayBuffer());
 		if (!isValidWebp(bytes)) {
-			return json({ error: "File is not a valid WebP image." }, 415);
+			return jsonResponse({ error: "File is not a valid WebP image." }, 415);
 		}
 
 		const { photos, revision } = await readPhotosCatalog();
@@ -148,9 +135,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			const next = await savePhotos(
 				photos,
 				revision,
-				cacheOpts(request, locals),
+				mutationCacheOpts(request, locals),
 			);
-			return json({ photo, rev: next.rev }, 201);
+			return jsonResponse({ photo, rev: next.rev }, 201);
 		} catch (error) {
 			// Roll back orphaned bytes if the catalog CAS/write fails.
 			await deletePhotoBytes(category, slug);
@@ -162,7 +149,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			"Could not upload photo.",
 			"api/photos POST",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };
 
@@ -171,19 +158,16 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
 	}
 
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
+	const parsed = await readMutationJsonBody(request);
+	if (!parsed.ok) return parsed.response;
+	const body = parsed.body;
 
 	try {
 		if (body.action !== "reorder") {
-			return json({ error: "Unsupported action." }, 400);
+			return jsonResponse({ error: "Unsupported action." }, 400);
 		}
 
 		const category = assertKebabSlug(
@@ -191,7 +175,7 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 			"photo category",
 		);
 		if (!isPhotoCategory(category)) {
-			return json({ error: "Missing category." }, 400);
+			return jsonResponse({ error: "Missing category." }, 400);
 		}
 
 		const expectedRev = expectedRevFromRequest(request, body);
@@ -222,15 +206,19 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		}
 		if (!inserted) next.push(...reordered);
 
-		const saved = await savePhotos(next, revision, cacheOpts(request, locals));
-		return json({ ok: true, rev: saved.rev });
+		const saved = await savePhotos(
+			next,
+			revision,
+			mutationCacheOpts(request, locals),
+		);
+		return jsonResponse({ ok: true, rev: saved.rev });
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not reorder photos.",
 			"api/photos PATCH",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };
 
@@ -239,7 +227,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
 	}
 
 	try {
@@ -247,7 +235,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 		const slugParam = url.searchParams.get("slug");
 		const categoryParam = url.searchParams.get("category");
 		if (!slugParam || !categoryParam || !isPhotoCategory(categoryParam)) {
-			return json({ error: "Missing slug or category." }, 400);
+			return jsonResponse({ error: "Missing slug or category." }, 400);
 		}
 		const slug = assertSafeStorageSegment(slugParam, "photo slug");
 		const category = assertKebabSlug(categoryParam, "photo category");
@@ -260,23 +248,27 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 			(photo) => !(photo.slug === slug && photo.category === category),
 		);
 		if (next.length === photos.length) {
-			return json({ error: "Photo not found." }, 404);
+			return jsonResponse({ error: "Photo not found." }, 404);
 		}
 
 		// Catalog first so a failed delete cannot leave a dangling catalog entry.
-		const saved = await savePhotos(next, revision, cacheOpts(request, locals));
+		const saved = await savePhotos(
+			next,
+			revision,
+			mutationCacheOpts(request, locals),
+		);
 		try {
 			await deletePhotoBytes(category, slug);
 		} catch (error) {
 			console.error("[api/photos DELETE] media cleanup failed", error);
 		}
-		return json({ ok: true, rev: saved.rev });
+		return jsonResponse({ ok: true, rev: saved.rev });
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not delete photo.",
 			"api/photos DELETE",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };

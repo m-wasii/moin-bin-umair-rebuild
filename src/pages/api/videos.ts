@@ -2,6 +2,11 @@ import type { APIRoute } from "astro";
 import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import { publicApiError } from "../../lib/api-errors";
 import {
+	jsonResponse,
+	mutationCacheOpts,
+	readMutationJsonBody,
+} from "../../lib/api-http";
+import {
 	assertCompleteSlugOrder,
 	assertExpectedRev,
 	assertSafeStorageSegment,
@@ -9,12 +14,8 @@ import {
 	optionalPositiveDuration,
 	optionalYear,
 } from "../../lib/catalog-integrity";
-import { isProjectCategory } from "../../lib/video-metadata";
-import { enrichVideo } from "../../lib/video-metadata";
-import {
-	waitUntilFromLocals,
-	type SiteCacheRefreshOptions,
-} from "../../lib/site-cache";
+import { optionalString, parseOptionalBoolean } from "../../lib/request-body";
+import { isProjectCategory, enrichVideo } from "../../lib/video-metadata";
 import {
 	hasWritableMedia,
 	readVideosCatalog,
@@ -24,23 +25,6 @@ import {
 } from "../../lib/store";
 
 export const prerender = false;
-
-function cacheOpts(
-	request: Request,
-	locals: App.Locals,
-): SiteCacheRefreshOptions {
-	return {
-		requestUrl: new URL(request.url),
-		waitUntil: waitUntilFromLocals(locals),
-	};
-}
-
-function json(data: unknown, status = 200) {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "content-type": "application/json; charset=utf-8" },
-	});
-}
 
 function rewriteCompleteOrder(
 	videos: StoredVideo[],
@@ -55,7 +39,7 @@ function rewriteCompleteOrder(
 
 export const GET: APIRoute = async () => {
 	const { videos, revision } = await readVideosCatalog();
-	return json({
+	return jsonResponse({
 		videos,
 		rev: revision.rev,
 		writable: hasWritableMedia(),
@@ -67,7 +51,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json(
+		return jsonResponse(
 			{
 				error:
 					"R2 is not bound yet. Add a MEDIA bucket binding, then save again.",
@@ -76,18 +60,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		);
 	}
 
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
+	const parsed = await readMutationJsonBody(request);
+	if (!parsed.ok) return parsed.response;
+	const body = parsed.body;
 
 	const url = String(body.url ?? "").trim();
 	const category = String(body.category ?? "");
-	if (!url) return json({ error: "Video URL is required." }, 400);
+	if (!url) return jsonResponse({ error: "Video URL is required." }, 400);
 	if (!isProjectCategory(category)) {
-		return json({ error: "Category must be indie, local, or bts." }, 400);
+		return jsonResponse(
+			{ error: "Category must be indie, local, or bts." },
+			400,
+		);
 	}
 
 	try {
@@ -101,17 +85,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		);
 		const year = optionalYear(body.year);
 		const duration = optionalPositiveDuration(body.duration);
+		const featured = parseOptionalBoolean(body.featured) ?? false;
 		const video = await enrichVideo(
 			{
 				url,
 				category,
-				title: typeof body.title === "string" ? body.title : undefined,
-				description:
-					typeof body.description === "string" ? body.description : undefined,
+				title: optionalString(body.title),
+				description: optionalString(body.description),
 				year,
 				duration,
-				featured: Boolean(body.featured),
-				slug: typeof body.slug === "string" ? body.slug : undefined,
+				featured,
+				slug: optionalString(body.slug),
 				sortOrder: maxOrder + 10,
 			},
 			youtubeApiKey(),
@@ -125,7 +109,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 				(item) => item.id === video.id && item.provider === video.provider,
 			)
 		) {
-			return json({ error: "That video is already in the catalog." }, 409);
+			return jsonResponse(
+				{ error: "That video is already in the catalog." },
+				409,
+			);
 		}
 
 		if (videos.some((item) => item.slug === video.slug)) {
@@ -136,15 +123,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		}
 
 		videos.push(video);
-		const next = await saveVideos(videos, revision, cacheOpts(request, locals));
-		return json({ video, rev: next.rev }, 201);
+		const next = await saveVideos(
+			videos,
+			revision,
+			mutationCacheOpts(request, locals),
+		);
+		return jsonResponse({ video, rev: next.rev }, 201);
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not save video.",
 			"api/videos POST",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };
 
@@ -153,15 +144,12 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
 	}
 
-	let body: Record<string, unknown>;
-	try {
-		body = (await request.json()) as Record<string, unknown>;
-	} catch {
-		return json({ error: "Invalid JSON" }, 400);
-	}
+	const parsed = await readMutationJsonBody(request);
+	if (!parsed.ok) return parsed.response;
+	const body = parsed.body;
 
 	try {
 		const expectedRev = expectedRevFromRequest(request, body);
@@ -179,21 +167,21 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 			const next = await saveVideos(
 				rewriteCompleteOrder(videos, slugs),
 				revision,
-				cacheOpts(request, locals),
+				mutationCacheOpts(request, locals),
 			);
-			return json({ ok: true, rev: next.rev });
+			return jsonResponse({ ok: true, rev: next.rev });
 		}
 
 		const slug = assertSafeStorageSegment(String(body.slug ?? ""), "slug");
 		const index = videos.findIndex((item) => item.slug === slug);
-		if (index === -1) return json({ error: "Video not found." }, 404);
+		if (index === -1) return jsonResponse({ error: "Video not found." }, 404);
 
 		const current = videos[index];
 		const url = String(body.url ?? current.url).trim();
 		const category = String(body.category ?? current.category);
 
 		if (!isProjectCategory(category)) {
-			return json({ error: "Invalid category." }, 400);
+			return jsonResponse({ error: "Invalid category." }, 400);
 		}
 
 		const year =
@@ -204,21 +192,19 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 			body.duration != null && body.duration !== ""
 				? optionalPositiveDuration(body.duration)
 				: current.duration;
+		const featured =
+			parseOptionalBoolean(body.featured) ?? current.featured ?? false;
 
 		const video = await enrichVideo(
 			{
 				url,
 				category,
 				slug,
-				title: typeof body.title === "string" ? body.title : current.title,
-				description:
-					typeof body.description === "string"
-						? body.description
-						: current.description,
+				title: optionalString(body.title) ?? current.title,
+				description: optionalString(body.description) ?? current.description,
 				year,
 				duration,
-				featured:
-					body.featured == null ? current.featured : Boolean(body.featured),
+				featured,
 				sortOrder: current.sortOrder,
 			},
 			youtubeApiKey(),
@@ -226,15 +212,19 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		assertSafeStorageSegment(video.slug, "video slug");
 		assertSafeStorageSegment(video.id, "video id");
 		videos[index] = video;
-		const next = await saveVideos(videos, revision, cacheOpts(request, locals));
-		return json({ video, rev: next.rev });
+		const next = await saveVideos(
+			videos,
+			revision,
+			mutationCacheOpts(request, locals),
+		);
+		return jsonResponse({ video, rev: next.rev });
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not update video.",
 			"api/videos PATCH",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };
 
@@ -243,13 +233,13 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 	if (denied) return denied;
 
 	if (!hasWritableMedia()) {
-		return json({ error: "R2 is not bound yet." }, 503);
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
 	}
 
 	try {
 		const url = new URL(request.url);
 		const slugParam = url.searchParams.get("slug");
-		if (!slugParam) return json({ error: "Missing slug." }, 400);
+		if (!slugParam) return jsonResponse({ error: "Missing slug." }, 400);
 		const slug = assertSafeStorageSegment(slugParam, "slug");
 
 		const expectedRev = expectedRevFromRequest(request);
@@ -258,20 +248,20 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 
 		const nextVideos = videos.filter((item) => item.slug !== slug);
 		if (nextVideos.length === videos.length) {
-			return json({ error: "Video not found." }, 404);
+			return jsonResponse({ error: "Video not found." }, 404);
 		}
 		const next = await saveVideos(
 			nextVideos,
 			revision,
-			cacheOpts(request, locals),
+			mutationCacheOpts(request, locals),
 		);
-		return json({ ok: true, rev: next.rev });
+		return jsonResponse({ ok: true, rev: next.rev });
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
 			"Could not delete video.",
 			"api/videos DELETE",
 		);
-		return json({ error: message }, status);
+		return jsonResponse({ error: message }, status);
 	}
 };

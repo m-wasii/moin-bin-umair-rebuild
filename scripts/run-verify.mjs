@@ -35,6 +35,10 @@ const checks = [
 		args: [...stripTypes, "scripts/verify-catalog-mutations.mjs"],
 	},
 	{
+		name: "request-body",
+		args: [...stripTypes, "scripts/verify-request-body.mjs"],
+	},
+	{
 		name: "target-guard",
 		args: ["scripts/verify-target-guard.mjs"],
 	},
