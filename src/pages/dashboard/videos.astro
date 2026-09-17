@@ -1,0 +1,656 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import PageHeader from "../../components/dashboard/PageHeader.astro";
+import EmptyState from "../../components/dashboard/EmptyState.astro";
+import { formatDuration } from "../../data/projects";
+import {
+	EMPTY_REVISION,
+	type CatalogRevisionMap,
+	queryVideos,
+	videosReorderAllowed,
+	type VideosCategoryFilter,
+	type VideosFeaturedFilter,
+	type VideosProviderFilter,
+	type VideosQuery,
+	type VideosSort,
+} from "../../lib/dashboard";
+import { hasWritableMedia, readVideosCatalog } from "../../lib/store";
+import type { StoredVideo } from "../../lib/store/types";
+
+export const prerender = false;
+
+const CATEGORY_LABELS: Record<"indie" | "local" | "bts", string> = {
+	indie: "Indie / Art",
+	local: "Local",
+	bts: "BTS",
+};
+
+function categoryLabel(category: StoredVideo["category"]): string {
+	if (category === "indie" || category === "local" || category === "bts") {
+		return CATEGORY_LABELS[category];
+	}
+	return category;
+}
+
+function parseCategory(raw: string | null): VideosCategoryFilter {
+	if (raw === "indie" || raw === "local" || raw === "bts") return raw;
+	return "all";
+}
+
+function parseFeatured(raw: string | null): VideosFeaturedFilter {
+	if (raw === "featured" || raw === "not-featured") return raw;
+	return "all";
+}
+
+function parseProvider(raw: string | null): VideosProviderFilter {
+	if (raw === "youtube" || raw === "vimeo") return raw;
+	return "all";
+}
+
+function parseSort(raw: string | null): VideosSort {
+	if (raw === "title" || raw === "category" || raw === "year") return raw;
+	return "order";
+}
+
+const { videos: catalogVideos, revision } = await readVideosCatalog();
+const writable = hasWritableMedia();
+
+const initialQuery: VideosQuery = {
+	q: Astro.url.searchParams.get("q") ?? "",
+	category: parseCategory(Astro.url.searchParams.get("category")),
+	featured: parseFeatured(Astro.url.searchParams.get("featured")),
+	provider: parseProvider(Astro.url.searchParams.get("provider")),
+	sort: parseSort(Astro.url.searchParams.get("sort")),
+};
+
+const sortedCatalog = queryVideos(catalogVideos, { sort: "order" });
+const visibleVideos = queryVideos(catalogVideos, initialQuery);
+const reorderAllowed = videosReorderAllowed(initialQuery);
+const totalCount = catalogVideos.length;
+const resultCount = visibleVideos.length;
+
+const hasSearch = Boolean((initialQuery.q ?? "").trim());
+const hasFilters =
+	(initialQuery.category ?? "all") !== "all" ||
+	(initialQuery.featured ?? "all") !== "all" ||
+	(initialQuery.provider ?? "all") !== "all";
+
+const revisions: CatalogRevisionMap = {
+	videos: revision,
+	photos: { ...EMPTY_REVISION },
+	photoCategories: { ...EMPTY_REVISION },
+	shorts: { ...EMPTY_REVISION },
+	hero: { ...EMPTY_REVISION },
+};
+
+const bootstrap = {
+	videos: sortedCatalog,
+	writable,
+};
+
+function chipLabel(
+	key: "category" | "featured" | "provider",
+	value: string,
+): string {
+	if (key === "category") {
+		if (value === "indie") return "Category: Indie / Art";
+		if (value === "local") return "Category: Local";
+		if (value === "bts") return "Category: BTS";
+	}
+	if (key === "featured") {
+		if (value === "featured") return "Featured";
+		if (value === "not-featured") return "Not featured";
+	}
+	if (key === "provider") {
+		if (value === "youtube") return "YouTube";
+		if (value === "vimeo") return "Vimeo";
+	}
+	return value;
+}
+
+const activeChips: Array<{ key: "category" | "featured" | "provider"; value: string }> =
+	[];
+if ((initialQuery.category ?? "all") !== "all") {
+	activeChips.push({ key: "category", value: initialQuery.category! });
+}
+if ((initialQuery.featured ?? "all") !== "all") {
+	activeChips.push({ key: "featured", value: initialQuery.featured! });
+}
+if ((initialQuery.provider ?? "all") !== "all") {
+	activeChips.push({ key: "provider", value: initialQuery.provider! });
+}
+---
+
+<DashboardLayout
+	title="Videos"
+	section="videos"
+	revisions={revisions}
+	statusLabel={writable ? "Storage ready" : "Storage unavailable"}
+	statusTone={writable ? "neutral" : "danger"}
+>
+	<div class="dash-videos" data-videos-workspace>
+		<PageHeader
+			eyebrow="Films"
+			title="Videos"
+			description={`${totalCount} video${totalCount === 1 ? "" : "s"} in the catalog. Search, filter, and edit without leaving this page.`}
+		>
+			<div slot="actions">
+				<button
+					type="button"
+					class="dash-btn dash-btn--primary"
+					data-videos-add
+					disabled={!writable}
+				>
+					Add video
+				</button>
+			</div>
+		</PageHeader>
+
+		{
+			!writable && (
+				<p class="dash-banner" role="status">
+					R2 is not bound on this Worker yet. You can browse the catalog, but
+					saves need a MEDIA bucket.
+				</p>
+			)
+		}
+
+		<section class="dash-videos-toolbar" aria-label="Videos filters">
+			<div class="dash-videos-toolbar__row">
+				<div class="dash-videos-toolbar__search">
+					<label class="visually-hidden" for="dash-videos-search"
+						>Search videos</label
+					>
+					<input
+						id="dash-videos-search"
+						type="search"
+						name="q"
+						placeholder="Search title, slug, URL…"
+						value={initialQuery.q ?? ""}
+						data-videos-search
+						autocomplete="off"
+					/>
+				</div>
+				<div class="dash-videos-toolbar__sort">
+					<label for="dash-videos-sort">Sort</label>
+					<select id="dash-videos-sort" data-videos-sort>
+						<option value="order" selected={initialQuery.sort === "order"}
+							>Catalog order</option
+						>
+						<option value="title" selected={initialQuery.sort === "title"}
+							>Title</option
+						>
+						<option
+							value="category"
+							selected={initialQuery.sort === "category"}>Category</option
+						>
+						<option value="year" selected={initialQuery.sort === "year"}
+							>Year</option
+						>
+					</select>
+				</div>
+			</div>
+
+			<div class="dash-videos-toolbar__row">
+				<div
+					class="dash-videos-tabs"
+					role="tablist"
+					aria-label="Category"
+					data-videos-category-tabs
+				>
+					{
+						(
+							[
+								["all", "All"],
+								["indie", "Indie"],
+								["local", "Local"],
+								["bts", "BTS"],
+							] as const
+						).map(([value, label]) => (
+							<button
+								type="button"
+								class="dash-videos-tabs__tab"
+								role="tab"
+								data-videos-category={value}
+								aria-selected={
+									(initialQuery.category ?? "all") === value
+										? "true"
+										: "false"
+								}
+								data-active={
+									(initialQuery.category ?? "all") === value
+										? "true"
+										: "false"
+								}
+							>
+								{label}
+							</button>
+						))
+					}
+				</div>
+
+				<div class="dash-videos-toolbar__filters">
+					<label class="visually-hidden" for="dash-videos-featured"
+						>Featured</label
+					>
+					<select
+						id="dash-videos-featured"
+						class="dash-videos-select"
+						data-videos-featured
+					>
+						<option
+							value="all"
+							selected={(initialQuery.featured ?? "all") === "all"}
+							>All featured</option
+						>
+						<option
+							value="featured"
+							selected={initialQuery.featured === "featured"}>Featured</option
+						>
+						<option
+							value="not-featured"
+							selected={initialQuery.featured === "not-featured"}
+							>Not featured</option
+						>
+					</select>
+
+					<label class="visually-hidden" for="dash-videos-provider"
+						>Provider</label
+					>
+					<select
+						id="dash-videos-provider"
+						class="dash-videos-select"
+						data-videos-provider
+					>
+						<option
+							value="all"
+							selected={(initialQuery.provider ?? "all") === "all"}
+							>All providers</option
+						>
+						<option
+							value="youtube"
+							selected={initialQuery.provider === "youtube"}>YouTube</option
+						>
+						<option
+							value="vimeo"
+							selected={initialQuery.provider === "vimeo"}>Vimeo</option
+						>
+					</select>
+				</div>
+
+				<p class="dash-videos-toolbar__count" data-videos-count>
+					{
+						totalCount === 0
+							? "No videos"
+							: `Showing ${resultCount} of ${totalCount}`
+					}
+				</p>
+			</div>
+
+			<div
+				class="dash-videos-chips"
+				data-videos-chips
+				hidden={activeChips.length === 0}
+			>
+				{
+					activeChips.map((chip) => (
+						<span class="dash-videos-chip" data-chip-key={chip.key}>
+							{chipLabel(chip.key, chip.value)}
+							<button
+								type="button"
+								class="dash-videos-chip__remove"
+								data-videos-chip-remove={chip.key}
+								aria-label={`Remove ${chipLabel(chip.key, chip.value)} filter`}
+							>
+								×
+							</button>
+						</span>
+					))
+				}
+				{
+					activeChips.length > 0 && (
+						<button
+							type="button"
+							class="dash-videos-chips__clear"
+							data-videos-clear-filters
+						>
+							Clear filters
+						</button>
+					)
+				}
+			</div>
+
+			<p
+				class="dash-videos-helper dash-videos-helper--warning"
+				data-videos-reorder-hint
+				hidden={reorderAllowed}
+			>
+				Reorder is available when sort is Catalog order and no search or filters
+				are active.
+			</p>
+		</section>
+
+		<div
+			class="dash-videos-live"
+			data-videos-live
+			aria-live="polite"
+			aria-atomic="true"
+		>
+		</div>
+
+		<div data-videos-content>
+			{
+				totalCount === 0 ? (
+					<EmptyState
+						title="No videos yet"
+						detail="Add a YouTube or Vimeo link to start the catalog."
+					>
+						{writable && (
+							<button type="button" class="dash-btn dash-btn--primary" data-videos-add>
+								Add video
+							</button>
+						)}
+					</EmptyState>
+				) : resultCount === 0 && hasSearch ? (
+					<EmptyState
+						title="No videos match your search"
+						detail="Try a different title, slug, or URL fragment."
+					>
+						<button
+							type="button"
+							class="dash-btn dash-btn--secondary"
+							data-videos-clear-search
+						>
+							Clear search
+						</button>
+					</EmptyState>
+				) : resultCount === 0 && hasFilters ? (
+					<EmptyState
+						title="No videos match these filters"
+						detail="Clear a filter chip or switch category tabs to widen results."
+					>
+						<button
+							type="button"
+							class="dash-btn dash-btn--secondary"
+							data-videos-clear-filters
+						>
+							Clear filters
+						</button>
+					</EmptyState>
+				) : (
+					<>
+						<div class="dash-videos-table-wrap">
+							<table class="dash-videos-table">
+								<thead>
+									<tr>
+										<th class="dash-videos-col--order" scope="col">
+											<span class="visually-hidden">Order</span>
+										</th>
+										<th class="dash-videos-table__thumb-cell" scope="col">
+											<span class="visually-hidden">Thumbnail</span>
+										</th>
+										<th scope="col">Title</th>
+										<th scope="col">Category</th>
+										<th class="dash-videos-col--year" scope="col">
+											Year
+										</th>
+										<th class="dash-videos-col--duration" scope="col">
+											Duration
+										</th>
+										<th scope="col">Featured</th>
+										<th class="dash-videos-col--order" scope="col">
+											#
+										</th>
+										<th scope="col">
+											<span class="visually-hidden">Actions</span>
+										</th>
+									</tr>
+								</thead>
+								<tbody data-videos-rows>
+									{visibleVideos.map((video, index) => (
+										<tr
+											data-slug={video.slug}
+											data-reorder-item={reorderAllowed ? "" : undefined}
+										>
+											<td class="dash-videos-col--order">
+												<div
+													class="dash-videos-reorder"
+													data-disabled={reorderAllowed ? "false" : "true"}
+												>
+													<button
+														type="button"
+														class="dash-videos-reorder__handle"
+														draggable={reorderAllowed}
+														data-drag-handle
+														disabled={!reorderAllowed || !writable}
+														aria-label={`Reorder ${video.title}`}
+														title={
+															reorderAllowed
+																? "Drag to reorder"
+																: "Reorder disabled while filtered or sorted"
+														}
+													>
+														⠿
+													</button>
+													<div class="dash-videos-reorder__controls">
+														<button
+															type="button"
+															class="dash-videos-reorder__btn"
+															data-reorder="up"
+															disabled={
+																!reorderAllowed || !writable || index === 0
+															}
+															aria-label={`Move ${video.title} up`}
+														>
+															↑
+														</button>
+														<button
+															type="button"
+															class="dash-videos-reorder__btn"
+															data-reorder="down"
+															disabled={
+																!reorderAllowed ||
+																!writable ||
+																index === visibleVideos.length - 1
+															}
+															aria-label={`Move ${video.title} down`}
+														>
+															↓
+														</button>
+														<button
+															type="button"
+															class="dash-videos-reorder__btn"
+															data-reorder="top"
+															disabled={
+																!reorderAllowed || !writable || index === 0
+															}
+															aria-label={`Move ${video.title} to top`}
+														>
+															⤒
+														</button>
+														<button
+															type="button"
+															class="dash-videos-reorder__btn"
+															data-reorder="bottom"
+															disabled={
+																!reorderAllowed ||
+																!writable ||
+																index === visibleVideos.length - 1
+															}
+															aria-label={`Move ${video.title} to bottom`}
+														>
+															⤓
+														</button>
+													</div>
+												</div>
+											</td>
+											<td class="dash-videos-table__thumb-cell">
+												{video.thumbnail ? (
+													<img
+														class="dash-videos-table__thumb"
+														src={video.thumbnail}
+														alt=""
+														width="52"
+														height="30"
+														loading="lazy"
+														decoding="async"
+													/>
+												) : (
+													<span class="dash-videos-table__thumb" aria-hidden="true" />
+												)}
+											</td>
+											<td>
+												<div class="dash-videos-table__title">
+													<p class="dash-videos-table__title-text">
+														{video.title}
+													</p>
+													<p class="dash-videos-table__provider">
+														{video.provider === "youtube"
+															? "YouTube"
+															: "Vimeo"}
+													</p>
+												</div>
+											</td>
+											<td>{categoryLabel(video.category)}</td>
+											<td class="dash-videos-col--year">{video.year}</td>
+											<td class="dash-videos-col--duration">
+												{formatDuration(video.duration)}
+											</td>
+											<td>{video.featured ? "Yes" : "—"}</td>
+											<td class="dash-videos-col--order">
+												{video.sortOrder ?? index + 1}
+											</td>
+											<td>
+												<div class="dash-videos-table__actions">
+													<button
+														type="button"
+														class="dash-videos-table__action"
+														data-videos-edit={video.slug}
+														disabled={!writable}
+													>
+														Edit
+													</button>
+													<button
+														type="button"
+														class="dash-videos-table__action dash-videos-table__action--danger"
+														data-videos-delete={video.slug}
+														disabled={!writable}
+													>
+														Delete
+													</button>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+
+						<div class="dash-videos-cards" data-videos-cards>
+							{visibleVideos.map((video, index) => (
+								<article
+									class="dash-videos-card"
+									data-slug={video.slug}
+									data-reorder-item={reorderAllowed ? "" : undefined}
+								>
+									{video.thumbnail ? (
+										<img
+											class="dash-videos-card__thumb"
+											src={video.thumbnail}
+											alt=""
+											width="72"
+											height="40"
+											loading="lazy"
+											decoding="async"
+										/>
+									) : (
+										<span class="dash-videos-card__thumb" aria-hidden="true" />
+									)}
+									<div class="dash-videos-card__body">
+										<p class="dash-videos-card__title">{video.title}</p>
+										<p class="dash-videos-card__meta">
+											{categoryLabel(video.category)} · {video.year} ·{" "}
+											{formatDuration(video.duration)}
+											{video.featured ? " · Featured" : ""}
+											{" · "}
+											{video.provider === "youtube" ? "YouTube" : "Vimeo"}
+										</p>
+										<div class="dash-videos-card__actions">
+											<button
+												type="button"
+												class="dash-videos-table__action"
+												data-videos-edit={video.slug}
+												disabled={!writable}
+											>
+												Edit
+											</button>
+											<button
+												type="button"
+												class="dash-videos-table__action dash-videos-table__action--danger"
+												data-videos-delete={video.slug}
+												disabled={!writable}
+											>
+												Delete
+											</button>
+											{reorderAllowed && writable && (
+												<>
+													<button
+														type="button"
+														class="dash-videos-reorder__btn"
+														data-reorder="up"
+														disabled={index === 0}
+														aria-label={`Move ${video.title} up`}
+													>
+														↑
+													</button>
+													<button
+														type="button"
+														class="dash-videos-reorder__btn"
+														data-reorder="down"
+														disabled={index === visibleVideos.length - 1}
+														aria-label={`Move ${video.title} down`}
+													>
+														↓
+													</button>
+												</>
+											)}
+										</div>
+									</div>
+								</article>
+							))}
+						</div>
+					</>
+				)
+			}
+		</div>
+
+		<noscript>
+			<p class="dash-videos-helper">
+				JavaScript is required to add, edit, reorder, or delete videos. This list
+				is read-only without scripting.
+			</p>
+		</noscript>
+	</div>
+
+	<script
+		is:inline
+		type="application/json"
+		id="dash-videos-bootstrap"
+		set:html={JSON.stringify(bootstrap)}
+	/>
+	<script is:inline src="/dashboard/videos-workspace.js"></script>
+</DashboardLayout>
+
+<style is:global>
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+</style>

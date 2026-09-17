@@ -23,6 +23,7 @@ import {
 	readCatalogRecord,
 	resolveCatalogList,
 	writeCatalogRecord,
+	type WriteCatalogResult,
 } from "./catalog";
 import type { CatalogRevision, StoredMediaBody } from "./types";
 import { PHOTO_CATEGORIES_KEY, PHOTOS_KEY } from "./types";
@@ -79,7 +80,7 @@ export async function savePhotos(
 	photos: StoredPhoto[],
 	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-): Promise<CatalogRevision> {
+): Promise<WriteCatalogResult> {
 	const normalized = assertStoredPhotos(photos).map(normalizeStoredPhoto);
 	return writeCatalogRecord(
 		PHOTOS_KEY,
@@ -112,7 +113,7 @@ export async function savePhotoCategories(
 	categories: StoredPhotoCategory[],
 	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-): Promise<CatalogRevision> {
+): Promise<WriteCatalogResult> {
 	const validated = assertStoredPhotoCategories(categories);
 	return writeCatalogRecord(
 		PHOTO_CATEGORIES_KEY,

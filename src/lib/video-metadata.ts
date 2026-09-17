@@ -161,12 +161,18 @@ async function fetchJson(url: string) {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 	try {
+		// Cloudflare Workers fetch only allows redirect "follow" | "manual"
+		// ("error" throws). Use manual and reject redirects ourselves.
 		const response = await fetch(url, {
 			method: "GET",
-			redirect: "error",
+			redirect: "manual",
 			signal: controller.signal,
 			headers: { accept: "application/json" },
 		});
+		if (response.status >= 300 && response.status < 400) {
+			console.error("[video-metadata] unexpected redirect", response.status);
+			throw new ClientError("Could not load video metadata.");
+		}
 		if (!response.ok) {
 			console.error("[video-metadata] upstream HTTP", response.status);
 			throw new ClientError("Could not load video metadata.");

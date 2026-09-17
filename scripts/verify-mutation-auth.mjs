@@ -30,7 +30,8 @@ const bringUp = decideMutationAuth({
 	hasJwtConfig: false,
 	hasValidIdentity: false,
 });
-if (bringUp.allow) ok("access-disabled bring-up allows");
+if (bringUp.allow)
+	ok("access-disabled bring-up allows (after dual-flag policy)");
 else fail("bring-up should allow");
 
 const publicHost = decideMutationAuth({

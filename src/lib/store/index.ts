@@ -3,6 +3,7 @@
  */
 export type { CatalogRevision, StoredVideo, StoredMediaBody } from "./types";
 export type { StoredPhotoCategory } from "./photos";
+export type { WriteCatalogResult } from "./catalog";
 
 export {
 	hasWritableMedia,
@@ -34,8 +35,23 @@ export {
 	getShortHead,
 	getShortRange,
 	getShortBytes,
+	putShortBytes,
+	deleteShortBytes,
+	deleteShortEntryMedia,
 } from "./shorts";
 
-export { getMediaObject, getMediaHead, getMediaRange } from "./media";
+export {
+	getMediaObject,
+	getMediaHead,
+	getMediaRange,
+	putMediaBytes,
+} from "./media";
 
-export { heroMediaVersion, heroMediaSrc, touchHeroMedia } from "./hero";
+export {
+	heroMediaVersion,
+	heroMediaSrc,
+	touchHeroMedia,
+	readHeroCatalog,
+	HERO_LOOP_KEY,
+	HERO_POSTER_KEY,
+} from "./hero";

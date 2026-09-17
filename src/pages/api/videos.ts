@@ -14,6 +14,7 @@ import {
 	optionalPositiveDuration,
 	optionalYear,
 } from "../../lib/catalog-integrity";
+import { mutationPublishFromRefresh } from "../../lib/dashboard/publish-status";
 import { optionalString, parseOptionalBoolean } from "../../lib/request-body";
 import { isProjectCategory, enrichVideo } from "../../lib/video-metadata";
 import {
@@ -123,12 +124,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		}
 
 		videos.push(video);
-		const next = await saveVideos(
+		const { revision: next, refresh } = await saveVideos(
 			videos,
 			revision,
 			mutationCacheOpts(request, locals),
 		);
-		return jsonResponse({ video, rev: next.rev }, 201);
+		return jsonResponse(
+			{
+				video,
+				rev: next.rev,
+				publish: mutationPublishFromRefresh(refresh),
+			},
+			201,
+		);
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
@@ -164,12 +172,16 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 				"videos",
 			);
 
-			const next = await saveVideos(
+			const { revision: next, refresh } = await saveVideos(
 				rewriteCompleteOrder(videos, slugs),
 				revision,
 				mutationCacheOpts(request, locals),
 			);
-			return jsonResponse({ ok: true, rev: next.rev });
+			return jsonResponse({
+				ok: true,
+				rev: next.rev,
+				publish: mutationPublishFromRefresh(refresh),
+			});
 		}
 
 		const slug = assertSafeStorageSegment(String(body.slug ?? ""), "slug");
@@ -212,12 +224,16 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		assertSafeStorageSegment(video.slug, "video slug");
 		assertSafeStorageSegment(video.id, "video id");
 		videos[index] = video;
-		const next = await saveVideos(
+		const { revision: next, refresh } = await saveVideos(
 			videos,
 			revision,
 			mutationCacheOpts(request, locals),
 		);
-		return jsonResponse({ video, rev: next.rev });
+		return jsonResponse({
+			video,
+			rev: next.rev,
+			publish: mutationPublishFromRefresh(refresh),
+		});
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
@@ -250,12 +266,16 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
 		if (nextVideos.length === videos.length) {
 			return jsonResponse({ error: "Video not found." }, 404);
 		}
-		const next = await saveVideos(
+		const { revision: next, refresh } = await saveVideos(
 			nextVideos,
 			revision,
 			mutationCacheOpts(request, locals),
 		);
-		return jsonResponse({ ok: true, rev: next.rev });
+		return jsonResponse({
+			ok: true,
+			rev: next.rev,
+			publish: mutationPublishFromRefresh(refresh),
+		});
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,

@@ -1,5 +1,6 @@
 import { siteOrigin } from "./hosts";
 import { cdnPurgeSecret } from "./purge-auth";
+import { runPurgeThenWarm } from "./site-cache-refresh";
 
 const HTML_CACHE_TAG = "html";
 /** Public purge route on the site Worker (must not use Astro `_` private folders). */
@@ -7,14 +8,41 @@ export const SITE_CACHE_PURGE_PATH = "/cdn-purge";
 const WARM_PATHS = ["/", "/de/"] as const;
 
 export { HTML_CACHE_TAG };
+export { runPurgeThenWarm } from "./site-cache-refresh";
+export { waitUntilFromLocals } from "./wait-until-locals";
 
 export interface SiteCacheRefreshOptions {
 	/** Dashboard or site request URL — used to derive the public origin. */
 	requestUrl?: URL;
 	/** Explicit public origin; wins over requestUrl / env. */
 	origin?: string;
+	/**
+	 * Worker ExecutionContext.waitUntil — from Astro.locals.cfContext
+	 * (@astrojs/cloudflare sets this via createLocals).
+	 */
 	waitUntil?: (promise: Promise<unknown>) => void;
 }
+
+/**
+ * Outcome of a public HTML purge+warm attempt.
+ * Catalog saves must treat failures as non-fatal and never throw on these.
+ */
+export type SiteCacheRefreshResult =
+	| { status: "skipped-dev" }
+	| { status: "skipped-no-origin" }
+	| { status: "success"; purged: true; warmed: true }
+	| {
+			status: "partial";
+			purged: boolean;
+			warmed: boolean;
+			detail?: string;
+	  }
+	| {
+			status: "failed";
+			purged: false;
+			warmed: false;
+			detail?: string;
+	  };
 
 function resolvePublicOrigin(options: SiteCacheRefreshOptions): string | null {
 	if (options.origin) return options.origin.replace(/\/$/, "");
@@ -68,46 +96,79 @@ async function warmPublicHtml(origin: string) {
 	);
 }
 
-async function runRefresh(origin: string) {
-	try {
-		await purgePublicHtmlOnSiteWorker(origin);
-	} catch (error) {
-		console.error("[site-cache] purge failed", error);
+async function runRefresh(origin: string): Promise<SiteCacheRefreshResult> {
+	// Never warm after a failed purge — that would re-store stale HTML under
+	// the long public s-maxage and hide a successful catalog write.
+	const result = await runPurgeThenWarm({
+		purge: () => purgePublicHtmlOnSiteWorker(origin),
+		warm: () => warmPublicHtml(origin),
+		onPurgeError: (error) => {
+			console.error("[site-cache] purge failed; skipping warm", error);
+		},
+		onWarmError: (error) => {
+			console.error("[site-cache] warm failed", error);
+		},
+		onSkipWarmAfterPurgeFailure: () => {
+			console.warn(
+				"[site-cache] warm skipped after purge failure — stale HTML may remain until a successful purge",
+			);
+		},
+	});
+
+	if (result.purged && result.warmed) {
+		return { status: "success", purged: true, warmed: true };
 	}
-	try {
-		await warmPublicHtml(origin);
-	} catch (error) {
-		console.error("[site-cache] warm failed", error);
+	if (result.purged && !result.warmed) {
+		return {
+			status: "partial",
+			purged: true,
+			warmed: false,
+			detail: "Purged but warm failed",
+		};
 	}
+	return {
+		status: "failed",
+		purged: false,
+		warmed: false,
+		detail: "Purge failed; warm skipped",
+	};
 }
 
 /**
  * After catalog/media mutations: purge public HTML on the site Worker, then
  * warm `/` and `/de/` so the next visitor is likely a HIT. Failures are logged
- * only — dashboard saves must not fail because of cache ops.
+ * and returned — dashboard saves must not fail because of cache ops. Warm is
+ * skipped when purge fails so stale responses are not re-cached.
+ *
+ * Always awaits purge/warm when a refresh runs (not skipped). Optional
+ * `waitUntil` still receives the same promise for Worker lifetime extension.
  */
-export function refreshPublicHtmlCache(options: SiteCacheRefreshOptions = {}) {
+export async function refreshPublicHtmlCache(
+	options: SiteCacheRefreshOptions = {},
+): Promise<SiteCacheRefreshResult> {
 	const origin = resolvePublicOrigin(options);
 	if (!origin) {
 		console.warn("[site-cache] skip refresh — no public site origin");
-		return;
+		return { status: "skipped-no-origin" };
 	}
-	if (import.meta.env.DEV) return;
+	if (import.meta.env.DEV) {
+		return { status: "skipped-dev" };
+	}
 
 	const task = runRefresh(origin);
 	if (options.waitUntil) {
 		options.waitUntil(task);
-		return;
 	}
-	void task;
-}
 
-export function waitUntilFromLocals(
-	locals: App.Locals | undefined,
-): ((promise: Promise<unknown>) => void) | undefined {
-	if (!locals) return undefined;
-	const cfContext = (
-		locals as { cfContext?: { waitUntil?: (p: Promise<unknown>) => void } }
-	).cfContext;
-	return cfContext?.waitUntil?.bind(cfContext);
+	try {
+		return await task;
+	} catch (error) {
+		console.error("[site-cache] refresh unexpected error", error);
+		return {
+			status: "failed",
+			purged: false,
+			warmed: false,
+			detail: error instanceof Error ? error.message : "Cache refresh failed",
+		};
+	}
 }

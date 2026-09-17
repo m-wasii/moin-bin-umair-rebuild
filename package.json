@@ -15,7 +15,7 @@
 		"format:check": "prettier --check .",
 		"test": "node scripts/run-verify.mjs",
 		"validate": "npm run validate:format && npm run check && npm run test && npm run build",
-		"validate:format": "prettier --check \"scripts/**/*.{mjs,js}\" \"src/lib/bearer-token.ts\" \"src/lib/mutation-auth-policy.ts\" \"src/lib/purge-auth.ts\" \"src/lib/api-auth.ts\" \"src/lib/catalog-integrity.ts\" \"src/lib/serialize-json-for-script.ts\" \"src/lib/store/catalog.ts\" \".github/workflows/*.yml\" \"package.json\"",
+		"validate:format": "prettier --check \"scripts/**/*.{mjs,js}\" \"src/lib/bearer-token.ts\" \"src/lib/mutation-auth-policy.ts\" \"src/lib/access-enforce-policy.ts\" \"src/lib/site-cache-refresh.ts\" \"src/lib/wait-until-locals.ts\" \"src/lib/site-cache.ts\" \"src/lib/purge-auth.ts\" \"src/lib/api-auth.ts\" \"src/lib/catalog-integrity.ts\" \"src/lib/serialize-json-for-script.ts\" \"src/lib/store/catalog.ts\" \"src/lib/store/bucket.ts\" \".github/workflows/*.yml\" \"package.json\"",
 		"preview": "astro preview",
 		"astro": "astro",
 		"seed:photos": "node scripts/seed-photos.mjs",

@@ -5,6 +5,7 @@ import {
 	readCatalogRecord,
 	resolveCatalogList,
 	writeCatalogRecord,
+	type WriteCatalogResult,
 } from "./catalog";
 import type { CatalogRevision, StoredVideo } from "./types";
 import { VIDEOS_KEY } from "./types";
@@ -44,7 +45,7 @@ export async function saveVideos(
 	videos: StoredVideo[],
 	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-): Promise<CatalogRevision> {
+): Promise<WriteCatalogResult> {
 	const validated = assertStoredVideos(videos).map(normalizeStoredVideo);
 	return writeCatalogRecord(VIDEOS_KEY, { videos: validated }, revision, cache);
 }

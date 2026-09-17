@@ -1,9 +1,12 @@
 import { withMediaVersion } from "../media-url";
 import type { SiteCacheRefreshOptions } from "../site-cache";
-import { readCatalogRecord, writeCatalogRecord } from "./catalog";
+import { readCatalogRecord, writeCatalogRecord, type WriteCatalogResult } from "./catalog";
 import { getMediaHead } from "./media";
 import type { CatalogRevision, MediaHead } from "./types";
 import { HERO_META_KEY } from "./types";
+
+export const HERO_LOOP_KEY = "media/hero-loop.mp4";
+export const HERO_POSTER_KEY = "media/hero-poster.webp";
 
 interface HeroCatalogPayload {
 	v?: string;
@@ -25,8 +28,8 @@ function versionFromMediaHead(head: MediaHead | null) {
 export async function heroMediaVersion() {
 	const meta = await readHeroMeta();
 	const [loop, poster] = await Promise.all([
-		getMediaHead("media/hero-loop.mp4"),
-		getMediaHead("media/hero-poster.webp"),
+		getMediaHead(HERO_LOOP_KEY),
+		getMediaHead(HERO_POSTER_KEY),
 	]);
 	const objectVersion = `${versionFromMediaHead(loop)}-${versionFromMediaHead(poster)}`;
 	const catalogV = meta?.payload.v?.trim();
@@ -52,15 +55,46 @@ async function readHeroMeta(): Promise<{
 	};
 }
 
-/** Persist hero version + purge/warm when hero bytes are replaced. */
+export async function readHeroCatalog(): Promise<{
+	revision: CatalogRevision;
+	catalogVersion: string | null;
+	loop: MediaHead | null;
+	poster: MediaHead | null;
+	mediaVersion: string;
+	loopSrc: string | null;
+	posterSrc: string | null;
+}> {
+	const meta = await readHeroMeta();
+	const [loop, poster, mediaVersion] = await Promise.all([
+		getMediaHead(HERO_LOOP_KEY),
+		getMediaHead(HERO_POSTER_KEY),
+		heroMediaVersion(),
+	]);
+	return {
+		revision: meta?.revision ?? { rev: 0, found: false },
+		catalogVersion: meta?.payload.v?.trim() || null,
+		loop,
+		poster,
+		mediaVersion,
+		loopSrc: loop ? heroMediaSrc("hero-loop.mp4", mediaVersion) : null,
+		posterSrc: poster ? heroMediaSrc("hero-poster.webp", mediaVersion) : null,
+	};
+}
+
+/**
+ * Persist hero version + purge/warm when hero bytes are replaced.
+ * Accepts an expected revision for CAS when the client supplies one.
+ */
 export async function touchHeroMedia(
 	version = Date.now().toString(36),
 	cache?: SiteCacheRefreshOptions,
-) {
+	expected?: CatalogRevision,
+): Promise<WriteCatalogResult> {
 	const current = await readHeroMeta();
-	const revision = current?.revision ?? { rev: 0, found: false };
+	const revision =
+		expected ?? current?.revision ?? ({ rev: 0, found: false } as CatalogRevision);
 	const payload: HeroCatalogPayload = { v: version };
-	await writeCatalogRecord(
+	return writeCatalogRecord(
 		HERO_META_KEY,
 		payload as Record<string, unknown>,
 		revision,

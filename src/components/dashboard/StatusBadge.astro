@@ -1,0 +1,13 @@
+---
+interface Props {
+	tone?: "neutral" | "info" | "success" | "warning" | "danger";
+	label: string;
+}
+
+const { tone = "neutral", label } = Astro.props;
+---
+
+<span class={`dash-status dash-status--${tone}`} data-status-tone={tone}>
+	<span class="dash-status__dot" aria-hidden="true"></span>
+	{label}
+</span>

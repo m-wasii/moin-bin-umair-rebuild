@@ -4,6 +4,7 @@ import {
 	guessMediaContentType,
 	localPath,
 	readLocalBytes,
+	writeLocalBytes,
 } from "./bucket";
 import type { MediaHead, StoredMediaBody } from "./types";
 
@@ -171,4 +172,22 @@ export async function getMediaRange(
 
 	if (!import.meta.env.DEV) return null;
 	return localMediaRange(safeKey, offset, length);
+}
+
+/** Write an opaque media object (hero loop/poster, etc.). */
+export async function putMediaBytes(
+	key: string,
+	bytes: Uint8Array,
+	contentType?: string,
+) {
+	const safeKey = assertSafeObjectKey(key);
+	const type = contentType || guessMediaContentType(safeKey);
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(safeKey, bytes, {
+			httpMetadata: { contentType: type },
+		});
+		return;
+	}
+	await writeLocalBytes(safeKey, bytes);
 }

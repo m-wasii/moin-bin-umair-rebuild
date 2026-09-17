@@ -1,0 +1,216 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import PageHeader from "../../components/dashboard/PageHeader.astro";
+import {
+	EMPTY_REVISION,
+	type CatalogRevisionMap,
+} from "../../lib/dashboard";
+import { hasWritableMedia, readHeroCatalog } from "../../lib/store";
+
+export const prerender = false;
+
+const hero = await readHeroCatalog();
+const writable = hasWritableMedia();
+
+const revisions: CatalogRevisionMap = {
+	videos: { ...EMPTY_REVISION },
+	photos: { ...EMPTY_REVISION },
+	photoCategories: { ...EMPTY_REVISION },
+	shorts: { ...EMPTY_REVISION },
+	hero: hero.revision,
+};
+
+const bootstrap = {
+	writable,
+	version: hero.mediaVersion,
+	catalogVersion: hero.catalogVersion,
+	loop: hero.loop
+		? {
+				src: hero.loopSrc,
+				size: hero.loop.size,
+			}
+		: null,
+	poster: hero.poster
+		? {
+				src: hero.posterSrc,
+				size: hero.poster.size,
+			}
+		: null,
+};
+
+function formatBytes(size: number | undefined) {
+	if (size == null || !Number.isFinite(size)) return "unknown size";
+	if (size < 1024) return `${size} B`;
+	if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+	return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+---
+
+<DashboardLayout
+	title="Site / Hero"
+	section="site"
+	revisions={revisions}
+	statusLabel={writable ? "Storage ready" : "Storage unavailable"}
+	statusTone={writable ? "neutral" : "danger"}
+>
+	<div class="dash-hero" data-hero-workspace>
+		<PageHeader
+			eyebrow="Site"
+			title="Hero"
+			description="Singleton home hero loop and poster. What you see here is what the public site serves."
+		/>
+
+		{
+			!writable && (
+				<p class="dash-banner dash-banner--warn" role="status">
+					MEDIA is not bound. You can inspect current assets, but replacement is
+					disabled.
+				</p>
+			)
+		}
+
+		<section class="dash-hero-stage" aria-labelledby="dash-hero-live-title">
+			<div class="dash-hero-stage__header">
+				<h2 id="dash-hero-live-title">Current live hero</h2>
+				<p class="dash-muted" data-hero-version>
+					Live version {hero.mediaVersion}
+				</p>
+			</div>
+
+			<div class="dash-hero-stage__grid">
+				<figure class="dash-hero-asset">
+					<figcaption>Poster</figcaption>
+					<div class="dash-hero-asset__frame">
+						{
+							hero.posterSrc ? (
+								<img
+									src={hero.posterSrc}
+									alt="Current public hero poster"
+									width="960"
+									height="540"
+									data-hero-poster-img
+								/>
+							) : (
+								<p class="dash-muted" data-hero-poster-missing>
+									Poster missing from MEDIA.
+								</p>
+							)
+						}
+					</div>
+					<p class="dash-hero-asset__meta" data-hero-poster-meta>
+						{
+							hero.poster
+								? `hero-poster.webp · ${formatBytes(hero.poster.size)}`
+								: "Not available"
+						}
+					</p>
+				</figure>
+
+				<figure class="dash-hero-asset">
+					<figcaption>Loop</figcaption>
+					<div class="dash-hero-asset__frame dash-hero-asset__frame--video">
+						{
+							hero.loopSrc ? (
+								<>
+									<video
+										controls
+										playsinline
+										preload="none"
+										poster={hero.posterSrc ?? undefined}
+										data-hero-loop-video
+									>
+										<source data-hero-loop-source src={hero.loopSrc} type="video/mp4" />
+									</video>
+									<p class="dash-muted dash-hero-asset__hint">
+										Preview uses native controls. The public site autoplays muted
+										after idle.
+									</p>
+								</>
+							) : (
+								<p class="dash-muted" data-hero-loop-missing>
+									Loop missing from MEDIA.
+								</p>
+							)
+						}
+					</div>
+					<p class="dash-hero-asset__meta" data-hero-loop-meta>
+						{
+							hero.loop
+								? `hero-loop.mp4 · ${formatBytes(hero.loop.size)}`
+								: "Not available"
+						}
+					</p>
+				</figure>
+			</div>
+		</section>
+
+		<section class="dash-hero-replace" aria-labelledby="dash-hero-replace-title">
+			<h2 id="dash-hero-replace-title">Replace</h2>
+			<p class="dash-muted">
+				Upload a new loop and/or poster. Files are validated before writing.
+				The live public asset is only overwritten after a successful upload —
+				there is no delete, because the home page requires a hero.
+			</p>
+
+			<form class="dash-hero-form" data-hero-form>
+				<label class="dash-field">
+					<span>New loop (MP4, optional)</span>
+					<input
+						type="file"
+						name="loop"
+						accept="video/mp4,.mp4"
+						data-hero-loop-input
+						disabled={!writable}
+					/>
+				</label>
+				<label class="dash-field">
+					<span>New poster (image, optional — converted to WebP)</span>
+					<input
+						type="file"
+						name="poster"
+						accept="image/jpeg,image/png,image/webp,image/gif,image/bmp"
+						data-hero-poster-input
+						disabled={!writable}
+					/>
+				</label>
+
+				<div class="dash-hero-pending" data-hero-pending hidden>
+					<h3>Pending selection</h3>
+					<p data-hero-pending-detail></p>
+					<div class="dash-hero-pending__preview" data-hero-pending-preview></div>
+				</div>
+
+				<p class="dash-inline-error" data-hero-status hidden></p>
+
+				<div class="dash-quick-actions">
+					<button
+						type="submit"
+						class="dash-btn dash-btn--primary"
+						data-hero-apply
+						disabled={!writable}
+					>
+						Apply replacement
+					</button>
+					<button
+						type="button"
+						class="dash-btn dash-btn--secondary"
+						data-hero-clear
+						disabled={!writable}
+					>
+						Clear selection
+					</button>
+				</div>
+			</form>
+		</section>
+
+		<div class="sr-only" aria-live="polite" data-hero-live></div>
+
+		<script
+			is:inline
+			type="application/json"
+			id="dash-hero-bootstrap"
+			set:html={JSON.stringify(bootstrap)}
+		/>
+		<script is:inline src="/dashboard/hero-workspace.js"></script>
+	</div>
+</DashboardLayout>

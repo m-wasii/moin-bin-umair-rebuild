@@ -17,9 +17,11 @@ import {
 	assertKebabSlug,
 	expectedRevFromRequest,
 } from "../../lib/catalog-integrity";
+import { mutationPublishFromRefresh } from "../../lib/dashboard/publish-status";
 import {
 	hasWritableMedia,
 	readPhotoCategoriesCatalog,
+	readPhotosCatalog,
 	savePhotoCategories,
 } from "../../lib/store";
 
@@ -81,12 +83,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			label: label || titleFromSlug(slug),
 		};
 		categories.push(category);
-		const next = await savePhotoCategories(
+		const { revision: next, refresh } = await savePhotoCategories(
 			categories,
 			revision,
 			mutationCacheOpts(request, locals),
 		);
-		return jsonResponse({ category, rev: next.rev }, 201);
+		return jsonResponse(
+			{
+				category,
+				rev: next.rev,
+				publish: mutationPublishFromRefresh(refresh),
+			},
+			201,
+		);
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
@@ -110,34 +119,127 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 	const body = parsed.body;
 
 	try {
-		if (body.action !== "reorder") {
-			return jsonResponse({ error: "Unsupported action." }, 400);
-		}
-
+		const action = String(body.action ?? "");
 		const expectedRev = expectedRevFromRequest(request, body);
 		const { categories, revision } = await readPhotoCategoriesCatalog();
 		assertExpectedRev(revision.rev, expectedRev);
 
-		const rawSlugs = Array.isArray(body.slugs) ? body.slugs : [];
-		const slugs = assertCompleteSlugOrder(
-			categories.map((entry) => entry.slug),
-			rawSlugs.map((slug) => String(slug)),
-			"categories",
-		);
+		if (action === "reorder") {
+			const rawSlugs = Array.isArray(body.slugs) ? body.slugs : [];
+			const slugs = assertCompleteSlugOrder(
+				categories.map((entry) => entry.slug),
+				rawSlugs.map((slug) => String(slug)),
+				"categories",
+			);
 
-		const bySlug = new Map(categories.map((entry) => [entry.slug, entry]));
-		const next = slugs.map((slug) => bySlug.get(slug)!);
-		const saved = await savePhotoCategories(
+			const bySlug = new Map(categories.map((entry) => [entry.slug, entry]));
+			const next = slugs.map((slug) => bySlug.get(slug)!);
+			const { revision: saved, refresh } = await savePhotoCategories(
+				next,
+				revision,
+				mutationCacheOpts(request, locals),
+			);
+			return jsonResponse({
+				ok: true,
+				rev: saved.rev,
+				publish: mutationPublishFromRefresh(refresh),
+			});
+		}
+
+		if (action === "rename") {
+			const slug = assertKebabSlug(String(body.slug ?? ""), "category slug");
+			const label = String(body.label ?? "").trim();
+			if (!label) {
+				return jsonResponse({ error: "Album name is required." }, 400);
+			}
+			if (label.length > 200) {
+				return jsonResponse({ error: "Album name is too long." }, 400);
+			}
+
+			const index = categories.findIndex((entry) => entry.slug === slug);
+			if (index === -1) {
+				return jsonResponse({ error: "Album not found." }, 404);
+			}
+
+			categories[index] = { ...categories[index]!, label };
+			const { revision: saved, refresh } = await savePhotoCategories(
+				categories,
+				revision,
+				mutationCacheOpts(request, locals),
+			);
+			return jsonResponse({
+				category: categories[index],
+				rev: saved.rev,
+				publish: mutationPublishFromRefresh(refresh),
+			});
+		}
+
+		return jsonResponse({ error: "Unsupported action." }, 400);
+	} catch (error) {
+		const { message, status } = publicApiError(
+			error,
+			"Could not update categories.",
+			"api/photo-categories PATCH",
+		);
+		return jsonResponse({ error: message }, status);
+	}
+};
+
+/**
+ * Delete an album only when it contains no photos.
+ * Never cascades photo deletion — empty albums only.
+ */
+export const DELETE: APIRoute = async ({ request, locals }) => {
+	const denied = await unauthorizedMutationResponse(request);
+	if (denied) return denied;
+
+	if (!hasWritableMedia()) {
+		return jsonResponse({ error: "R2 is not bound yet." }, 503);
+	}
+
+	try {
+		const url = new URL(request.url);
+		const slugParam = url.searchParams.get("slug");
+		if (!slugParam) {
+			return jsonResponse({ error: "Missing album slug." }, 400);
+		}
+		const slug = assertKebabSlug(slugParam, "category slug");
+
+		const expectedRev = expectedRevFromRequest(request);
+		const { categories, revision } = await readPhotoCategoriesCatalog();
+		assertExpectedRev(revision.rev, expectedRev);
+
+		if (!categories.some((entry) => entry.slug === slug)) {
+			return jsonResponse({ error: "Album not found." }, 404);
+		}
+
+		const { photos } = await readPhotosCatalog();
+		const remaining = photos.filter((photo) => photo.category === slug).length;
+		if (remaining > 0) {
+			return jsonResponse(
+				{
+					error: `This album still has ${remaining} photo${remaining === 1 ? "" : "s"}. Move or delete them first.`,
+				},
+				400,
+			);
+		}
+
+		const next = categories.filter((entry) => entry.slug !== slug);
+		const { revision: saved, refresh } = await savePhotoCategories(
 			next,
 			revision,
 			mutationCacheOpts(request, locals),
 		);
-		return jsonResponse({ ok: true, rev: saved.rev });
+		return jsonResponse({
+			ok: true,
+			rev: saved.rev,
+			publish: mutationPublishFromRefresh(refresh),
+		});
 	} catch (error) {
 		const { message, status } = publicApiError(
 			error,
-			"Could not reorder categories.",
-			"api/photo-categories PATCH",
+			"Could not delete album.",
+			"api/photo-categories DELETE",
 		);
 		return jsonResponse({ error: message }, status);
 	}
