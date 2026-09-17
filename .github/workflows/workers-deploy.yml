@@ -68,6 +68,22 @@ jobs:
           npm run check
           npm run test
 
+      - name: "3b. Refuse insecure Access bring-up flags in production env"
+        env:
+          DASHBOARD_ENFORCE_CF_ACCESS: ${{ vars.DASHBOARD_ENFORCE_CF_ACCESS }}
+          ALLOW_INSECURE_DASHBOARD_BRINGUP: ${{ vars.ALLOW_INSECURE_DASHBOARD_BRINGUP }}
+        run: |
+          set -euo pipefail
+          if [ "${DASHBOARD_ENFORCE_CF_ACCESS:-}" = "false" ]; then
+            echo "::error::Production deploy refuses DASHBOARD_ENFORCE_CF_ACCESS=false (GitHub Actions variable). Omit the variable or set it to true."
+            exit 1
+          fi
+          if [ "${ALLOW_INSECURE_DASHBOARD_BRINGUP:-}" = "true" ]; then
+            echo "::error::Production deploy refuses ALLOW_INSECURE_DASHBOARD_BRINGUP=true. Remove this variable from the production environment."
+            exit 1
+          fi
+          echo "Production Access bring-up flags are not set insecurely."
+
       - name: "4. Build"
         run: npm run build
 

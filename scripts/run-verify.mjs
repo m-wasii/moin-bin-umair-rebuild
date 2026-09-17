@@ -31,8 +31,20 @@ const checks = [
 		args: [...stripTypes, "scripts/verify-mutation-auth.mjs"],
 	},
 	{
+		name: "access-enforce",
+		args: [...stripTypes, "scripts/verify-access-enforce.mjs"],
+	},
+	{
+		name: "site-cache-refresh",
+		args: [...stripTypes, "scripts/verify-site-cache-refresh.mjs"],
+	},
+	{
 		name: "catalog-mutations",
 		args: [...stripTypes, "scripts/verify-catalog-mutations.mjs"],
+	},
+	{
+		name: "catalog-api-contracts",
+		args: [...stripTypes, "scripts/verify-catalog-api-contracts.mjs"],
 	},
 	{
 		name: "request-body",

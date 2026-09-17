@@ -9,14 +9,17 @@ import { withMediaVersion } from "../media-url";
 import type { SiteCacheRefreshOptions } from "../site-cache";
 import {
 	assertSafeObjectKey,
+	deleteLocal,
 	getBucket,
 	localPath,
 	readLocalBytes,
+	writeLocalBytes,
 } from "./bucket";
 import {
 	readCatalogRecord,
 	resolveCatalogList,
 	writeCatalogRecord,
+	type WriteCatalogResult,
 } from "./catalog";
 import type { CatalogRevision, StoredMediaBody } from "./types";
 import { SHORTS_KEY } from "./types";
@@ -90,7 +93,7 @@ export async function saveShorts(
 	shorts: StoredShort[],
 	revision: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-): Promise<CatalogRevision> {
+): Promise<WriteCatalogResult> {
 	const v = Date.now().toString(36);
 	const normalized = normalizeShortMedia(assertStoredShorts(shorts), v);
 	const payload: ShortsCatalogPayload = { shorts: normalized, v };
@@ -259,4 +262,41 @@ export async function getShortBytes(
 		size: local.byteLength,
 		contentType: shortContentType(file),
 	};
+}
+
+export async function putShortBytes(
+	campaign: string,
+	file: string,
+	bytes: Uint8Array,
+) {
+	const key = shortObjectKey(campaign, file);
+	const contentType = shortContentType(file);
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.put(key, bytes, {
+			httpMetadata: { contentType },
+		});
+		return;
+	}
+	await writeLocalBytes(key, bytes);
+}
+
+export async function deleteShortBytes(campaign: string, file: string) {
+	const key = shortObjectKey(campaign, file);
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.delete(key);
+		return;
+	}
+	await deleteLocal(key);
+}
+
+/** Delete every known clip object for a short entry (best-effort). */
+export async function deleteShortEntryMedia(entry: StoredShort) {
+	for (const clip of entry.clips) {
+		await Promise.allSettled([
+			deleteShortBytes(entry.slug, `${clip.slug}.mp4`),
+			deleteShortBytes(entry.slug, `${clip.slug}.webp`),
+		]);
+	}
 }

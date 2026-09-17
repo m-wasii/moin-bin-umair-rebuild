@@ -30,8 +30,11 @@ production sign-in. Videos and photos are saved to **R2**, not git.
 ```text
 Public site                 dashboard.<same account>
 (www / apex / mbu.*)        ├─ Cloudflare Access (Google) on custom domains
-                            ├─ /dashboard          videos
-                            ├─ /dashboard/photos   stills (auto WebP)
+                            ├─ /dashboard          Home (attention board)
+                            ├─ /dashboard/videos   Films catalog
+                            ├─ /dashboard/photos   Photography
+                            ├─ /dashboard/shorts   Shorts campaigns
+                            ├─ /dashboard/site     Hero loop + poster
                             └─ writes R2 (MEDIA bucket)
 ```
 
@@ -44,7 +47,7 @@ Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
 
 ### Videos
 
-1. Open `/dashboard`
+1. Open `/dashboard/videos`
 2. Paste a Vimeo or YouTube URL, pick Indie / Art / Local Films / BTS & trailers
 3. Save — title, thumbnail, and (for Vimeo) year/duration are fetched automatically
 4. YouTube needs **year** and **duration** (seconds) unless `YOUTUBE_API_KEY` is set
@@ -55,6 +58,17 @@ Live workers.dev hosts (short names; the account suffix is `wasi-workdesk`):
 2. Pick a category, drop JPEG / PNG / GIF / BMP / WebP
 3. The browser resizes to 1600px and encodes **WebP** before upload
 4. RAW, HEIC, and PDF are rejected
+
+### Shorts
+
+1. Open `/dashboard/shorts`
+2. Create a short or open a campaign to manage clips
+3. Reorder only when the list is unfiltered catalog order
+
+### Hero
+
+1. Open `/dashboard/site`
+2. Inspect the live poster and loop, then replace either or both
 
 Seed stills (Drive Top) live in `.data/media/photography/` plus
 `src/data/photos.seed.json`. The Worker serves `/media/photos/...` from the
@@ -144,7 +158,9 @@ Dashboard saves write to the same bucket. The API token needs
    - **Required (server-only) when Access is enforced:** `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` on the **dashboard** Worker (JWT verification; do not trust the email header alone)
    - **Required (server-only):** `CDN_PURGE_SECRET` on both `mbu` and `dashboard` Workers, plus the same value as a GitHub Actions repository secret (post-deploy cache purge)
    - Optional (server-only): `YOUTUBE_API_KEY`
-   - Optional while testing Access: `DASHBOARD_ENFORCE_CF_ACCESS=false`
+   - Optional while testing Access (insecure; requires **both** Worker vars):
+     `DASHBOARD_ENFORCE_CF_ACCESS=false` **and** `ALLOW_INSECURE_DASHBOARD_BRINGUP=true`.
+     A lone `DASHBOARD_ENFORCE_CF_ACCESS=false` is ignored.
 
 5. **Google login (Cloudflare Access)** on `dashboard.yourdomain.com` only:
 
@@ -158,7 +174,8 @@ That dashboard hostname is gated the same way as a custom domain: Cloudflare
 Access (Google) plus Worker-side verification of `Cf-Access-Jwt-Assertion`
 (`CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`). The email header alone is not
 trusted. Without Access configured, the Worker returns 401/503 (set
-`DASHBOARD_ENFORCE_CF_ACCESS=false` only while bringing Access online).
+`DASHBOARD_ENFORCE_CF_ACCESS=false` **and** `ALLOW_INSECURE_DASHBOARD_BRINGUP=true`
+only while bringing Access online). A lone enforce=false is ignored.
 Ephemeral PR preview Workers (`mbu-pr-*`) are not dashboard hosts, so their
 on-host `/dashboard` stays open for visual QA; catalog mutations stay blocked.
 

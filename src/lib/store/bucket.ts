@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { decideAccessEnforced } from "../access-enforce-policy";
 import { isSafeStorageSegment } from "../catalog-integrity";
 import type { MediaBucket } from "./types";
 
@@ -8,6 +9,8 @@ export function workerEnv() {
 		YOUTUBE_API_KEY?: string;
 		CDN_PURGE_SECRET?: string;
 		DASHBOARD_ENFORCE_CF_ACCESS?: string;
+		/** Required together with DASHBOARD_ENFORCE_CF_ACCESS=false for insecure bring-up. */
+		ALLOW_INSECURE_DASHBOARD_BRINGUP?: string;
 	};
 }
 
@@ -138,6 +141,22 @@ export function youtubeApiKey() {
 	return workerEnv().YOUTUBE_API_KEY || import.meta.env.YOUTUBE_API_KEY;
 }
 
+/**
+ * Whether Cloudflare Access must be enforced for dashboard/mutations.
+ * Defaults to enforced. Disabling requires both Worker vars:
+ *   DASHBOARD_ENFORCE_CF_ACCESS=false
+ *   ALLOW_INSECURE_DASHBOARD_BRINGUP=true
+ */
 export function dashboardAccessEnforced() {
-	return workerEnv().DASHBOARD_ENFORCE_CF_ACCESS !== "false";
+	const envBindings = workerEnv();
+	const decision = decideAccessEnforced({
+		enforceFlag: envBindings.DASHBOARD_ENFORCE_CF_ACCESS,
+		allowInsecureBringUp: envBindings.ALLOW_INSECURE_DASHBOARD_BRINGUP,
+	});
+	if (decision.rejectedInsecureDisable) {
+		console.error(
+			"[auth] Ignoring DASHBOARD_ENFORCE_CF_ACCESS=false without ALLOW_INSECURE_DASHBOARD_BRINGUP=true",
+		);
+	}
+	return decision.enforced;
 }

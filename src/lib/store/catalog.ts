@@ -6,6 +6,7 @@ import {
 import {
 	refreshPublicHtmlCache,
 	type SiteCacheRefreshOptions,
+	type SiteCacheRefreshResult,
 } from "../site-cache";
 import {
 	getBucket,
@@ -14,6 +15,30 @@ import {
 	writeLocalJson,
 } from "./bucket";
 import type { CatalogRecord, CatalogRevision } from "./types";
+
+/** Catalog write + non-throwing public HTML refresh outcome. */
+export interface WriteCatalogResult {
+	revision: CatalogRevision;
+	refresh: SiteCacheRefreshResult;
+}
+
+async function safeRefreshPublicHtml(
+	cache?: SiteCacheRefreshOptions,
+): Promise<SiteCacheRefreshResult> {
+	try {
+		return await refreshPublicHtmlCache(cache ?? {});
+	} catch (error) {
+		// refreshPublicHtmlCache already swallows network failures; this is
+		// belt-and-suspenders so a catalog save never fails on cache ops.
+		console.error("[store] cache refresh must not fail the save", error);
+		return {
+			status: "failed",
+			purged: false,
+			warmed: false,
+			detail: error instanceof Error ? error.message : "Cache refresh failed",
+		};
+	}
+}
 
 /**
  * Read a catalog JSON object from R2 or local `.data`.
@@ -90,7 +115,7 @@ export async function writeCatalogRecord(
 	payload: Record<string, unknown>,
 	expectedInput: CatalogRevision,
 	cache?: SiteCacheRefreshOptions,
-): Promise<CatalogRevision> {
+): Promise<WriteCatalogResult> {
 	const expected = await withResolvedEtag(key, expectedInput);
 	const nextRev = expected.rev + 1;
 	const body = { ...payload, rev: nextRev };
@@ -118,8 +143,11 @@ export async function writeCatalogRecord(
 				? String((result as { etag?: string }).etag ?? "")
 				: undefined;
 
-		refreshPublicHtmlCache(cache);
-		return { rev: nextRev, etag: etag || undefined, found: true };
+		const refresh = await safeRefreshPublicHtml(cache);
+		return {
+			revision: { rev: nextRev, etag: etag || undefined, found: true },
+			refresh,
+		};
 	}
 
 	await withLocalCatalogLock(key, async () => {
@@ -135,8 +163,11 @@ export async function writeCatalogRecord(
 		await writeLocalJson(key, body);
 	});
 
-	refreshPublicHtmlCache(cache);
-	return { rev: nextRev, found: true };
+	const refresh = await safeRefreshPublicHtml(cache);
+	return {
+		revision: { rev: nextRev, found: true },
+		refresh,
+	};
 }
 
 /**

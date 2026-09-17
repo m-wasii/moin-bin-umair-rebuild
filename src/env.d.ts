@@ -48,6 +48,8 @@ interface CloudflareEnv {
 	/** Access application AUD tag for the dashboard hostname */
 	CF_ACCESS_AUD?: string;
 	DASHBOARD_ENFORCE_CF_ACCESS?: string;
+	/** Second flag required to honor DASHBOARD_ENFORCE_CF_ACCESS=false. */
+	ALLOW_INSECURE_DASHBOARD_BRINGUP?: string;
 	CF_VERSION_METADATA?: { id: string; tag?: string };
 }
 

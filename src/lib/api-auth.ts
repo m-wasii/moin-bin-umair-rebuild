@@ -19,8 +19,9 @@ function json(data: unknown, status: number) {
  * Does not replace Cloudflare Access at the edge.
  *
  * - Dev: allow (local dashboard without Access).
- * - Prod + DASHBOARD_ENFORCE_CF_ACCESS=false: allow (documented bring-up only).
- * - Prod + enforced:
+ * - Prod + both DASHBOARD_ENFORCE_CF_ACCESS=false and
+ *   ALLOW_INSECURE_DASHBOARD_BRINGUP=true: allow (documented bring-up only).
+ * - Prod + enforced (default; a lone enforce=false is ignored):
  *   - dashboard host only (blocks public / preview Workers sharing MEDIA)
  *   - verified Cf-Access-Jwt-Assertion (email header alone is forgeable)
  *   - fail closed if CF_ACCESS_TEAM_DOMAIN / CF_ACCESS_AUD are missing

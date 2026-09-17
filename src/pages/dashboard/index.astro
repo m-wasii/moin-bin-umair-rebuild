@@ -1,266 +1,140 @@
 ---
 import DashboardLayout from "../../layouts/DashboardLayout.astro";
-import { hasWritableMedia, listVideos } from "../../lib/store";
+import PageHeader from "../../components/dashboard/PageHeader.astro";
+import StatusBadge from "../../components/dashboard/StatusBadge.astro";
+import { readDashboardCatalogSnapshot } from "../../lib/dashboard/catalog-snapshot";
 
 export const prerender = false;
 
-const videos = [...(await listVideos())].sort((a, b) => {
-	const order = (a.sortOrder ?? 100) - (b.sortOrder ?? 100);
-	if (order !== 0) return order;
-	return a.slug.localeCompare(b.slug);
-});
-const writable = hasWritableMedia();
+const snapshot = await readDashboardCatalogSnapshot();
+/** Storage readiness is not a publish lifecycle — keep wording distinct. */
+const storageStatus = snapshot.writable
+	? {
+			label: "Storage ready",
+			tone: "neutral" as const,
+			detail: "MEDIA bound — catalogs can publish",
+		}
+	: {
+			label: "Storage unavailable",
+			tone: "danger" as const,
+			detail: "MEDIA bucket is not bound",
+		};
 ---
 
-<DashboardLayout title="Videos" section="videos">
-	<header class="dash-heading">
-		<div>
-			<p>Catalog</p>
-			<h1>Videos</h1>
-		</div>
-		<p>
-			Paste a Vimeo or YouTube link. Drag the ⠿ handle to reorder. Google Access
-			is the only login — nothing is saved to GitHub.
-		</p>
-	</header>
+<DashboardLayout
+	title="Home"
+	section="home"
+	revisions={snapshot.revisions}
+	statusLabel={storageStatus.label}
+	statusTone={storageStatus.tone}
+>
+	<div class="dash-home">
+		<PageHeader
+			eyebrow="Studio"
+			title="Attention board"
+			description="What needs attention across the live portfolio catalogs. Counts and gaps come from real storage — nothing fabricated."
+		>
+			<div slot="actions" class="dash-quick-actions">
+				<a class="dash-btn dash-btn--primary" href="/dashboard/videos"
+					>Add video</a
+				>
+				<a class="dash-btn dash-btn--secondary" href="/dashboard/photos"
+					>Upload photos</a
+				>
+				<a class="dash-btn dash-btn--secondary" href="/dashboard/shorts"
+					>Manage shorts</a
+				>
+			</div>
+		</PageHeader>
 
-	{
-		!writable && (
-			<p class="dash-banner" role="status">
-				R2 is not bound on this Worker yet. You can look at the catalog, but
-				saves need a MEDIA bucket.
-			</p>
-		)
-	}
+		<section class="dash-panel" aria-labelledby="dash-home-status">
+			<h2 class="dash-panel__title" id="dash-home-status">System</h2>
+			<div class="dash-quick-actions">
+				<StatusBadge tone={storageStatus.tone} label={storageStatus.label} />
+			</div>
+			{
+				!snapshot.writable && (
+					<p class="dash-inline-error">
+						Saves need a MEDIA binding before publish status can advance.
+					</p>
+				)
+			}
+		</section>
 
-	<form class="dash-form" data-video-form>
-		<label>
-			<span>Video URL</span>
-			<input
-				name="url"
-				type="url"
-				required
-				placeholder="https://vimeo.com/… or YouTube"
-			/>
-		</label>
-		<label>
-			<span>Category</span>
-			<select name="category" required>
-				<option value="indie">Indie / Art</option>
-				<option value="local">Local Films</option>
-				<option value="bts">BTS & trailers</option>
-			</select>
-			<span class="dash-muted"
-				>File Shorts are managed separately (not via this video catalog).</span
-			>
-		</label>
-		<label>
-			<span>Title override</span>
-			<input name="title" type="text" placeholder="Optional" />
-		</label>
-		<label>
-			<span>Year (YouTube)</span>
-			<input name="year" type="number" min="1900" max="2100" />
-		</label>
-		<label>
-			<span>Duration seconds (YouTube)</span>
-			<input name="duration" type="number" min="1" />
-		</label>
-		<label class="dash-form__check">
-			<input name="featured" type="checkbox" />
-			<span>Featured</span>
-		</label>
-		<label class="dash-form__wide">
-			<span>Description</span>
-			<textarea name="description" rows="3"></textarea>
-		</label>
-		<button type="submit">Add video</button>
-		<p class="dash-form__status" data-form-status hidden></p>
-	</form>
+		<div class="dash-home__grid">
+			<section class="dash-panel" aria-labelledby="dash-home-counts">
+				<h2 class="dash-panel__title" id="dash-home-counts">Content</h2>
+				<div class="dash-count-row">
+					<div class="dash-count">
+						<span class="dash-count__value">{snapshot.counts.videos}</span>
+						<span class="dash-count__label">Videos</span>
+					</div>
+					<div class="dash-count">
+						<span class="dash-count__value">{snapshot.counts.albums}</span>
+						<span class="dash-count__label">Albums</span>
+					</div>
+					<div class="dash-count">
+						<span class="dash-count__value">{snapshot.counts.photos}</span>
+						<span class="dash-count__label">Photos</span>
+					</div>
+					<a class="dash-count" href="/dashboard/shorts">
+						<span class="dash-count__value">{snapshot.counts.shorts}</span>
+						<span class="dash-count__label">Shorts</span>
+					</a>
+				</div>
+				<p class="dash-muted">
+					Shorts: {snapshot.counts.shortCampaigns} campaigns ·{" "}
+					{snapshot.counts.shortSingles} singles
+				</p>
+			</section>
 
-	<div class="dash-table-wrap">
-		<table class="dash-table">
-			<thead>
-				<tr>
-					<th class="dash-handle-col" aria-label="Reorder"></th>
-					<th>Title</th>
-					<th>Category</th>
-					<th>Year</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody data-video-rows>
+			<section class="dash-panel dash-hero-snap" aria-labelledby="dash-home-hero">
+				<h2 class="dash-panel__title" id="dash-home-hero">Hero</h2>
 				{
-					videos.map((video) => (
-						<tr data-slug={video.slug} data-reorder-item>
-							<td>
-								<button
-									type="button"
-									class="dash-handle"
-									draggable="true"
-									data-drag-handle
-									aria-label={`Reorder ${video.title}`}
-									title="Drag to reorder"
-								>
-									⠿
-								</button>
-							</td>
-							<td>
-								<strong>{video.title}</strong>
-								<div class="dash-muted">{video.provider}</div>
-							</td>
-							<td>{video.category}</td>
-							<td>{video.year}</td>
-							<td>
-								<button
-									type="button"
-									class="dash-delete"
-									data-delete-video={video.slug}
-								>
-									Delete
-								</button>
-							</td>
-						</tr>
+					snapshot.hero.posterSrc ? (
+						<div class="dash-hero-snap__media">
+							<img
+								src={snapshot.hero.posterSrc}
+								alt="Current public hero poster"
+								width="960"
+								height="540"
+								loading="lazy"
+								decoding="async"
+							/>
+						</div>
+					) : (
+						<p class="dash-muted">Hero poster is not available.</p>
+					)
+				}
+				<p class="dash-hero-snap__meta">
+					Live version {snapshot.hero.version}
+					{
+						!snapshot.hero.loopPresent || !snapshot.hero.posterPresent
+							? " · incomplete media"
+							: ""
+					}
+				</p>
+				<a class="dash-btn dash-btn--ghost" href="/dashboard/site">Open Site / Hero</a>
+			</section>
+		</div>
+
+		<section class="dash-panel" aria-labelledby="dash-home-attention">
+			<h2 class="dash-panel__title" id="dash-home-attention">Needs attention</h2>
+			<ul class="dash-attention">
+				{
+					snapshot.attention.map((item) => (
+						<li class="dash-attention__item">
+							<p class="dash-attention__title">{item.title}</p>
+							<p class="dash-attention__detail">{item.detail}</p>
+							{item.href && (
+								<a class="dash-link" href={item.href}>
+									Open
+								</a>
+							)}
+						</li>
 					))
 				}
-			</tbody>
-		</table>
+			</ul>
+		</section>
 	</div>
 </DashboardLayout>
-
-<script>
-	const form = document.querySelector<HTMLFormElement>("[data-video-form]");
-	const status = document.querySelector<HTMLElement>("[data-form-status]");
-	const rows = document.querySelector<HTMLElement>("[data-video-rows]");
-
-	function setStatus(message: string, isError = false) {
-		if (!status) return;
-		status.hidden = !message;
-		status.textContent = message;
-		status.dataset.error = isError ? "true" : "false";
-	}
-
-	async function readResponse(response: Response): Promise<{ error?: string }> {
-		const text = await response.text();
-		if (!text) return {};
-		try {
-			return JSON.parse(text) as { error?: string };
-		} catch {
-			return { error: text };
-		}
-	}
-
-	form?.addEventListener("submit", async (event) => {
-		event.preventDefault();
-		const data = new FormData(form);
-		setStatus("Saving…");
-		const payload = {
-			url: String(data.get("url") ?? ""),
-			category: String(data.get("category") ?? ""),
-			title: String(data.get("title") ?? ""),
-			description: String(data.get("description") ?? ""),
-			year: data.get("year") ? Number(data.get("year")) : undefined,
-			duration: data.get("duration") ? Number(data.get("duration")) : undefined,
-			featured: data.get("featured") === "on",
-		};
-		const response = await fetch("/api/videos", {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(payload),
-		});
-		const result = await readResponse(response);
-		if (!response.ok) {
-			setStatus(result.error ?? "Could not save.", true);
-			return;
-		}
-		location.reload();
-	});
-
-	rows?.addEventListener("click", async (event) => {
-		const target = event.target;
-		if (!(target instanceof Element)) return;
-		const button = target.closest<HTMLButtonElement>("[data-delete-video]");
-		if (!button) return;
-		const slug = button.dataset.deleteVideo;
-		if (!slug || !confirm("Remove this video from the site?")) return;
-		const response = await fetch(
-			`/api/videos?slug=${encodeURIComponent(slug)}`,
-			{
-				method: "DELETE",
-			},
-		);
-		const result = await readResponse(response);
-		if (!response.ok) {
-			alert(result.error ?? "Could not delete.");
-			return;
-		}
-		button.closest("tr")?.remove();
-	});
-
-	function setupReorder(list: HTMLElement) {
-		let dragEl: HTMLElement | null = null;
-
-		list.addEventListener("dragstart", (event) => {
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			const handle = target.closest<HTMLElement>("[data-drag-handle]");
-			if (!handle || !list.contains(handle)) return;
-			const item = handle.closest<HTMLElement>("[data-reorder-item]");
-			if (!item) return;
-			dragEl = item;
-			item.classList.add("is-dragging");
-			event.dataTransfer?.setData("text/plain", item.dataset.slug ?? "");
-			if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-		});
-
-		list.addEventListener("dragend", () => {
-			dragEl?.classList.remove("is-dragging");
-			list
-				.querySelectorAll(".is-drop-target")
-				.forEach((el) => el.classList.remove("is-drop-target"));
-			dragEl = null;
-		});
-
-		list.addEventListener("dragover", (event) => {
-			if (!dragEl) return;
-			event.preventDefault();
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			const over = target.closest<HTMLElement>("[data-reorder-item]");
-			if (!over || over === dragEl || !list.contains(over)) return;
-			list
-				.querySelectorAll(".is-drop-target")
-				.forEach((el) => el.classList.remove("is-drop-target"));
-			over.classList.add("is-drop-target");
-			const rect = over.getBoundingClientRect();
-			const before = event.clientY < rect.top + rect.height / 2;
-			if (before) list.insertBefore(dragEl, over);
-			else list.insertBefore(dragEl, over.nextSibling);
-		});
-
-		list.addEventListener("drop", async (event) => {
-			event.preventDefault();
-			if (!dragEl) return;
-			list
-				.querySelectorAll(".is-drop-target")
-				.forEach((el) => el.classList.remove("is-drop-target"));
-			const slugs = [
-				...list.querySelectorAll<HTMLElement>("[data-reorder-item]"),
-			]
-				.map((el) => el.dataset.slug)
-				.filter((slug): slug is string => Boolean(slug));
-			const response = await fetch("/api/videos", {
-				method: "PATCH",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ action: "reorder", slugs }),
-			});
-			const result = await readResponse(response);
-			if (!response.ok) {
-				alert(result.error ?? "Could not reorder.");
-				location.reload();
-			}
-		});
-	}
-
-	if (rows) setupReorder(rows);
-</script>

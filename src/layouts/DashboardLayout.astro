@@ -1,13 +1,40 @@
 ---
+import "../styles/fonts.css";
 import { siteOrigin } from "../lib/hosts";
+import {
+	dashboardNavGroups,
+	type DashboardSection,
+} from "../lib/dashboard/nav";
+import { serializeRevisionMap } from "../lib/dashboard/revision-state";
+import type { CatalogRevisionMap } from "../lib/dashboard/revision-state";
+import StatusBadge from "../components/dashboard/StatusBadge.astro";
 
 interface Props {
 	title: string;
-	section: "videos" | "photos";
+	section: DashboardSection;
+	/** Optional breadcrumb trail after the workspace name. */
+	breadcrumbs?: Array<{ label: string; href?: string }>;
+	/** Catalog revisions for client bootstrap (Home / future workspaces). */
+	revisions?: CatalogRevisionMap;
+	/** Top-bar status chip label. */
+	statusLabel?: string;
+	statusTone?: "neutral" | "info" | "success" | "warning" | "danger";
 }
 
-const { title, section } = Astro.props;
+const {
+	title,
+	section,
+	breadcrumbs = [],
+	revisions,
+	statusLabel,
+	statusTone = "neutral",
+} = Astro.props;
+
 const siteHref = siteOrigin(Astro.url);
+const navGroups = dashboardNavGroups();
+const pageLabel =
+	navGroups.flatMap((group) => group.items).find((item) => item.id === section)
+		?.label ?? title;
 ---
 
 <!doctype html>
@@ -16,28 +43,200 @@ const siteHref = siteOrigin(Astro.url);
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="robots" content="noindex, nofollow" />
-		<meta name="theme-color" content="#050505" />
+		<meta name="theme-color" content="#0a0a0a" />
 		<title>{title} — MBU Dashboard</title>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="stylesheet" href="/dashboard.css" />
 	</head>
 	<body class="dash">
-		<header class="dash-bar">
-			<p class="dash-bar__brand">MBU</p>
-			<nav class="dash-bar__nav" aria-label="Dashboard">
+		<a class="dash-skip" href="#dash-main">Skip to content</a>
+
+		<div class="dash-shell">
+			<aside class="dash-sidebar" aria-label="Workspace">
+				<div class="dash-sidebar__brand">
+					<a class="dash-sidebar__logo" href="/dashboard">MBU</a>
+					<p class="dash-sidebar__product">Studio</p>
+				</div>
+
+				<nav class="dash-sidebar__nav" aria-label="Dashboard">
+					{
+						navGroups.map((group) => (
+							<div class="dash-sidebar__section">
+								{group.label && (
+									<p class="dash-sidebar__group">{group.label}</p>
+								)}
+								{group.items.map((item) => (
+									<a
+										class="dash-sidebar__link"
+										href={item.href}
+										aria-current={
+											section === item.id ? "page" : undefined
+										}
+									>
+										<span>{item.label}</span>
+									</a>
+								))}
+							</div>
+						))
+					}
+				</nav>
+
+				<div class="dash-sidebar__footer">
+					<a
+						class="dash-sidebar__site"
+						href={siteHref}
+						target="_blank"
+						rel="noreferrer"
+					>
+						View site
+					</a>
+				</div>
+			</aside>
+
+			<div
+				class="dash-nav-backdrop"
+				data-dash-nav-backdrop
+				hidden
+				data-open="false"
+			>
+			</div>
+
+			<div
+				id="dash-nav-sheet"
+				class="dash-nav-sheet"
+				data-dash-nav-sheet
+				data-open="false"
+				aria-hidden="true"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Workspace navigation"
+			>
+				<div class="dash-nav-sheet__head">
+					<p class="dash-sidebar__logo">MBU</p>
+					<button
+						type="button"
+						class="dash-icon-btn"
+						data-dash-nav-close
+						aria-label="Close navigation"
+					>
+						×
+					</button>
+				</div>
+				<nav class="dash-sidebar__nav" aria-label="Dashboard mobile">
+					{
+						navGroups.map((group) => (
+							<div class="dash-sidebar__section">
+								{group.label && (
+									<p class="dash-sidebar__group">{group.label}</p>
+								)}
+								{group.items.map((item) => (
+									<a
+										class="dash-sidebar__link"
+										href={item.href}
+										aria-current={
+											section === item.id ? "page" : undefined
+										}
+									>
+										<span>{item.label}</span>
+									</a>
+								))}
+							</div>
+						))
+					}
+				</nav>
 				<a
-					href="/dashboard"
-					aria-current={section === "videos" ? "page" : undefined}>Videos</a
+					class="dash-sidebar__site"
+					href={siteHref}
+					target="_blank"
+					rel="noreferrer"
 				>
-				<a
-					href="/dashboard/photos"
-					aria-current={section === "photos" ? "page" : undefined}>Photos</a
-				>
-			</nav>
-			<a class="dash-bar__site" href={siteHref}>View site</a>
-		</header>
-		<main class="dash-main">
-			<slot />
-		</main>
+					View site
+				</a>
+			</div>
+
+			<div class="dash-frame">
+				<header class="dash-topbar">
+					<button
+						type="button"
+						class="dash-icon-btn dash-topbar__menu"
+						data-dash-nav-toggle
+						aria-expanded="false"
+						aria-controls="dash-nav-sheet"
+						aria-label="Open navigation"
+					>
+						<span class="dash-topbar__menu-icon" aria-hidden="true"></span>
+					</button>
+
+					<div class="dash-topbar__context">
+						<nav class="dash-breadcrumbs" aria-label="Breadcrumb">
+							<a href="/dashboard">Home</a>
+							{
+								section !== "home" && (
+									<>
+										<span class="dash-breadcrumbs__sep" aria-hidden="true">
+											/
+										</span>
+										<span aria-current="page">{pageLabel}</span>
+									</>
+								)
+							}
+							{
+								breadcrumbs.map((crumb) => (
+									<>
+										<span class="dash-breadcrumbs__sep" aria-hidden="true">
+											/
+										</span>
+										{crumb.href ? (
+											<a href={crumb.href}>{crumb.label}</a>
+										) : (
+											<span aria-current="page">{crumb.label}</span>
+										)}
+									</>
+								))
+							}
+						</nav>
+						<p class="dash-topbar__title">{title}</p>
+					</div>
+
+					<div class="dash-topbar__actions">
+						{
+							statusLabel && (
+								<StatusBadge tone={statusTone} label={statusLabel} />
+							)
+						}
+						<a
+							class="dash-btn dash-btn--ghost dash-topbar__site"
+							href={siteHref}
+							target="_blank"
+							rel="noreferrer"
+						>
+							View site
+						</a>
+					</div>
+				</header>
+
+				<main class="dash-main" id="dash-main">
+					<slot />
+				</main>
+			</div>
+		</div>
+
+		{
+			revisions && (
+				<script
+					is:inline
+					type="application/json"
+					id="dash-revision-bootstrap"
+					set:html={serializeRevisionMap(revisions)}
+				/>
+			)
+		}
+
+		<script is:inline src="/dashboard/focus.js"></script>
+		<script is:inline src="/dashboard/shell.js"></script>
+		<script is:inline src="/dashboard/toast.js"></script>
+		<script is:inline src="/dashboard/overlays.js"></script>
+		<script is:inline src="/dashboard/revisions.js"></script>
+		<script is:inline src="/dashboard/publish-status.js"></script>
 	</body>
 </html>

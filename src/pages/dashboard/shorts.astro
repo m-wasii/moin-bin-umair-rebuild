@@ -1,0 +1,273 @@
+---
+import DashboardLayout from "../../layouts/DashboardLayout.astro";
+import PageHeader from "../../components/dashboard/PageHeader.astro";
+import EmptyState from "../../components/dashboard/EmptyState.astro";
+import { isShortCampaign, shortCover, shortDuration } from "../../data/shorts";
+import { formatDuration } from "../../data/projects";
+import {
+	EMPTY_REVISION,
+	type CatalogRevisionMap,
+	queryShorts,
+	shortsReorderAllowed,
+	type ShortsKindFilter,
+	type ShortsQuery,
+	type ShortsSort,
+} from "../../lib/dashboard";
+import { hasWritableMedia, readShortsCatalog } from "../../lib/store";
+
+export const prerender = false;
+
+function parseKind(raw: string | null): ShortsKindFilter {
+	if (raw === "campaign" || raw === "single") return raw;
+	return "all";
+}
+
+function parseSort(raw: string | null): ShortsSort {
+	if (raw === "title" || raw === "year") return raw;
+	return "order";
+}
+
+const { shorts: catalogShorts, revision } = await readShortsCatalog();
+const writable = hasWritableMedia();
+
+const initialQuery: ShortsQuery = {
+	q: Astro.url.searchParams.get("q") ?? "",
+	kind: parseKind(Astro.url.searchParams.get("kind")),
+	sort: parseSort(Astro.url.searchParams.get("sort")),
+};
+
+const sortedCatalog = queryShorts(catalogShorts, { sort: "order" });
+const visible = queryShorts(catalogShorts, initialQuery);
+const reorderAllowed = shortsReorderAllowed(initialQuery);
+const totalCount = catalogShorts.length;
+const resultCount = visible.length;
+const campaignCount = catalogShorts.filter(isShortCampaign).length;
+const singleCount = totalCount - campaignCount;
+
+const hasSearch = Boolean((initialQuery.q ?? "").trim());
+const hasFilters = (initialQuery.kind ?? "all") !== "all";
+
+const revisions: CatalogRevisionMap = {
+	videos: { ...EMPTY_REVISION },
+	photos: { ...EMPTY_REVISION },
+	photoCategories: { ...EMPTY_REVISION },
+	shorts: revision,
+	hero: { ...EMPTY_REVISION },
+};
+
+const bootstrap = {
+	shorts: sortedCatalog,
+	writable,
+};
+---
+
+<DashboardLayout
+	title="Shorts"
+	section="shorts"
+	revisions={revisions}
+	statusLabel={writable ? "Storage ready" : "Storage unavailable"}
+	statusTone={writable ? "neutral" : "danger"}
+>
+	<div class="dash-shorts" data-shorts-workspace>
+		<PageHeader
+			eyebrow="Shorts"
+			title="Shorts"
+			description={`${totalCount} ${totalCount === 1 ? "entry" : "entries"} · ${campaignCount} ${campaignCount === 1 ? "campaign" : "campaigns"} · ${singleCount} ${singleCount === 1 ? "single" : "singles"}`}
+		>
+			<div slot="actions" class="dash-quick-actions">
+				<button
+					type="button"
+					class="dash-btn dash-btn--primary"
+					data-shorts-new
+					disabled={!writable}
+				>
+					New short
+				</button>
+			</div>
+		</PageHeader>
+
+		{
+			!writable && (
+				<p class="dash-banner dash-banner--warn" role="status">
+					MEDIA is not bound. You can browse the catalog, but creates, uploads,
+					and deletes are disabled.
+				</p>
+			)
+		}
+
+		<div class="dash-shorts-toolbar" role="search">
+			<label class="dash-shorts-toolbar__search">
+				<span class="sr-only">Search shorts</span>
+				<input
+					type="search"
+					name="q"
+					placeholder="Search title or slug"
+					value={initialQuery.q ?? ""}
+					data-shorts-search
+					autocomplete="off"
+				/>
+			</label>
+			<div class="dash-shorts-toolbar__filters">
+				<label>
+					<span class="sr-only">Kind</span>
+					<select class="dash-videos-select" data-shorts-kind>
+						<option value="all" selected={(initialQuery.kind ?? "all") === "all"}>
+							All
+						</option>
+						<option
+							value="campaign"
+							selected={initialQuery.kind === "campaign"}
+						>
+							Campaigns
+						</option>
+						<option value="single" selected={initialQuery.kind === "single"}>
+							Singles
+						</option>
+					</select>
+				</label>
+				<label class="dash-shorts-toolbar__sort">
+					<span class="sr-only">Sort</span>
+					<select data-shorts-sort>
+						<option value="order" selected={(initialQuery.sort ?? "order") === "order"}>
+							Catalog order
+						</option>
+						<option value="title" selected={initialQuery.sort === "title"}>
+							Title
+						</option>
+						<option value="year" selected={initialQuery.sort === "year"}>
+							Year
+						</option>
+					</select>
+				</label>
+			</div>
+			<p class="dash-shorts-toolbar__count" data-shorts-count>
+				{resultCount === totalCount
+					? `${resultCount} shown`
+					: `${resultCount} of ${totalCount}`}
+			</p>
+		</div>
+
+		{
+			!reorderAllowed && (
+				<p class="dash-muted dash-shorts-reorder-hint" data-shorts-reorder-hint>
+					Reorder is available when viewing the full catalog in catalog order
+					(clear search and filters).
+				</p>
+			)
+		}
+		{
+			reorderAllowed && (
+				<p
+					class="dash-muted dash-shorts-reorder-hint"
+					data-shorts-reorder-hint
+					hidden
+				></p>
+			)
+		}
+
+		<div class="dash-shorts-content" data-shorts-content>
+			{
+				visible.length === 0 ? (
+					hasSearch || hasFilters ? (
+						<EmptyState
+							title="No matching shorts"
+							detail="Try a different search or clear the kind filter."
+						/>
+					) : (
+						<EmptyState
+							title="No shorts yet"
+							detail={
+								writable
+									? "Create a short with a prepared MP4 clip and WebP poster."
+									: "Bind MEDIA to start managing shorts."
+							}
+						/>
+					)
+				) : (
+					<ul class="dash-shorts-grid" data-shorts-grid>
+						{visible.map((entry, index) => {
+							const cover = shortCover(entry);
+							const campaign = isShortCampaign(entry);
+							const duration = shortDuration(entry);
+							return (
+								<li
+									class="dash-shorts-card"
+									data-shorts-card
+									data-slug={entry.slug}
+									draggable={reorderAllowed && writable ? "true" : undefined}
+								>
+									<button
+										type="button"
+										class="dash-shorts-card__hit"
+										data-shorts-open={entry.slug}
+									>
+										<span class="dash-shorts-card__media">
+											{cover ? (
+												<img
+													src={cover.poster}
+													alt=""
+													width={cover.width || 540}
+													height={cover.height || 540}
+													loading="lazy"
+													decoding="async"
+												/>
+											) : (
+												<span class="dash-shorts-card__missing">No poster</span>
+											)}
+										</span>
+										<span class="dash-shorts-card__meta">
+											<span class="dash-shorts-card__title">{entry.title}</span>
+											<span class="dash-shorts-card__sub">
+												{entry.year}
+												{" · "}
+												{campaign
+													? `${entry.clips.length} clips`
+													: formatDuration(duration)}
+												{" · "}
+												{campaign ? "Campaign" : "Single"}
+											</span>
+										</span>
+									</button>
+									{reorderAllowed && writable && (
+										<div class="dash-shorts-card__reorder">
+											<button
+												type="button"
+												class="dash-btn dash-btn--ghost"
+												data-shorts-move="up"
+												data-slug={entry.slug}
+												disabled={index === 0}
+												aria-label={`Move ${entry.title} up`}
+											>
+												↑
+											</button>
+											<button
+												type="button"
+												class="dash-btn dash-btn--ghost"
+												data-shorts-move="down"
+												data-slug={entry.slug}
+												disabled={index === visible.length - 1}
+												aria-label={`Move ${entry.title} down`}
+											>
+												↓
+											</button>
+										</div>
+									)}
+								</li>
+							);
+						})}
+					</ul>
+				)
+			}
+		</div>
+
+		<div class="sr-only" aria-live="polite" data-shorts-live></div>
+
+		<script
+			is:inline
+			type="application/json"
+			id="dash-shorts-bootstrap"
+			set:html={JSON.stringify(bootstrap)}
+		/>
+		<script is:inline src="/dashboard/shorts-workspace.js"></script>
+	</div>
+</DashboardLayout>
