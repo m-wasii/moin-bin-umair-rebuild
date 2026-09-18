@@ -43,6 +43,13 @@ interface CloudflareEnv {
 	YOUTUBE_API_KEY?: string;
 	/** Shared bearer token for POST /cdn-purge (mbu + dashboard Workers). */
 	CDN_PURGE_SECRET?: string;
+	/**
+	 * Dashboard-only service binding to the public `mbu` Worker.
+	 * Required: same-zone workers.dev fetch() returns Cloudflare error 1042.
+	 */
+	SITE_WORKER?: {
+		fetch(input: Request | string, init?: RequestInit): Promise<Response>;
+	};
 	/** Access team domain, e.g. myteam.cloudflareaccess.com */
 	CF_ACCESS_TEAM_DOMAIN?: string;
 	/** Access application AUD tag for the dashboard hostname */
