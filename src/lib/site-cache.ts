@@ -60,17 +60,26 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 	// Dashboard and mbu are separate Workers; purge is entrypoint-scoped, so
 	// catalog saves on dashboard must ask the public Worker to purge its cache.
 	const purgeUrl = new URL(SITE_CACHE_PURGE_PATH, `${origin}/`);
-	const response = await fetch(purgeUrl, {
-		method: "POST",
-		headers: {
-			accept: "application/json",
-			"content-type": "application/json",
-			authorization: `Bearer ${secret}`,
-		},
-		body: "{}",
-	});
+	let response: Response;
+	try {
+		response = await fetch(purgeUrl, {
+			method: "POST",
+			headers: {
+				accept: "application/json",
+				"content-type": "application/json",
+				authorization: `Bearer ${secret}`,
+			},
+			body: "{}",
+		});
+	} catch (error) {
+		const reason = error instanceof Error ? error.message : String(error);
+		throw new Error(`purge fetch failed at ${purgeUrl.host}: ${reason}`);
+	}
 	if (!response.ok) {
-		throw new Error(`purge endpoint ${response.status} at ${purgeUrl.host}`);
+		const body = (await response.text().catch(() => "")).slice(0, 160);
+		throw new Error(
+			`purge endpoint ${response.status} at ${purgeUrl.host}${body ? `: ${body}` : ""}`,
+		);
 	}
 }
 
@@ -93,10 +102,12 @@ async function warmPublicHtml(origin: string) {
 async function runRefresh(origin: string): Promise<SiteCacheRefreshResult> {
 	// Never warm after a failed purge — that would re-store stale HTML under
 	// the long public s-maxage and hide a successful catalog write.
+	let purgeDetail: string | undefined;
 	const result = await runPurgeThenWarm({
 		purge: () => purgePublicHtmlOnSiteWorker(origin),
 		warm: () => warmPublicHtml(origin),
 		onPurgeError: (error) => {
+			purgeDetail = error instanceof Error ? error.message : "Purge failed";
 			console.error("[site-cache] purge failed; skipping warm", error);
 		},
 		onWarmError: (error) => {
@@ -124,7 +135,9 @@ async function runRefresh(origin: string): Promise<SiteCacheRefreshResult> {
 		status: "failed",
 		purged: false,
 		warmed: false,
-		detail: "Purge failed; warm skipped",
+		detail: purgeDetail
+			? `Purge failed; warm skipped — ${purgeDetail}`
+			: "Purge failed; warm skipped",
 	};
 }
 

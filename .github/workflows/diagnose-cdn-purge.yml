@@ -1,0 +1,59 @@
+name: Diagnose CDN purge
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Probe /cdn-purge scopes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      CDN_PURGE_SECRET: ${{ secrets.CDN_PURGE_SECRET }}
+      MBU_SITE_ORIGIN: https://mbu.wasi-workdesk.workers.dev
+    steps:
+      - name: Require secret
+        run: |
+          set -euo pipefail
+          if [ -z "${CDN_PURGE_SECRET:-}" ]; then
+            echo "::error::CDN_PURGE_SECRET missing"
+            exit 1
+          fi
+          echo "CDN_PURGE_SECRET is PRESENT (value not printed)"
+
+      - name: Probe html scope (CMS path)
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/purge-html.json -w "%{http_code}" \
+            -X POST "${MBU_SITE_ORIGIN}/cdn-purge" \
+            -H "accept: application/json" \
+            -H "content-type: application/json" \
+            -H "authorization: Bearer ${CDN_PURGE_SECRET}" \
+            -d "{}")
+          echo "html_scope_http=$code"
+          # Body is non-secret JSON ({ok, scope|error})
+          head -c 200 /tmp/purge-html.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::html scope purge failed with HTTP $code"
+            exit 1
+          fi
+
+      - name: Probe everything scope (deploy path)
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/purge-all.json -w "%{http_code}" \
+            -X POST "${MBU_SITE_ORIGIN}/cdn-purge?scope=everything" \
+            -H "accept: application/json" \
+            -H "content-type: application/json" \
+            -H "authorization: Bearer ${CDN_PURGE_SECRET}" \
+            -d "{}")
+          echo "everything_scope_http=$code"
+          head -c 200 /tmp/purge-all.json; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::everything scope purge failed with HTTP $code"
+            exit 1
+          fi
