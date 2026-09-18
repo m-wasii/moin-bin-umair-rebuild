@@ -1,5 +1,6 @@
 import {
 	assertSafeObjectKey,
+	deleteLocal,
 	getBucket,
 	guessMediaContentType,
 	localPath,
@@ -7,6 +8,11 @@ import {
 	writeLocalBytes,
 } from "./bucket";
 import type { MediaHead, StoredMediaBody } from "./types";
+
+async function mediaBodyToBytes(body: StoredMediaBody): Promise<Uint8Array> {
+	if (body.body instanceof Uint8Array) return body.body;
+	return new Uint8Array(await new Response(body.body).arrayBuffer());
+}
 
 async function readLocalMediaBody(
 	key: string,
@@ -190,4 +196,35 @@ export async function putMediaBytes(
 		return;
 	}
 	await writeLocalBytes(safeKey, bytes);
+}
+
+/** Delete an opaque media object (best-effort for callers that ignore miss). */
+export async function deleteMediaBytes(key: string) {
+	const safeKey = assertSafeObjectKey(key);
+	const bucket = getBucket();
+	if (bucket) {
+		await bucket.delete(safeKey);
+		return;
+	}
+	await deleteLocal(safeKey);
+}
+
+/**
+ * Copy an opaque media object to another key.
+ * Returns false when the source is missing.
+ */
+export async function copyMediaBytes(
+	fromKey: string,
+	toKey: string,
+	contentType?: string,
+): Promise<boolean> {
+	const source = await getMediaObject(fromKey);
+	if (!source) return false;
+	const bytes = await mediaBodyToBytes(source);
+	await putMediaBytes(
+		toKey,
+		bytes,
+		contentType || source.contentType || guessMediaContentType(fromKey),
+	);
+	return true;
 }
