@@ -23,7 +23,7 @@
 		"seed:r2": "node scripts/seed-r2.mjs",
 		"verify:shorts-r2": "node scripts/verify-shorts-r2.mjs",
 		"deploy:public": "wrangler deploy",
-		"deploy:dashboard": "wrangler deploy --name dashboard",
+		"deploy:dashboard": "node scripts/inject-site-worker-binding.mjs && wrangler deploy --name dashboard",
 		"deploy": "npm run build && npm run deploy:public && npm run deploy:dashboard",
 		"purge:cache": "node scripts/purge-workers-cache.mjs --target production --i-know-this-is-production --scope everything --warm"
 	},

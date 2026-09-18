@@ -30,4 +30,13 @@
 	"images": {
 		"binding": "IMAGES",
 	},
+	// Same-zone workers.dev fetch() from dashboard → mbu is Cloudflare error 1042.
+	// Must be a top-level binding: `wrangler deploy --name dashboard` inherits this
+	// config, and Astro's redirected deploy config drops `env.*`.
+	"services": [
+		{
+			"binding": "SITE_WORKER",
+			"service": "mbu",
+		},
+	],
 }

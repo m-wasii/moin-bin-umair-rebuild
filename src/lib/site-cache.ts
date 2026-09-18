@@ -44,6 +44,30 @@ export type SiteCacheRefreshResult =
 			detail?: string;
 	  };
 
+/**
+ * Same-zone workers.dev fetch() from dashboard → mbu is Cloudflare error 1042.
+ * Prefer the dashboard SITE_WORKER service binding; fall back to public fetch
+ * (CI, and hosts that are not the same workers.dev zone).
+ */
+async function fetchSiteWorker(url: URL, init: RequestInit): Promise<Response> {
+	try {
+		const { env } = await import("cloudflare:workers");
+		const binding = (
+			env as {
+				SITE_WORKER?: {
+					fetch(input: Request | string, init?: RequestInit): Promise<Response>;
+				};
+			}
+		).SITE_WORKER;
+		if (binding && typeof binding.fetch === "function") {
+			return binding.fetch(new Request(url, init));
+		}
+	} catch {
+		// Node tests / missing runtime — public fetch below.
+	}
+	return fetch(url, init);
+}
+
 function resolvePublicOrigin(options: SiteCacheRefreshOptions): string | null {
 	if (options.origin) return options.origin.replace(/\/$/, "");
 	// Derive from the dashboard/site request host — never from marketing SITE.
@@ -62,7 +86,7 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 	const purgeUrl = new URL(SITE_CACHE_PURGE_PATH, `${origin}/`);
 	let response: Response;
 	try {
-		response = await fetch(purgeUrl, {
+		response = await fetchSiteWorker(purgeUrl, {
 			method: "POST",
 			headers: {
 				accept: "application/json",
@@ -86,7 +110,7 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 async function warmPublicHtml(origin: string) {
 	await Promise.all(
 		WARM_PATHS.map(async (path) => {
-			const response = await fetch(new URL(path, `${origin}/`), {
+			const response = await fetchSiteWorker(new URL(path, `${origin}/`), {
 				method: "GET",
 				headers: { accept: "text/html" },
 			});
