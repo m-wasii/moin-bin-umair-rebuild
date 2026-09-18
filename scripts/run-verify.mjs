@@ -39,6 +39,10 @@ const checks = [
 		args: [...stripTypes, "scripts/verify-site-cache-refresh.mjs"],
 	},
 	{
+		name: "worker-cache-origin",
+		args: [...stripTypes, "scripts/verify-worker-cache-origin.mjs"],
+	},
+	{
 		name: "catalog-mutations",
 		args: [...stripTypes, "scripts/verify-catalog-mutations.mjs"],
 	},

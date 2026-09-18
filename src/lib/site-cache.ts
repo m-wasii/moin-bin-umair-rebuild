@@ -1,4 +1,4 @@
-import { siteOrigin } from "./hosts";
+import { workerCacheOrigin } from "./hosts";
 import { cdnPurgeSecret } from "./purge-auth";
 import { runPurgeThenWarm } from "./site-cache-refresh";
 
@@ -46,15 +46,8 @@ export type SiteCacheRefreshResult =
 
 function resolvePublicOrigin(options: SiteCacheRefreshOptions): string | null {
 	if (options.origin) return options.origin.replace(/\/$/, "");
-	if (options.requestUrl) return siteOrigin(options.requestUrl);
-	const configured = import.meta.env.SITE || import.meta.env.PUBLIC_SITE_URL;
-	if (configured) {
-		try {
-			return new URL(configured).origin;
-		} catch {
-			return null;
-		}
-	}
+	// Derive from the dashboard/site request host — never from marketing SITE.
+	if (options.requestUrl) return workerCacheOrigin(options.requestUrl);
 	return null;
 }
 
@@ -66,7 +59,8 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 
 	// Dashboard and mbu are separate Workers; purge is entrypoint-scoped, so
 	// catalog saves on dashboard must ask the public Worker to purge its cache.
-	const response = await fetch(new URL(SITE_CACHE_PURGE_PATH, `${origin}/`), {
+	const purgeUrl = new URL(SITE_CACHE_PURGE_PATH, `${origin}/`);
+	const response = await fetch(purgeUrl, {
 		method: "POST",
 		headers: {
 			accept: "application/json",
@@ -76,7 +70,7 @@ async function purgePublicHtmlOnSiteWorker(origin: string) {
 		body: "{}",
 	});
 	if (!response.ok) {
-		throw new Error(`purge endpoint ${response.status}`);
+		throw new Error(`purge endpoint ${response.status} at ${purgeUrl.host}`);
 	}
 }
 
