@@ -45,6 +45,8 @@ export {
 	getMediaHead,
 	getMediaRange,
 	putMediaBytes,
+	deleteMediaBytes,
+	copyMediaBytes,
 } from "./media";
 
 export {

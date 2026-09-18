@@ -27,12 +27,15 @@ import {
 import { mutationPublishFromRefresh } from "../../lib/dashboard/publish-status";
 import { isValidWebp } from "../../lib/webp";
 import {
+	copyMediaBytes,
+	deleteMediaBytes,
 	deleteShortBytes,
 	deleteShortEntryMedia,
 	hasWritableMedia,
 	putShortBytes,
 	readShortsCatalog,
 	saveShorts,
+	shortObjectKey,
 } from "../../lib/store";
 
 export const prerender = false;
@@ -113,7 +116,9 @@ async function readPosterUpload(file: File): Promise<Uint8Array> {
 		});
 	}
 	if (file.type && file.type !== "image/webp") {
-		throw Object.assign(new Error("Clip poster must be WebP."), { status: 415 });
+		throw Object.assign(new Error("Clip poster must be WebP."), {
+			status: 415,
+		});
 	}
 	if (file.size > MAX_CLIP_POSTER_BYTES) {
 		throw Object.assign(new Error("Poster is too large (max 4.5 MB)."), {
@@ -135,10 +140,14 @@ function parseClipMetrics(form: FormData, prefix = "") {
 		"clip duration",
 		{ min: 1, max: 3_600 },
 	);
-	const width = parseRequiredInt(String(form.get(`${prefix}width`) ?? ""), "clip width", {
-		min: 1,
-		max: 10_000,
-	});
+	const width = parseRequiredInt(
+		String(form.get(`${prefix}width`) ?? ""),
+		"clip width",
+		{
+			min: 1,
+			max: 10_000,
+		},
+	);
 	const height = parseRequiredInt(
 		String(form.get(`${prefix}height`) ?? ""),
 		"clip height",
@@ -147,7 +156,10 @@ function parseClipMetrics(form: FormData, prefix = "") {
 	return { duration, width, height };
 }
 
-function rewriteCompleteOrder(shorts: StoredShort[], slugs: string[]): StoredShort[] {
+function rewriteCompleteOrder(
+	shorts: StoredShort[],
+	slugs: string[],
+): StoredShort[] {
 	const bySlug = new Map(shorts.map((entry) => [entry.slug, entry]));
 	return slugs.map((slug, index) => ({
 		...bySlug.get(slug)!,
@@ -185,6 +197,46 @@ async function writeClipMedia(
 		);
 		throw error;
 	}
+}
+
+function shortClipBackupKey(campaign: string, file: string) {
+	return `shorts/${campaign}/${file}.bak`;
+}
+
+async function backupClipMedia(campaign: string, clipSlug: string) {
+	const files = [
+		shortMediaFile(clipSlug, "mp4"),
+		shortMediaFile(clipSlug, "webp"),
+	] as const;
+	const backups: Array<{ liveKey: string; bakKey: string }> = [];
+	for (const file of files) {
+		const liveKey = shortObjectKey(campaign, file);
+		const bakKey = shortClipBackupKey(campaign, file);
+		if (await copyMediaBytes(liveKey, bakKey)) {
+			backups.push({ liveKey, bakKey });
+		}
+	}
+	return backups;
+}
+
+async function restoreClipBackups(
+	backups: Array<{ liveKey: string; bakKey: string }>,
+) {
+	for (const { liveKey, bakKey } of backups) {
+		await copyMediaBytes(bakKey, liveKey).catch(() => undefined);
+		await deleteMediaBytes(bakKey).catch(() => undefined);
+	}
+}
+
+async function clearClipBackups(bakKeys: string[]) {
+	await Promise.allSettled(bakKeys.map((key) => deleteMediaBytes(key)));
+}
+
+async function deleteClipMedia(campaign: string, clipSlug: string) {
+	await Promise.allSettled([
+		deleteShortBytes(campaign, shortMediaFile(clipSlug, "mp4")),
+		deleteShortBytes(campaign, shortMediaFile(clipSlug, "webp")),
+	]);
 }
 
 export const GET: APIRoute = async () => {
@@ -239,46 +291,71 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			const metrics = parseClipMetrics(form);
 
 			let clipSlug: string;
+			let replaceBackups: Array<{ liveKey: string; bakKey: string }> = [];
 			if (intent === "replace-clip") {
 				clipSlug = assertSafeStorageSegment(
 					String(form.get("clipSlug") ?? ""),
 					"clip slug",
 				);
-				const clipIndex = existing.clips.findIndex((clip) => clip.slug === clipSlug);
+				const clipIndex = existing.clips.findIndex(
+					(clip) => clip.slug === clipSlug,
+				);
 				if (clipIndex === -1) {
 					return jsonResponse({ error: "Clip not found." }, 404);
 				}
-				await writeClipMedia(slug, clipSlug, video, poster);
-				const nextClips = existing.clips.slice();
-				nextClips[clipIndex] = buildClip(slug, clipSlug, metrics);
-				shorts[index] = { ...existing, clips: nextClips };
-			} else {
+				replaceBackups = await backupClipMedia(slug, clipSlug);
 				try {
-					clipSlug = nextShortClipSlug(existing.clips);
-				} catch {
-					return jsonResponse(
-						{ error: "Campaign already has the maximum number of clips." },
-						400,
+					await writeClipMedia(slug, clipSlug, video, poster);
+					const nextClips = existing.clips.slice();
+					nextClips[clipIndex] = buildClip(slug, clipSlug, metrics);
+					shorts[index] = { ...existing, clips: nextClips };
+					const { revision: next, refresh } = await saveShorts(
+						shorts,
+						revision,
+						mutationCacheOpts(request, locals),
 					);
+					await clearClipBackups(replaceBackups.map((item) => item.bakKey));
+					return jsonResponse({
+						short: shorts[index],
+						rev: next.rev,
+						publish: mutationPublishFromRefresh(refresh),
+					});
+				} catch (error) {
+					if (replaceBackups.length) await restoreClipBackups(replaceBackups);
+					throw error;
 				}
-				assertSafeStorageSegment(clipSlug, "clip slug");
-				await writeClipMedia(slug, clipSlug, video, poster);
-				shorts[index] = {
-					...existing,
-					clips: [...existing.clips, buildClip(slug, clipSlug, metrics)],
-				};
 			}
 
-			const { revision: next, refresh } = await saveShorts(
-				shorts,
-				revision,
-				mutationCacheOpts(request, locals),
-			);
-			return jsonResponse({
-				short: shorts[index],
-				rev: next.rev,
-				publish: mutationPublishFromRefresh(refresh),
-			});
+			try {
+				clipSlug = nextShortClipSlug(existing.clips);
+			} catch {
+				return jsonResponse(
+					{ error: "Campaign already has the maximum number of clips." },
+					400,
+				);
+			}
+			assertSafeStorageSegment(clipSlug, "clip slug");
+			await writeClipMedia(slug, clipSlug, video, poster);
+			shorts[index] = {
+				...existing,
+				clips: [...existing.clips, buildClip(slug, clipSlug, metrics)],
+			};
+
+			try {
+				const { revision: next, refresh } = await saveShorts(
+					shorts,
+					revision,
+					mutationCacheOpts(request, locals),
+				);
+				return jsonResponse({
+					short: shorts[index],
+					rev: next.rev,
+					publish: mutationPublishFromRefresh(refresh),
+				});
+			} catch (error) {
+				await deleteClipMedia(slug, clipSlug);
+				throw error;
+			}
 		}
 
 		// create
@@ -291,7 +368,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		let slug = slugifyShortName(String(form.get("slug") ?? "") || title);
 		if (!slug || !isShortSlug(slug)) {
 			return jsonResponse(
-				{ error: "Provide a valid kebab-case slug (or a title that slugifies)." },
+				{
+					error: "Provide a valid kebab-case slug (or a title that slugifies).",
+				},
 				400,
 			);
 		}
@@ -386,7 +465,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		}
 
 		if (body.action === "reorder-clips") {
-			const slug = assertSafeStorageSegment(String(body.slug ?? ""), "short slug");
+			const slug = assertSafeStorageSegment(
+				String(body.slug ?? ""),
+				"short slug",
+			);
 			const index = shorts.findIndex((entry) => entry.slug === slug);
 			if (index === -1) return jsonResponse({ error: "Short not found." }, 404);
 			const existing = shorts[index]!;
@@ -414,7 +496,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		}
 
 		if (body.action === "remove-clip") {
-			const slug = assertSafeStorageSegment(String(body.slug ?? ""), "short slug");
+			const slug = assertSafeStorageSegment(
+				String(body.slug ?? ""),
+				"short slug",
+			);
 			const clipSlug = assertSafeStorageSegment(
 				String(body.clipSlug ?? ""),
 				"clip slug",
@@ -424,11 +509,15 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 			const existing = shorts[index]!;
 			if (existing.clips.length <= 1) {
 				return jsonResponse(
-					{ error: "A short needs at least one clip. Delete the short instead." },
+					{
+						error: "A short needs at least one clip. Delete the short instead.",
+					},
 					400,
 				);
 			}
-			const clipIndex = existing.clips.findIndex((clip) => clip.slug === clipSlug);
+			const clipIndex = existing.clips.findIndex(
+				(clip) => clip.slug === clipSlug,
+			);
 			if (clipIndex === -1) {
 				return jsonResponse({ error: "Clip not found." }, 404);
 			}
@@ -454,7 +543,10 @@ export const PATCH: APIRoute = async ({ request, locals }) => {
 		}
 
 		// metadata update
-		const slug = assertSafeStorageSegment(String(body.slug ?? ""), "short slug");
+		const slug = assertSafeStorageSegment(
+			String(body.slug ?? ""),
+			"short slug",
+		);
 		const index = shorts.findIndex((entry) => entry.slug === slug);
 		if (index === -1) return jsonResponse({ error: "Short not found." }, 404);
 		const existing = shorts[index]!;

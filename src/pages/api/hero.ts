@@ -1,10 +1,7 @@
 import type { APIRoute } from "astro";
 import { unauthorizedMutationResponse } from "../../lib/api-auth";
 import { publicApiError } from "../../lib/api-errors";
-import {
-	jsonResponse,
-	mutationCacheOpts,
-} from "../../lib/api-http";
+import { jsonResponse, mutationCacheOpts } from "../../lib/api-http";
 import {
 	assertExpectedRev,
 	expectedRevFromRequest,
@@ -13,6 +10,8 @@ import { mutationPublishFromRefresh } from "../../lib/dashboard/publish-status";
 import { newMediaVersion } from "../../lib/media-url";
 import { isValidWebp } from "../../lib/webp";
 import {
+	copyMediaBytes,
+	deleteMediaBytes,
 	hasWritableMedia,
 	HERO_LOOP_KEY,
 	HERO_POSTER_KEY,
@@ -25,6 +24,8 @@ export const prerender = false;
 
 const MAX_LOOP_BYTES = 80_000_000;
 const MAX_POSTER_BYTES = 4_500_000;
+const HERO_LOOP_BAK_KEY = `${HERO_LOOP_KEY}.bak`;
+const HERO_POSTER_BAK_KEY = `${HERO_POSTER_KEY}.bak`;
 
 function httpError(error: unknown): { message: string; status: number } | null {
 	if (
@@ -88,7 +89,9 @@ async function readPosterUpload(file: File): Promise<Uint8Array> {
 		});
 	}
 	if (file.type && file.type !== "image/webp") {
-		throw Object.assign(new Error("Hero poster must be WebP."), { status: 415 });
+		throw Object.assign(new Error("Hero poster must be WebP."), {
+			status: 415,
+		});
 	}
 	if (file.size > MAX_POSTER_BYTES) {
 		throw Object.assign(new Error("Poster is too large (max 4.5 MB)."), {
@@ -102,6 +105,24 @@ async function readPosterUpload(file: File): Promise<Uint8Array> {
 		});
 	}
 	return bytes;
+}
+
+async function backupHeroAsset(liveKey: string, bakKey: string) {
+	const copied = await copyMediaBytes(liveKey, bakKey);
+	return copied ? bakKey : null;
+}
+
+async function restoreHeroBackups(
+	backups: Array<{ liveKey: string; bakKey: string }>,
+) {
+	for (const { liveKey, bakKey } of backups) {
+		await copyMediaBytes(bakKey, liveKey).catch(() => undefined);
+		await deleteMediaBytes(bakKey).catch(() => undefined);
+	}
+}
+
+async function clearHeroBackups(bakKeys: string[]) {
+	await Promise.allSettled(bakKeys.map((key) => deleteMediaBytes(key)));
 }
 
 export const GET: APIRoute = async () => {
@@ -131,9 +152,9 @@ export const GET: APIRoute = async () => {
 
 /**
  * Replace hero loop and/or poster.
- * Sequence: validate → write new bytes to fixed keys → touch catalog + refresh.
- * Live assets are overwritten only after validation; a failed write leaves the
- * previous object in place. There is no delete — hero is a required singleton.
+ * Sequence: validate → backup live objects → write fixed keys → touch catalog +
+ * refresh. On any failure after a live write, restore from `.bak` copies so the
+ * loop/poster pair cannot diverge permanently.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
 	const denied = await unauthorizedMutationResponse(request);
@@ -148,6 +169,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			503,
 		);
 	}
+
+	const backups: Array<{ liveKey: string; bakKey: string }> = [];
 
 	try {
 		const form = await request.formData();
@@ -179,43 +202,63 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			: null;
 
 		if (loopBytes) {
-			await putMediaBytes(HERO_LOOP_KEY, loopBytes, "video/mp4");
+			const bakKey = await backupHeroAsset(HERO_LOOP_KEY, HERO_LOOP_BAK_KEY);
+			if (bakKey) backups.push({ liveKey: HERO_LOOP_KEY, bakKey });
 		}
 		if (posterBytes) {
-			await putMediaBytes(HERO_POSTER_KEY, posterBytes, "image/webp");
+			const bakKey = await backupHeroAsset(
+				HERO_POSTER_KEY,
+				HERO_POSTER_BAK_KEY,
+			);
+			if (bakKey) backups.push({ liveKey: HERO_POSTER_KEY, bakKey });
 		}
 
-		const { revision: next, refresh } = await touchHeroMedia(
-			newMediaVersion(),
-			mutationCacheOpts(request, locals),
-			current.revision,
-		);
+		try {
+			if (loopBytes) {
+				await putMediaBytes(HERO_LOOP_KEY, loopBytes, "video/mp4");
+			}
+			if (posterBytes) {
+				await putMediaBytes(HERO_POSTER_KEY, posterBytes, "image/webp");
+			}
 
-		const hero = await readHeroCatalog();
-		return jsonResponse({
-			rev: next.rev,
-			version: hero.mediaVersion,
-			catalogVersion: hero.catalogVersion,
-			loop: hero.loop
-				? {
-						src: hero.loopSrc,
-						size: hero.loop.size,
-						contentType: hero.loop.httpMetadata?.contentType ?? "video/mp4",
-					}
-				: null,
-			poster: hero.poster
-				? {
-						src: hero.posterSrc,
-						size: hero.poster.size,
-						contentType: hero.poster.httpMetadata?.contentType ?? "image/webp",
-					}
-				: null,
-			replaced: {
-				loop: Boolean(loopBytes),
-				poster: Boolean(posterBytes),
-			},
-			publish: mutationPublishFromRefresh(refresh),
-		});
+			const { revision: next, refresh } = await touchHeroMedia(
+				newMediaVersion(),
+				mutationCacheOpts(request, locals),
+				current.revision,
+			);
+
+			await clearHeroBackups(backups.map((item) => item.bakKey));
+
+			const hero = await readHeroCatalog();
+			return jsonResponse({
+				rev: next.rev,
+				version: hero.mediaVersion,
+				catalogVersion: hero.catalogVersion,
+				loop: hero.loop
+					? {
+							src: hero.loopSrc,
+							size: hero.loop.size,
+							contentType: hero.loop.httpMetadata?.contentType ?? "video/mp4",
+						}
+					: null,
+				poster: hero.poster
+					? {
+							src: hero.posterSrc,
+							size: hero.poster.size,
+							contentType:
+								hero.poster.httpMetadata?.contentType ?? "image/webp",
+						}
+					: null,
+				replaced: {
+					loop: Boolean(loopBytes),
+					poster: Boolean(posterBytes),
+				},
+				publish: mutationPublishFromRefresh(refresh),
+			});
+		} catch (error) {
+			if (backups.length) await restoreHeroBackups(backups);
+			throw error;
+		}
 	} catch (error) {
 		const mapped = httpError(error);
 		if (mapped) return jsonResponse({ error: mapped.message }, mapped.status);

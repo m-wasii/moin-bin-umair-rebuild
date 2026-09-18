@@ -17,6 +17,7 @@
 	/** @type {HTMLElement | null} */
 	let dragEl = null;
 	let reorderBusy = false;
+	let mutationBusy = false;
 	/** @type {{ mode: "create" | "edit", slug?: string } | null} */
 	let drawerContext = null;
 
@@ -262,8 +263,8 @@
 					${
 						canReorder
 							? `<div class="dash-shorts-card__reorder">
-							<button type="button" class="dash-btn dash-btn--ghost" data-shorts-move="up" data-slug="${escapeHtml(entry.slug)}" ${index === 0 ? "disabled" : ""} aria-label="Move ${escapeHtml(entry.title)} up">↑</button>
-							<button type="button" class="dash-btn dash-btn--ghost" data-shorts-move="down" data-slug="${escapeHtml(entry.slug)}" ${index === visible.length - 1 ? "disabled" : ""} aria-label="Move ${escapeHtml(entry.title)} down">↓</button>
+							<button type="button" class="dash-btn dash-btn--ghost" data-shorts-move="up" data-slug="${escapeHtml(entry.slug)}" ${index === 0 || reorderBusy ? "disabled" : ""} aria-label="Move ${escapeHtml(entry.title)} up">↑</button>
+							<button type="button" class="dash-btn dash-btn--ghost" data-shorts-move="down" data-slug="${escapeHtml(entry.slug)}" ${index === visible.length - 1 || reorderBusy ? "disabled" : ""} aria-label="Move ${escapeHtml(entry.title)} down">↓</button>
 						</div>`
 							: ""
 					}
@@ -586,6 +587,21 @@
 		status.style.color = isError ? "var(--dash-danger, #f87171)" : "";
 	}
 
+	function setDrawerMutationBusy(layer, form, busy) {
+		mutationBusy = busy;
+		const primary = layer.panel.querySelector(
+			'[data-dash-action][class*="primary"]',
+		);
+		if (primary instanceof HTMLButtonElement) primary.disabled = busy;
+		form
+			.querySelectorAll(
+				"[data-shorts-add-clip], [data-clip-replace], [data-clip-remove], [data-clip-move]",
+			)
+			.forEach((node) => {
+				if (node instanceof HTMLButtonElement) node.disabled = busy;
+			});
+	}
+
 	function openEditor(entry) {
 		drawerContext = entry
 			? { mode: "edit", slug: entry.slug }
@@ -697,6 +713,7 @@
 	}
 
 	async function createShort(form, layer) {
+		if (mutationBusy) return;
 		const title = String(new FormData(form).get("title") ?? "").trim();
 		const year = Number(new FormData(form).get("year"));
 		const slug = String(new FormData(form).get("slug") ?? "").trim();
@@ -715,6 +732,7 @@
 			return;
 		}
 
+		setDrawerMutationBusy(layer, form, true);
 		setDrawerStatus(form, "Preparing upload…", false);
 		try {
 			const metrics = await probeVideo(video);
@@ -739,9 +757,14 @@
 			});
 			const result = await readJson(response);
 			if (response.status === 409) {
+				const err = result.error ?? "Conflict while creating.";
+				if (/already exists/i.test(err)) {
+					setDrawerStatus(form, err, true);
+					return;
+				}
 				layer.close();
 				showConflict({
-					message: result.error ?? "Conflict while creating.",
+					message: err,
 					reopenMode: "create",
 				});
 				return;
@@ -761,10 +784,13 @@
 				error instanceof Error ? error.message : "Upload failed.",
 				true,
 			);
+		} finally {
+			setDrawerMutationBusy(layer, form, false);
 		}
 	}
 
 	async function saveMetadata(form, layer) {
+		if (mutationBusy) return;
 		const slug = drawerContext?.slug;
 		if (!slug) return;
 		const data = new FormData(form);
@@ -774,6 +800,7 @@
 			setDrawerStatus(form, "Title is required.", true);
 			return;
 		}
+		setDrawerMutationBusy(layer, form, true);
 		setDrawerStatus(form, "Saving…", false);
 		try {
 			const response = await fetch("/api/shorts", {
@@ -810,10 +837,13 @@
 			renderList();
 		} catch {
 			setDrawerStatus(form, "Network error while saving.", true);
+		} finally {
+			setDrawerMutationBusy(layer, form, false);
 		}
 	}
 
 	async function addClip(form, slug, layer) {
+		if (mutationBusy) return;
 		const videoInput = form.querySelector('input[name="addVideo"]');
 		const posterInput = form.querySelector('input[name="addPoster"]');
 		const video =
@@ -824,6 +854,7 @@
 			setDrawerStatus(form, "Choose an MP4 and poster to add a clip.", true);
 			return;
 		}
+		setDrawerMutationBusy(layer, form, true);
 		setDrawerStatus(form, "Uploading clip…", false);
 		try {
 			const metrics = await probeVideo(video);
@@ -868,10 +899,13 @@
 				error instanceof Error ? error.message : "Upload failed.",
 				true,
 			);
+		} finally {
+			setDrawerMutationBusy(layer, form, false);
 		}
 	}
 
 	async function replaceClip(form, slug, clipSlug, layer) {
+		if (mutationBusy) return;
 		const videoInput = document.createElement("input");
 		videoInput.type = "file";
 		videoInput.accept = "video/mp4,.mp4";
@@ -893,6 +927,7 @@
 			return;
 		}
 
+		setDrawerMutationBusy(layer, form, true);
 		setDrawerStatus(form, "Replacing clip…", false);
 		try {
 			const metrics = await probeVideo(video);
@@ -938,6 +973,8 @@
 				error instanceof Error ? error.message : "Replace failed.",
 				true,
 			);
+		} finally {
+			setDrawerMutationBusy(layer, form, false);
 		}
 	}
 

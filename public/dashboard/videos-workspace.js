@@ -679,13 +679,17 @@
 			const result = await readJson(response);
 
 			if (response.status === 409) {
+				const err =
+					result.error ?? "The catalog changed since you loaded this page.";
 				setDrawerStatus(form, "", false);
 				if (saveBtn instanceof HTMLButtonElement) saveBtn.disabled = false;
+				if (/already in the catalog/i.test(err)) {
+					setDrawerStatus(form, err, true);
+					return;
+				}
 				layer.close();
 				showConflict({
-					message:
-						result.error ??
-						"The catalog changed since you loaded this page.",
+					message: err,
 					pendingSlug: slug,
 					reopenMode: mode,
 				});

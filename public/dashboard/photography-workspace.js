@@ -24,6 +24,10 @@
 	let dragEl = null;
 	let photoReorderBusy = false;
 	let albumReorderBusy = false;
+	let inspectorBusy = false;
+	let uploadBusy = false;
+	/** Serializes catalog POSTs so concurrent converts still share one rev pipeline. */
+	let uploadGate = Promise.resolve();
 	/** @type {{ close: () => void, panel: HTMLElement } | null} */
 	let lightboxLayer = null;
 
@@ -250,8 +254,8 @@
 						<span class="dash-photo-rail__count">${count}</span>
 					</button>
 					<div class="dash-photo-rail__moves">
-						<button type="button" class="dash-photo-rail__move" data-album-reorder="up" ${!state.writable || index === 0 ? "disabled" : ""} aria-label="Move ${escapeHtml(category.label)} up">↑</button>
-						<button type="button" class="dash-photo-rail__move" data-album-reorder="down" ${!state.writable || index === state.categories.length - 1 ? "disabled" : ""} aria-label="Move ${escapeHtml(category.label)} down">↓</button>
+						<button type="button" class="dash-photo-rail__move" data-album-reorder="up" ${!state.writable || albumReorderBusy || index === 0 ? "disabled" : ""} aria-label="Move ${escapeHtml(category.label)} up">↑</button>
+						<button type="button" class="dash-photo-rail__move" data-album-reorder="down" ${!state.writable || albumReorderBusy || index === state.categories.length - 1 ? "disabled" : ""} aria-label="Move ${escapeHtml(category.label)} down">↓</button>
 					</div>
 				</li>`;
 			})
@@ -422,10 +426,10 @@
 					</label>
 					<p class="dash-photo-inspector__status" data-inspector-status hidden></p>
 					<div class="dash-photo-inspector__actions">
-						<button type="submit" class="dash-btn dash-btn--primary" ${state.writable ? "" : "disabled"}>Save</button>
+						<button type="submit" class="dash-btn dash-btn--primary" ${state.writable && !inspectorBusy ? "" : "disabled"}>Save</button>
 						<button type="button" class="dash-btn dash-btn--ghost" data-photo-preview>Preview</button>
-						<button type="button" class="dash-btn dash-btn--ghost" data-photo-replace ${state.writable ? "" : "disabled"}>Replace asset</button>
-						<button type="button" class="dash-btn dash-btn--danger" data-photo-delete ${state.writable ? "" : "disabled"}>Delete</button>
+						<button type="button" class="dash-btn dash-btn--ghost" data-photo-replace ${state.writable && !inspectorBusy ? "" : "disabled"}>Replace asset</button>
+						<button type="button" class="dash-btn dash-btn--danger" data-photo-delete ${state.writable && !inspectorBusy ? "" : "disabled"}>Delete</button>
 					</div>
 				</form>
 				${
@@ -461,6 +465,25 @@
 		ROOT.classList.remove("inspector-open");
 		renderGrid();
 		renderInspector();
+	}
+
+	function setInspectorBusy(busy) {
+		inspectorBusy = busy;
+		const form = els.inspectorBody?.querySelector("[data-inspector-form]");
+		if (!(form instanceof HTMLFormElement)) return;
+		form
+			.querySelectorAll(
+				'button[type="submit"], [data-photo-replace], [data-photo-delete]',
+			)
+			.forEach((node) => {
+				if (node instanceof HTMLButtonElement) {
+					node.disabled = busy || !state.writable;
+				}
+			});
+	}
+
+	function isBusinessConflict(message) {
+		return /already exists/i.test(String(message ?? ""));
 	}
 
 	function setInspectorStatus(message, isError = false) {
@@ -877,11 +900,14 @@
 	}
 
 	async function runUploads(files, layer) {
+		if (uploadBusy) return;
+		uploadBusy = true;
 		const categoryEl = layer.panel.querySelector("[data-upload-category]");
 		const listEl = layer.panel.querySelector("[data-upload-list]");
 		const statusEl = layer.panel.querySelector("[data-upload-status]");
 		const category = String(categoryEl?.value ?? "");
 		if (!category) {
+			uploadBusy = false;
 			if (statusEl) {
 				statusEl.hidden = false;
 				statusEl.textContent = "Pick an album first.";
@@ -902,9 +928,17 @@
 		let cursor = 0;
 		let success = 0;
 		let failed = 0;
+		let stoppedForConflict = false;
+
+		async function enqueueUpload(task) {
+			const run = uploadGate.then(task, task);
+			uploadGate = run.catch(() => undefined);
+			return run;
+		}
 
 		async function worker() {
 			while (cursor < files.length) {
+				if (stoppedForConflict) return;
 				const index = cursor++;
 				const file = files[index];
 				const row = listEl?.querySelector(`[data-upload-item="${index}"]`);
@@ -912,39 +946,44 @@
 				try {
 					if (rowStatus) rowStatus.textContent = "Converting…";
 					const webp = await toWebp(file);
+					if (stoppedForConflict) return;
 					if (rowStatus) rowStatus.textContent = "Uploading…";
-					const payload = new FormData();
-					payload.set("file", webp);
-					payload.set("category", category);
-					payload.set("title", file.name.replace(/\.[^.]+$/, ""));
-					payload.set("rev", String(photosRev().rev ?? 0));
-					const response = await fetch("/api/photos", {
-						method: "POST",
-						body: payload,
-					});
-					const result = await readJson(response);
-					if (response.status === 409) {
-						if (rowStatus) rowStatus.textContent = "Conflict";
-						failed += 1;
-						showConflict({
-							message:
-								result.error ??
-								"The photo catalog changed during upload.",
-							domain: "photos",
+					await enqueueUpload(async () => {
+						if (stoppedForConflict) return;
+						const payload = new FormData();
+						payload.set("file", webp);
+						payload.set("category", category);
+						payload.set("title", file.name.replace(/\.[^.]+$/, ""));
+						payload.set("rev", String(photosRev().rev ?? 0));
+						const response = await fetch("/api/photos", {
+							method: "POST",
+							body: payload,
 						});
-						return;
-					}
-					if (!response.ok) {
-						if (rowStatus)
-							rowStatus.textContent = result.error ?? "Failed";
-						failed += 1;
-						continue;
-					}
-					if (typeof result.rev === "number") setPhotosRev(result.rev);
-					if (result.photo) upsertPhoto(result.photo);
-					if (rowStatus) rowStatus.textContent = "Done";
-					success += 1;
-					reportPublish(result.publish);
+						const result = await readJson(response);
+						if (response.status === 409) {
+							if (rowStatus) rowStatus.textContent = "Conflict";
+							failed += 1;
+							stoppedForConflict = true;
+							showConflict({
+								message:
+									result.error ??
+									"The photo catalog changed during upload.",
+								domain: "photos",
+							});
+							return;
+						}
+						if (!response.ok) {
+							if (rowStatus)
+								rowStatus.textContent = result.error ?? "Failed";
+							failed += 1;
+							return;
+						}
+						if (typeof result.rev === "number") setPhotosRev(result.rev);
+						if (result.photo) upsertPhoto(result.photo);
+						if (rowStatus) rowStatus.textContent = "Done";
+						success += 1;
+						reportPublish(result.publish);
+					});
 				} catch (error) {
 					if (rowStatus)
 						rowStatus.textContent =
@@ -954,29 +993,33 @@
 			}
 		}
 
-		const workers = Array.from(
-			{ length: Math.min(UPLOAD_CONCURRENCY, files.length) },
-			() => worker(),
-		);
-		await Promise.all(workers);
-		renderAll();
-		if (statusEl) {
-			statusEl.hidden = false;
-			statusEl.dataset.error = failed ? "true" : "false";
-			statusEl.textContent =
+		try {
+			const workers = Array.from(
+				{ length: Math.min(UPLOAD_CONCURRENCY, files.length) },
+				() => worker(),
+			);
+			await Promise.all(workers);
+			renderAll();
+			if (statusEl) {
+				statusEl.hidden = false;
+				statusEl.dataset.error = failed ? "true" : "false";
+				statusEl.textContent =
+					failed === 0
+						? `Uploaded ${success} photo${success === 1 ? "" : "s"}.`
+						: `Uploaded ${success}, failed ${failed}. Successful files were kept.`;
+			}
+			announce(
 				failed === 0
-					? `Uploaded ${success} photo${success === 1 ? "" : "s"}.`
-					: `Uploaded ${success}, failed ${failed}. Successful files were kept.`;
+					? `Uploaded ${success} photos`
+					: `Uploaded ${success}, failed ${failed}`,
+			);
+		} finally {
+			uploadBusy = false;
 		}
-		announce(
-			failed === 0
-				? `Uploaded ${success} photos`
-				: `Uploaded ${success}, failed ${failed}`,
-		);
 	}
 
 	async function saveInspector(form) {
-		if (!selected) return;
+		if (!selected || inspectorBusy) return;
 		const photo = findPhoto(selected.category, selected.slug);
 		if (!photo) return;
 		const data = new FormData(form);
@@ -987,56 +1030,65 @@
 			setInspectorStatus("Title and alt text are required.", true);
 			return;
 		}
+		setInspectorBusy(true);
 		setInspectorStatus("Saving…", false);
-		const response = await fetch("/api/photos", {
-			method: "PATCH",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				action: "update",
-				slug: photo.slug,
-				category: photo.category,
-				title,
-				alt,
-				nextCategory,
-				...photosRev(),
-			}),
-		});
-		const result = await readJson(response);
-		if (response.status === 409) {
-			setInspectorStatus("", false);
-			showConflict({
-				message: result.error ?? "The photo catalog changed.",
-				domain: "photos",
-				reopenPhoto: { category: photo.category, slug: photo.slug },
+		try {
+			const response = await fetch("/api/photos", {
+				method: "PATCH",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					action: "update",
+					slug: photo.slug,
+					category: photo.category,
+					title,
+					alt,
+					nextCategory,
+					...photosRev(),
+				}),
 			});
-			return;
-		}
-		if (!response.ok) {
-			setInspectorStatus(result.error ?? "Could not save.", true);
-			return;
-		}
-		if (typeof result.rev === "number") setPhotosRev(result.rev);
-		if (result.photo) {
-			if (
-				result.photo.category !== photo.category ||
-				result.photo.slug !== photo.slug
-			) {
-				removePhoto(photo.category, photo.slug);
+			const result = await readJson(response);
+			if (response.status === 409) {
+				if (isBusinessConflict(result.error)) {
+					setInspectorStatus(result.error, true);
+					return;
+				}
+				setInspectorStatus("", false);
+				showConflict({
+					message: result.error ?? "The photo catalog changed.",
+					domain: "photos",
+					reopenPhoto: { category: photo.category, slug: photo.slug },
+				});
+				return;
 			}
-			upsertPhoto(result.photo);
-			selected = {
-				category: result.photo.category,
-				slug: result.photo.slug,
-			};
+			if (!response.ok) {
+				setInspectorStatus(result.error ?? "Could not save.", true);
+				return;
+			}
+			if (typeof result.rev === "number") setPhotosRev(result.rev);
+			if (result.photo) {
+				if (
+					result.photo.category !== photo.category ||
+					result.photo.slug !== photo.slug
+				) {
+					removePhoto(photo.category, photo.slug);
+				}
+				upsertPhoto(result.photo);
+				selected = {
+					category: result.photo.category,
+					slug: result.photo.slug,
+				};
+			}
+			reportPublish(result.publish);
+			setInspectorStatus("Saved.", false);
+			renderAll();
+			announce(`Updated ${result.photo?.title ?? photo.title}`);
+		} finally {
+			setInspectorBusy(false);
 		}
-		reportPublish(result.publish);
-		setInspectorStatus("Saved.", false);
-		renderAll();
-		announce(`Updated ${result.photo?.title ?? photo.title}`);
 	}
 
 	function openReplacePicker() {
-		if (!selected || !state.writable) return;
+		if (!selected || !state.writable || inspectorBusy) return;
 		const input = document.createElement("input");
 		input.type = "file";
 		input.accept =
@@ -1049,9 +1101,10 @@
 	}
 
 	async function replaceAsset(file) {
-		if (!selected) return;
+		if (!selected || inspectorBusy) return;
 		const photo = findPhoto(selected.category, selected.slug);
 		if (!photo) return;
+		setInspectorBusy(true);
 		setInspectorStatus("Converting…", false);
 		try {
 			const webp = await toWebp(file);
@@ -1093,6 +1146,8 @@
 				error instanceof Error ? error.message : "Could not convert image.",
 				true,
 			);
+		} finally {
+			setInspectorBusy(false);
 		}
 	}
 
