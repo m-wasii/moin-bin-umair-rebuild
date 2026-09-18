@@ -87,3 +87,26 @@ export function siteOrigin(url: URL) {
 
 	return url.origin;
 }
+
+/**
+ * Public Worker origin for Workers Caching purge/warm.
+ *
+ * Must NOT prefer marketing `SITE` / `PUBLIC_SITE_URL` — those are canonical
+ * hosts for OG/hreflang and may be unset in DNS or front a different CDN.
+ * Catalog saves run on the dashboard Worker and must call `/cdn-purge` on the
+ * site Worker entrypoint that owns the HTML cache (e.g. mbu.*.workers.dev).
+ */
+export function workerCacheOrigin(url: URL) {
+	const host = hostnameOf(url);
+	const account = workersDevAccountHost(host);
+	if (account) {
+		return `${url.protocol}//${WORKERS_DEV_SITE_WORKER}.${account}`;
+	}
+
+	if (host.startsWith("dashboard.")) {
+		const rest = host.replace(/^dashboard\./, "");
+		return `${url.protocol}//${rest}${url.port ? `:${url.port}` : ""}`;
+	}
+
+	return url.origin;
+}
